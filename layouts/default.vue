@@ -208,8 +208,7 @@ const handleSearchClick = () => {
       </NuxtLink>
     </nav>
 
-    <!-- Floating Concierge WhatsApp & Floating Language Switcher -->
-    <CommonFloatingLanguage />
+    <!-- Floating Concierge WhatsApp -->
     <CommonFloatingWhatsApp />
   </div>
 </template>
