@@ -85,15 +85,17 @@ const handleSearchClick = () => {
       <div class="max-w-6xl mx-auto flex justify-between items-center w-full gap-4">
         <!-- Brand Link & Anchor / Logo -->
         <NuxtLink to="/" class="flex items-center gap-3 group shrink-0">
-          <div class="w-10 h-10 rounded-xl bg-[#103860] flex items-center justify-center text-white shadow-md overflow-hidden flex-shrink-0">
+          <div class="w-11 h-11 flex items-center justify-center flex-shrink-0">
             <img 
               v-if="!logoError"
               src="/brand/logo.png" 
               alt="Laut Berkah Abadi" 
-              class="w-full h-full object-contain p-0.5 bg-white"
+              class="w-full h-full object-contain rounded-full"
               @error="logoError = true"
             />
-            <span v-else class="material-symbols-outlined text-[24px]" style="font-variation-settings: 'FILL' 1;">anchor</span>
+            <div v-else class="w-full h-full rounded-full bg-[#103860] flex items-center justify-center text-white">
+              <span class="material-symbols-outlined text-[24px]" style="font-variation-settings: 'FILL' 1;">anchor</span>
+            </div>
           </div>
           <div class="flex flex-col">
             <h1 class="text-base font-bold text-[#103860] leading-tight group-hover:text-[#13446E] transition-colors">
