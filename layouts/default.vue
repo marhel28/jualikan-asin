@@ -205,9 +205,6 @@ const handleSearchClick = () => {
 
     <!-- Floating Concierge WhatsApp -->
     <CommonFloatingWhatsApp />
-
-    <!-- Global Cart Add Toast -->
-    <CommonCartToast />
   </div>
 </template>
 

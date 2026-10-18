@@ -377,9 +377,6 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- Visual Journey: Jalur 4 Jam Muncar ke Dapur -->
-    <HomeColdChainJourney />
-
     <!-- Real-Time Search Bar -->
     <div class="relative w-full">
       <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
