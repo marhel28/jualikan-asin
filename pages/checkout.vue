@@ -42,8 +42,14 @@ const handleProceedToPayment = () => {
         <h1 class="text-base font-bold text-[#103860] leading-tight">Checkout Pengiriman</h1>
         <p class="text-xs text-slate-500 font-medium">Pusat Distribusi Dingin Muncar</p>
       </div>
-      <NuxtLink to="/keranjang" class="ml-auto flex items-center text-[#103860] hover:opacity-80" aria-label="Lihat Keranjang">
+      <NuxtLink to="/keranjang" class="ml-auto relative flex items-center justify-center w-9 h-9 text-[#103860] hover:bg-slate-100 rounded-full transition-colors" aria-label="Lihat Keranjang">
         <span class="material-symbols-outlined text-[22px]">shopping_cart</span>
+        <span 
+          v-if="cartStore.items.length > 0"
+          class="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-[#059669] text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none ring-2 ring-white shadow-xs"
+        >
+          {{ cartStore.items.length }}
+        </span>
       </NuxtLink>
     </header>
 

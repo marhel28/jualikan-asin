@@ -338,7 +338,7 @@ useHead(() => {
             <span class="material-symbols-outlined text-[22px]">shopping_cart</span>
             <span 
               v-if="cartStore.totalItemsCount > 0"
-              class="absolute top-1.5 right-1.5 w-4 h-4 bg-[#006c4a] text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none"
+              class="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-[#006c4a] text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none ring-2 ring-white shadow-xs"
             >
               {{ cartStore.totalItemsCount }}
             </span>
