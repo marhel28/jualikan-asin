@@ -5,7 +5,7 @@ import { useCheckoutStore, type CourierType, type DeliverySlot } from '~/stores/
 import { useOrderStore } from '~/stores/order'
 
 definePageMeta({
-  layout: 'clean'
+  layout: 'default'
 })
 
 useHead({
@@ -25,7 +25,7 @@ const handleProceedToPayment = () => {
 
 <template>
   <!-- Responsive Checkout: 1 col on mobile, 2 col on desktop md+ -->
-  <div class="grid grid-cols-1 md:grid-cols-[1.4fr_1fr] gap-4 md:gap-6 items-start">
+  <div class="grid grid-cols-1 md:grid-cols-[1.4fr_1fr] gap-4 md:gap-6 items-start pb-24 md:pb-8">
     <!-- Left Column: Address, Courier, and Delivery Slot Selection -->
     <div class="flex flex-col gap-4">
       <!-- Recipient Address Card -->

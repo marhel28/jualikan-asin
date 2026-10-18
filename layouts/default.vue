@@ -38,7 +38,6 @@ const showBottomNav = computed(() => {
   if (route.meta?.hideBottomNav) return false
   if (route.path.startsWith('/produk')) return false
   if (route.path.startsWith('/keranjang')) return false
-  if (route.path.startsWith('/checkout')) return false
   if (route.path.startsWith('/pembayaran')) return false
   return true
 })
