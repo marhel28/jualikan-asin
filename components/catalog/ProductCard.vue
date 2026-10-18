@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useCartStore, type CutType } from '~/stores/cart'
 import { useWishlistStore } from '~/stores/wishlist'
 import type { Product } from '~/data/products'
@@ -11,6 +12,7 @@ interface Props {
 
 const props = defineProps<Props>()
 
+const router = useRouter()
 const cartStore = useCartStore()
 const wishlistStore = useWishlistStore()
 const { t } = useLocale()
@@ -21,6 +23,10 @@ const isFavorited = computed(() => wishlistStore.has(props.product.id))
 
 const formatPrice = (price: number): string => {
   return price.toLocaleString('id-ID')
+}
+
+const goToDetail = () => {
+  router.push('/produk/' + props.product.slug)
 }
 
 const toggleWishlist = (event: Event) => {
@@ -65,9 +71,12 @@ const handleQuickAdd = () => {
 </script>
 
 <template>
-  <article class="bg-white border border-slate-200/90 rounded-xl overflow-hidden flex flex-col justify-between hover:border-[#002242]/40 transition duration-150 shadow-2xs">
+  <article 
+    @click="goToDetail"
+    class="bg-white border border-slate-200/90 rounded-xl overflow-hidden flex flex-col justify-between hover:border-[#002242]/40 transition duration-150 shadow-2xs cursor-pointer group"
+  >
     <div>
-      <NuxtLink :to="'/produk/' + product.slug" class="block relative w-full aspect-[4/3] bg-slate-100 overflow-hidden group">
+      <div class="block relative w-full aspect-[4/3] bg-slate-100 overflow-hidden">
         <img
           :src="product.images?.hero || 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=600&q=80'"
           :alt="product.name"
@@ -82,7 +91,7 @@ const handleQuickAdd = () => {
 
         <button
           type="button"
-          @click="toggleWishlist"
+          @click.stop="toggleWishlist"
           :aria-label="isFavorited ? 'Hapus dari favorit' : 'Tambah ke favorit'"
           class="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/90 backdrop-blur-xs flex items-center justify-center transition-colors shadow-xs hover:bg-white cursor-pointer"
           :class="isFavorited ? 'text-rose-600' : 'text-slate-400 hover:text-slate-700'"
@@ -95,14 +104,12 @@ const handleQuickAdd = () => {
         <span class="absolute bottom-2 right-2 bg-white/90 backdrop-blur-xs text-slate-800 text-[10px] font-medium px-1.5 py-0.5 rounded border border-slate-200">
           {{ product.exportGrade || 'Grade A' }}
         </span>
-      </NuxtLink>
+      </div>
 
       <div class="p-2.5 pb-1">
-        <NuxtLink :to="'/produk/' + product.slug">
-          <h2 class="text-xs font-bold text-[#002242] line-clamp-2 leading-snug hover:underline">
-            {{ product.name }}
-          </h2>
-        </NuxtLink>
+        <h2 class="text-xs font-bold text-[#002242] line-clamp-2 leading-snug group-hover:text-[#103860] group-hover:underline">
+          {{ product.name }}
+        </h2>
 
         <!-- Terjual (ringan) -->
         <div class="flex items-center gap-1 mt-1 text-[11px] text-slate-500">
@@ -139,7 +146,7 @@ const handleQuickAdd = () => {
       <button 
         type="button" 
         :disabled="isAdding"
-        @click="handleQuickAdd"
+        @click.stop="handleQuickAdd"
         class="w-full flex items-center justify-center gap-1.5 bg-slate-100 hover:bg-[#103860] text-[#103860] hover:text-white active:scale-95 transition py-1.5 px-2 rounded-lg text-xs font-bold cursor-pointer disabled:opacity-60"
       >
         <span class="material-symbols-outlined text-[16px]">

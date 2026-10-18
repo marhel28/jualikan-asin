@@ -394,10 +394,11 @@ useHead(() => {
             <article 
               v-for="p in filteredProducts" 
               :key="p.id"
-              class="bg-white border border-slate-200/90 rounded-xl overflow-hidden flex flex-col justify-between hover:border-[#002242]/40 transition duration-150 shadow-2xs"
+              @click="router.push(`/produk/${p.slug}`)"
+              class="bg-white border border-slate-200/90 rounded-xl overflow-hidden flex flex-col justify-between hover:border-[#002242]/40 transition duration-150 shadow-2xs cursor-pointer group"
             >
               <div>
-                <NuxtLink :to="`/produk/${p.slug}`" class="block relative w-full aspect-[4/3] bg-slate-100 overflow-hidden group">
+                <div class="block relative w-full aspect-[4/3] bg-slate-100 overflow-hidden">
                   <img 
                     :src="p.images.hero" 
                     :alt="p.name" 
@@ -412,14 +413,12 @@ useHead(() => {
                   <span class="absolute bottom-2 right-2 bg-white/90 backdrop-blur-xs text-slate-800 text-[10px] font-medium px-1.5 py-0.5 rounded border border-slate-200">
                     {{ p.exportGrade || 'Grade A' }}
                   </span>
-                </NuxtLink>
+                </div>
 
                 <div class="p-2.5 pb-1">
-                  <NuxtLink :to="`/produk/${p.slug}`">
-                    <h2 class="text-xs font-bold text-[#002242] line-clamp-2 leading-snug hover:underline">
-                      {{ p.name }}
-                    </h2>
-                  </NuxtLink>
+                  <h2 class="text-xs font-bold text-[#002242] line-clamp-2 leading-snug group-hover:text-[#103860] group-hover:underline">
+                    {{ p.name }}
+                  </h2>
                   <div class="flex items-center gap-1.5 mt-1">
                     <span class="inline-block w-1.5 h-1.5 rounded-full bg-[#006c4a]"></span>
                     <span class="text-[11px] text-[#006c4a] font-medium">
@@ -439,7 +438,7 @@ useHead(() => {
 
                 <button 
                   type="button" 
-                  @click="handleAddToCart(p)"
+                  @click.stop="handleAddToCart(p)"
                   class="w-full flex items-center justify-center gap-1.5 bg-slate-100 hover:bg-[#103860] text-[#103860] hover:text-white active:scale-95 transition py-1.5 px-2 rounded-lg text-xs font-bold cursor-pointer"
                 >
                   <span class="material-symbols-outlined text-[16px]">add_shopping_cart</span>
