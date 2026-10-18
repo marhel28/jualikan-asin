@@ -190,6 +190,13 @@ const filteredProducts = computed(() => {
   })
 })
 
+// Produk Terlaris berdasarkan kuantitas terjual (soldCount tertinggi)
+const topSellingProducts = computed(() => {
+  return [...products.value]
+    .sort((a, b) => (b.soldCount || 0) - (a.soldCount || 0))
+    .slice(0, 4)
+})
+
 const resetFilter = () => {
   searchQuery.value = ''
   selectedCategory.value = 'semua'
@@ -468,6 +475,23 @@ onUnmounted(() => {
         :product="product"
       />
     </div>
+
+    <!-- Produk Terlaris Strip -->
+    <section class="bg-white border border-slate-200/80 rounded-xl p-3 md:p-4">
+      <div class="mb-3">
+        <h3 class="text-sm font-bold text-[#002242] flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-[16px] text-amber-600">local_fire_department</span>
+          Produk Terlaris
+        </h3>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+        <CatalogProductCard
+          v-for="product in topSellingProducts"
+          :key="'top-' + product.id"
+          :product="product"
+        />
+      </div>
+    </section>
 
     <!-- Cold chain delivery guarantee banner -->
     <div class="bg-white border border-slate-200/80 rounded-xl p-3 flex items-center gap-3 shadow-xs">
