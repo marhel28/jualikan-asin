@@ -181,8 +181,7 @@ export const PRODUCTS: Product[] = [
     supportsSoupBones: true,
     isFeatured: false,
     soldCount: 520,
-    wishlistCount: 112,
-    culinaryIdeas: ['Pindang Bumbu Rujak', 'Balado Pedas', 'Tongkol Suwir Kemangi']
+    wishlistCount: 112
   },
   {
     id: 'lemuru-segar',
@@ -221,8 +220,7 @@ export const PRODUCTS: Product[] = [
     supportsSoupBones: false,
     isFeatured: true,
     soldCount: 890,
-    wishlistCount: 145,
-    culinaryIdeas: ['Pindang Banyuwangi', 'Goreng Tepung', 'Pepes Daun']
+    wishlistCount: 145
   },
   {
     id: 'kakap-merah',
@@ -437,8 +435,7 @@ export const PRODUCTS: Product[] = [
     supportsSoupBones: false,
     isFeatured: true,
     soldCount: 98,
-    wishlistCount: 54,
-    culinaryIdeas: ['Fillet Goreng Tepung', 'Fillet Tumis Taoco', 'Fillet Bakar Sambal']
+    wishlistCount: 54
   }
 ]
 
