@@ -17,6 +17,14 @@ const cartStore = useCartStore()
 const checkoutStore = useCheckoutStore()
 const orderStore = useOrderStore()
 
+const goBack = () => {
+  if (typeof window !== 'undefined' && window.history.length > 1) {
+    router.back()
+  } else {
+    router.push('/keranjang')
+  }
+}
+
 const handleProceedToPayment = () => {
   const newOrderId = orderStore.createOrder()
   router.push(`/pembayaran/${newOrderId}`)
@@ -24,8 +32,42 @@ const handleProceedToPayment = () => {
 </script>
 
 <template>
-  <!-- Responsive Checkout: 1 col on mobile, 2 col on desktop md+ -->
-  <div class="grid grid-cols-1 md:grid-cols-[1.4fr_1fr] gap-4 md:gap-6 items-start pb-24 md:pb-8">
+  <div class="flex flex-col gap-4 py-1">
+    <!-- Mobile-only local header with Back navigation (hidden on md+) -->
+    <header class="md:hidden -mx-4 -mt-4 mb-1 bg-white border-b border-slate-200 px-4 py-3 flex items-center gap-3">
+      <button type="button" @click="goBack" class="p-1.5 -ml-1.5 rounded-full hover:bg-slate-100 text-[#103860]" aria-label="Kembali ke Keranjang">
+        <span class="material-symbols-outlined text-[24px]">arrow_back</span>
+      </button>
+      <div class="flex flex-col">
+        <h1 class="text-base font-bold text-[#103860] leading-tight">Checkout Pengiriman</h1>
+        <p class="text-xs text-slate-500 font-medium">Pusat Distribusi Dingin Muncar</p>
+      </div>
+      <NuxtLink to="/keranjang" class="ml-auto flex items-center text-[#103860] hover:opacity-80" aria-label="Lihat Keranjang">
+        <span class="material-symbols-outlined text-[22px]">shopping_cart</span>
+      </NuxtLink>
+    </header>
+
+    <!-- Desktop Breadcrumb & Back action -->
+    <nav class="hidden md:flex items-center justify-between text-xs text-slate-500 mb-1">
+      <div class="flex items-center gap-2">
+        <NuxtLink to="/" class="hover:text-[#103860] transition-colors">Beranda</NuxtLink>
+        <span class="material-symbols-outlined text-[14px]">chevron_right</span>
+        <NuxtLink to="/keranjang" class="hover:text-[#103860] transition-colors">Keranjang Belanja</NuxtLink>
+        <span class="material-symbols-outlined text-[14px]">chevron_right</span>
+        <span class="font-semibold text-[#103860]">Checkout Pengiriman</span>
+      </div>
+      <button 
+        type="button" 
+        @click="goBack" 
+        class="inline-flex items-center gap-1 text-slate-600 hover:text-[#103860] font-medium transition-colors cursor-pointer"
+      >
+        <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+        <span>Kembali</span>
+      </button>
+    </nav>
+
+    <!-- Responsive Checkout: 1 col on mobile, 2 col on desktop md+ -->
+    <div class="grid grid-cols-1 md:grid-cols-[1.4fr_1fr] gap-4 md:gap-6 items-start pb-24 md:pb-8">
     <!-- Left Column: Address, Courier, and Delivery Slot Selection -->
     <div class="flex flex-col gap-4">
       <!-- Recipient Address Card -->
@@ -286,6 +328,7 @@ const handleProceedToPayment = () => {
         </div>
       </div>
     </div>
+  </div>
   </div>
 </template>
 
