@@ -142,7 +142,7 @@ onMounted(() => {
     </div>
 
     <!-- POPULATED CART STATE: 2-column on desktop (Left items list & options, Right order summary) -->
-    <div v-else class="grid grid-cols-1 md:grid-cols-[1.8fr_1fr] lg:grid-cols-[2fr_1fr] gap-4 md:gap-6 items-start pb-10">
+    <div v-else class="grid grid-cols-1 md:grid-cols-[1.8fr_1fr] lg:grid-cols-[2fr_1fr] gap-4 md:gap-6 items-start pb-28 md:pb-10">
       <!-- Left Column: Free Shipping Progress + Items + Packaging + Notes -->
       <div class="flex flex-col gap-3.5">
         <!-- 1. Free Shipping Progress Bar Card -->
@@ -415,10 +415,10 @@ onMounted(() => {
             </div>
           </div>
 
-          <!-- Desktop Inline Checkout Button -->
+          <!-- Desktop & Mobile Inline Checkout Button -->
           <NuxtLink
             to="/checkout"
-            class="hidden md:flex w-full mt-3 py-3 px-4 rounded-xl bg-[#103860] hover:bg-[#13446E] text-white text-xs font-bold transition-all shadow-md text-center items-center justify-center gap-2 cursor-pointer"
+            class="flex w-full mt-3 py-3 px-4 rounded-xl bg-[#103860] hover:bg-[#13446E] text-white text-xs font-bold transition-all shadow-md text-center items-center justify-center gap-2 cursor-pointer"
           >
             <span>Lanjut ke Pengiriman</span>
             <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
@@ -427,7 +427,7 @@ onMounted(() => {
       </div>
 
       <!-- 6. Sticky Bottom Checkout Bar (Mobile only, hidden md+) -->
-      <footer class="md:hidden fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/95 backdrop-blur-md border-t border-slate-200 p-3.5 z-40 shadow-lg">
+      <footer class="md:hidden fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/95 backdrop-blur-md border-t border-slate-200 p-3.5 z-50 shadow-lg">
         <div class="flex items-center justify-between gap-3">
           <div class="flex flex-col">
             <span class="text-[10px] text-slate-500 font-medium">Total Estimasi</span>
