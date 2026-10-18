@@ -28,6 +28,11 @@ const goBack = () => {
   }
 }
 
+const goToProduct = (slugOrId?: string) => {
+  if (!slugOrId) return
+  router.push('/produk/' + slugOrId)
+}
+
 // State management for 3 UI states (Loading, Empty, Error)
 const isLoading = ref(false)
 const errorMessage = ref<string | null>(null)
@@ -190,13 +195,13 @@ onMounted(() => {
             <div
               v-for="item in cartStore.items"
               :key="item.id"
-              class="p-3.5 flex gap-3.5 items-center hover:bg-slate-50/50 transition-colors"
+              @click="goToProduct(item.slug || item.productId)"
+              class="p-3.5 flex gap-3.5 items-center hover:bg-slate-50/80 transition-colors cursor-pointer group"
+              :title="'Lihat detail ' + item.name"
             >
-              <!-- Product Thumbnail (Clickable to Product Detail) -->
-              <NuxtLink
-                :to="'/produk/' + (item.slug || item.productId)"
-                class="relative w-16 h-16 min-w-16 min-h-16 rounded-xl bg-slate-100 shrink-0 overflow-hidden border border-slate-200/60 block hover:opacity-90 active:scale-95 transition-all cursor-pointer"
-                :title="'Lihat detail ' + item.name"
+              <!-- Product Thumbnail -->
+              <div
+                class="relative w-16 h-16 min-w-16 min-h-16 rounded-xl bg-slate-100 shrink-0 overflow-hidden border border-slate-200/60 block group-hover:opacity-90 transition-opacity"
               >
                 <img
                   :src="item.imageUrl"
@@ -208,17 +213,13 @@ onMounted(() => {
                 <span class="absolute bottom-0 inset-x-0 bg-[#103860]/85 text-white text-[9px] font-bold text-center py-0.5">
                   {{ item.quantityKg }} {{ item.unit || 'kg' }}
                 </span>
-              </NuxtLink>
+              </div>
 
               <!-- Product Details -->
               <div class="flex-1 min-w-0 flex flex-col gap-0.5">
-                <NuxtLink
-                  :to="'/produk/' + (item.slug || item.productId)"
-                  class="text-xs font-bold text-[#0F172A] hover:text-[#103860] no-underline line-clamp-2 leading-snug transition-colors cursor-pointer"
-                  :title="'Lihat detail ' + item.name"
-                >
+                <h3 class="text-xs font-bold text-[#0F172A] group-hover:text-[#103860] line-clamp-2 leading-snug transition-colors no-underline">
                   {{ item.name }}
-                </NuxtLink>
+                </h3>
 
                 <div class="text-[11px] text-slate-500 font-medium">
                   {{ item.cutLabel }} &bull; Netto ~{{ item.estimatedNetWeightGrams }}g
@@ -235,10 +236,10 @@ onMounted(() => {
               </div>
 
               <!-- Stepper and Remove Controls -->
-              <div class="flex flex-col items-end justify-between self-stretch shrink-0 gap-2">
+              <div class="flex flex-col items-end justify-between self-stretch shrink-0 gap-2" @click.stop>
                 <button
                   type="button"
-                  @click="cartStore.removeItem(item.id)"
+                  @click.stop="cartStore.removeItem(item.id)"
                   class="text-slate-400 hover:text-red-600 p-1 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
                   title="Hapus produk dari keranjang"
                   aria-label="Hapus produk"
@@ -247,10 +248,10 @@ onMounted(() => {
                 </button>
 
                 <!-- Quantity Stepper -->
-                <div class="flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white shadow-2xs">
+                <div class="flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white shadow-2xs" @click.stop>
                   <button
                     type="button"
-                    @click="cartStore.updateQuantity(item.id, -1)"
+                    @click.stop="cartStore.updateQuantity(item.id, -1)"
                     class="w-7 h-7 flex items-center justify-center text-slate-700 hover:bg-slate-100 active:bg-slate-200 transition-colors cursor-pointer"
                     aria-label="Kurangi jumlah"
                   >
@@ -261,7 +262,7 @@ onMounted(() => {
                   </span>
                   <button
                     type="button"
-                    @click="cartStore.updateQuantity(item.id, 1)"
+                    @click.stop="cartStore.updateQuantity(item.id, 1)"
                     class="w-7 h-7 flex items-center justify-center text-slate-700 hover:bg-slate-100 active:bg-slate-200 transition-colors cursor-pointer"
                     aria-label="Tambah jumlah"
                   >
