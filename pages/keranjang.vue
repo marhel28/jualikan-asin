@@ -192,8 +192,12 @@ onMounted(() => {
               :key="item.id"
               class="p-3.5 flex gap-3.5 items-center hover:bg-slate-50/50 transition-colors"
             >
-              <!-- Product Thumbnail -->
-              <div class="relative w-16 h-16 min-w-16 min-h-16 rounded-xl bg-slate-100 shrink-0 overflow-hidden border border-slate-200/60">
+              <!-- Product Thumbnail (Clickable to Product Detail) -->
+              <NuxtLink
+                :to="'/produk/' + (item.slug || item.productId)"
+                class="relative w-16 h-16 min-w-16 min-h-16 rounded-xl bg-slate-100 shrink-0 overflow-hidden border border-slate-200/60 block hover:opacity-90 active:scale-95 transition-all cursor-pointer"
+                :title="'Lihat detail ' + item.name"
+              >
                 <img
                   :src="item.imageUrl"
                   :alt="item.name"
@@ -204,13 +208,17 @@ onMounted(() => {
                 <span class="absolute bottom-0 inset-x-0 bg-[#103860]/85 text-white text-[9px] font-bold text-center py-0.5">
                   {{ item.quantityKg }} {{ item.unit || 'kg' }}
                 </span>
-              </div>
+              </NuxtLink>
 
               <!-- Product Details -->
               <div class="flex-1 min-w-0 flex flex-col gap-0.5">
-                <h3 class="text-xs font-bold text-[#0F172A] line-clamp-2 leading-snug" :title="item.name">
+                <NuxtLink
+                  :to="'/produk/' + (item.slug || item.productId)"
+                  class="text-xs font-bold text-[#0F172A] hover:text-[#103860] no-underline line-clamp-2 leading-snug transition-colors cursor-pointer"
+                  :title="'Lihat detail ' + item.name"
+                >
                   {{ item.name }}
-                </h3>
+                </NuxtLink>
 
                 <div class="text-[11px] text-slate-500 font-medium">
                   {{ item.cutLabel }} &bull; Netto ~{{ item.estimatedNetWeightGrams }}g
