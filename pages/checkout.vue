@@ -35,22 +35,13 @@ const handleProceedToPayment = () => {
   <div class="flex flex-col gap-4 py-1">
     <!-- Mobile-only local header with Back navigation (hidden on md+) -->
     <header class="md:hidden -mx-4 -mt-4 mb-1 bg-white border-b border-slate-200 px-4 py-3 flex items-center gap-3">
-      <button type="button" @click="goBack" class="p-1.5 -ml-1.5 rounded-full hover:bg-slate-100 text-[#103860]" aria-label="Kembali ke Keranjang">
+      <button type="button" @click="goBack" class="p-1.5 -ml-1.5 rounded-full hover:bg-slate-100 text-[#103860] cursor-pointer" aria-label="Kembali ke Keranjang">
         <span class="material-symbols-outlined text-[24px]">arrow_back</span>
       </button>
       <div class="flex flex-col">
         <h1 class="text-base font-bold text-[#103860] leading-tight">Checkout Pengiriman</h1>
         <p class="text-xs text-slate-500 font-medium">Pusat Distribusi Dingin Muncar</p>
       </div>
-      <NuxtLink to="/keranjang" class="ml-auto relative flex items-center justify-center w-9 h-9 text-[#103860] hover:bg-slate-100 rounded-full transition-colors" aria-label="Lihat Keranjang">
-        <span class="material-symbols-outlined text-[22px]">shopping_cart</span>
-        <span 
-          v-if="cartStore.items.length > 0"
-          class="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-[#059669] text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none ring-2 ring-white shadow-xs"
-        >
-          {{ cartStore.items.length }}
-        </span>
-      </NuxtLink>
     </header>
 
     <!-- Desktop Breadcrumb & Back action -->
