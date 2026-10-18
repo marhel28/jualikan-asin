@@ -1,0 +1,130 @@
+import forms from '@tailwindcss/forms'
+
+/** @type {import('tailwindcss').Config} */
+export default {
+  darkMode: 'class',
+  content: [
+    './components/**/*.{vue,js,ts}',
+    './layouts/**/*.vue',
+    './pages/**/*.vue',
+    './composables/**/*.{js,ts}',
+    './plugins/**/*.{js,ts}',
+    './app.vue',
+    './error.vue',
+  ],
+  theme: {
+    extend: {
+      colors: {
+        // Stitch Material 3 tokens
+        primary: '#002242',
+        'primary-container': '#103860',
+        'on-primary': '#ffffff',
+        'on-primary-container': '#81a2d0',
+        'primary-fixed': '#d3e4ff',
+        'primary-fixed-dim': '#a7c9f9',
+        'on-primary-fixed': '#001c38',
+        'on-primary-fixed-variant': '#244871',
+
+        secondary: '#006c4a',
+        'secondary-container': '#82f5c1',
+        'on-secondary': '#ffffff',
+        'on-secondary-container': '#00714e',
+        'secondary-fixed': '#85f8c4',
+        'secondary-fixed-dim': '#68dba9',
+        'on-secondary-fixed': '#002114',
+        'on-secondary-fixed-variant': '#005137',
+
+        tertiary: '#142235',
+        'tertiary-container': '#2a374b',
+        'on-tertiary': '#ffffff',
+        'on-tertiary-container': '#93a0b9',
+        'tertiary-fixed': '#d6e3fe',
+        'tertiary-fixed-dim': '#bac7e1',
+        'on-tertiary-fixed': '#0e1c2f',
+        'on-tertiary-fixed-variant': '#3a475c',
+
+        surface: '#f7f9fb',
+        'surface-bright': '#f7f9fb',
+        'surface-dim': '#d8dadc',
+        'surface-variant': '#e0e3e5',
+        'surface-tint': '#3e608a',
+        'surface-container-lowest': '#ffffff',
+        'surface-container-low': '#f2f4f6',
+        'surface-container': '#eceef0',
+        'surface-container-high': '#e6e8ea',
+        'surface-container-highest': '#e0e3e5',
+
+        background: '#f7f9fb',
+        'on-background': '#191c1e',
+        'on-surface': '#191c1e',
+        'on-surface-variant': '#43474e',
+        'inverse-surface': '#2d3133',
+        'inverse-on-surface': '#eff1f3',
+        'inverse-primary': '#a7c9f9',
+
+        outline: '#73777f',
+        'outline-variant': '#c3c6cf',
+
+        error: '#ba1a1a',
+        'error-container': '#ffdad6',
+        'on-error': '#ffffff',
+        'on-error-container': '#93000a',
+
+        // Explicit Maritime Brand Tokens
+        'maritime-navy': '#103860',
+        'maritime-dark': '#002242',
+        'maritime-emerald': '#059669',
+        'maritime-canvas': '#F8FAFC',
+        'maritime-surface': '#FFFFFF',
+        'maritime-text': '#0F172A',
+      },
+      fontFamily: {
+        sans: ['Plus Jakarta Sans', 'Inter', 'system-ui', 'sans-serif'],
+        jakarta: ['Plus Jakarta Sans', 'sans-serif'],
+        inter: ['Inter', 'sans-serif'],
+        // Stitch template font classes
+        'headline-xl': ['Inter', 'sans-serif'],
+        'headline-lg': ['Inter', 'sans-serif'],
+        'headline-lg-mobile': ['Inter', 'sans-serif'],
+        'headline-md': ['Inter', 'sans-serif'],
+        'headline-sm': ['Inter', 'sans-serif'],
+        'body-lg': ['Inter', 'sans-serif'],
+        'body-md': ['Inter', 'sans-serif'],
+        'body-sm': ['Inter', 'sans-serif'],
+        'label-md': ['Inter', 'sans-serif'],
+        'label-sm': ['Inter', 'sans-serif'],
+      },
+      fontSize: {
+        'headline-xl': ['36px', { lineHeight: '44px', letterSpacing: '-0.02em', fontWeight: '700' }],
+        'headline-lg': ['28px', { lineHeight: '36px', letterSpacing: '-0.01em', fontWeight: '600' }],
+        'headline-lg-mobile': ['24px', { lineHeight: '32px', fontWeight: '600' }],
+        'headline-md': ['22px', { lineHeight: '28px', fontWeight: '600' }],
+        'headline-sm': ['18px', { lineHeight: '24px', fontWeight: '600' }],
+        'body-lg': ['16px', { lineHeight: '24px', fontWeight: '400' }],
+        'body-md': ['14px', { lineHeight: '20px', fontWeight: '400' }],
+        'body-sm': ['12px', { lineHeight: '16px', fontWeight: '400' }],
+        'label-md': ['14px', { lineHeight: '20px', fontWeight: '500' }],
+        'label-sm': ['12px', { lineHeight: '16px', fontWeight: '500' }],
+      },
+      borderRadius: {
+        DEFAULT: '0.125rem',
+        lg: '0.25rem',
+        xl: '0.5rem',
+        full: '0.75rem',
+      },
+      spacing: {
+        'space-xs': '4px',
+        'space-sm': '8px',
+        'space-md': '16px',
+        'space-lg': '24px',
+        'space-xl': '32px',
+        gutter: '24px',
+        margin: '32px',
+      },
+    },
+  },
+  plugins: [
+    forms,
+  ],
+}
+

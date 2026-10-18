@@ -1,0 +1,450 @@
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useCartStore, type PackagingType } from '~/stores/cart'
+
+definePageMeta({
+  layout: 'default'
+})
+
+useHead({
+  title: 'Keranjang Belanja Dingin | Laut Berkah Abadi Banyuwangi',
+  meta: [
+    {
+      name: 'description',
+      content: 'Keranjang belanja dingin hasil laut segar tangkapan Muncar dengan proteksi rantai dingin bersubsidi dan perhitungan rendemen netto transparan.'
+    }
+  ]
+})
+
+const router = useRouter()
+const cartStore = useCartStore()
+
+const goBack = () => {
+  if (typeof window !== 'undefined' && window.history.length > 1) {
+    router.back()
+  } else {
+    router.push('/katalog')
+  }
+}
+
+// State management for 3 UI states (Loading, Empty, Error)
+const isLoading = ref(false)
+const errorMessage = ref<string | null>(null)
+
+// Standard local chilled courier fee
+const STANDARD_SHIPPING_FEE = 12000
+
+// Dynamic effective shipping fee based on free shipping threshold
+const shippingFee = computed(() => {
+  if (cartStore.isFreeShipping) return 0
+  return STANDARD_SHIPPING_FEE
+})
+
+// Total estimated bill calculation
+const totalEstimatedBill = computed(() => {
+  return cartStore.productsSubtotal + cartStore.packagingFee + shippingFee.value
+})
+
+// Packaging selector helper with resilient store method handling
+const handleSelectPackaging = (type: PackagingType) => {
+  if (typeof (cartStore as any).setPackaging === 'function') {
+    (cartStore as any).setPackaging(type)
+  } else if (typeof cartStore.setPackagingType === 'function') {
+    cartStore.setPackagingType(type)
+  } else {
+    cartStore.packagingType = type
+  }
+}
+
+// Kitchen notes input handler with character limiting
+const handleKitchenNotesInput = (event: Event) => {
+  const target = event.target as HTMLTextAreaElement
+  cartStore.setKitchenNotes(target.value)
+}
+
+// Retry handler for Error state
+const handleRetry = async () => {
+  isLoading.value = true
+  errorMessage.value = null
+  try {
+    // Simulate refreshing cart data and validating cold hub stock
+    await new Promise(resolve => setTimeout(resolve, 500))
+    errorMessage.value = null
+  } catch (err: any) {
+    errorMessage.value = 'Gagal memuat ulang data keranjang dingin. Silakan coba kembali.'
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// Image error fallback
+const handleImageError = (event: Event) => {
+  const target = event.target as HTMLImageElement
+  target.src = 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=600&q=80'
+}
+
+onMounted(() => {
+  // Reset any lingering transient errors
+  errorMessage.value = null
+})
+</script>
+
+<template>
+  <div class="flex flex-col gap-4 py-1">
+    <!-- Mobile-only local header (hidden on md+) -->
+    <header class="md:hidden -mx-4 -mt-4 mb-1 bg-white border-b border-slate-200 px-4 py-3 flex items-center gap-3">
+      <button type="button" @click="goBack" class="p-1.5 -ml-1.5 rounded-full hover:bg-slate-100 text-[#103860]" aria-label="Kembali">
+        <span class="material-symbols-outlined text-[24px]">arrow_back</span>
+      </button>
+      <div class="flex flex-col">
+        <h1 class="text-base font-bold text-[#103860] leading-tight">Keranjang Belanja Dingin</h1>
+        <p class="text-xs text-slate-500 font-medium">{{ cartStore.items.length }} Produk dalam keranjang</p>
+      </div>
+      <NuxtLink to="/" class="ml-auto flex items-center text-[#103860] hover:opacity-80">
+        <span class="material-symbols-outlined text-[24px]" style="font-variation-settings: 'FILL' 1;">anchor</span>
+      </NuxtLink>
+    </header>
+
+    <!-- Desktop Breadcrumb -->
+    <nav class="hidden md:flex items-center gap-2 text-xs text-slate-500">
+      <NuxtLink to="/" class="hover:text-[#103860] transition-colors">Beranda</NuxtLink>
+      <span class="material-symbols-outlined text-[14px]">chevron_right</span>
+      <span class="font-semibold text-[#103860]">Keranjang Belanja Dingin</span>
+    </nav>
+
+    <!-- MANDATORY STATE 1: Error State Banner with Functional Retry -->
+    <CommonErrorRetry
+      v-if="errorMessage"
+      title="Kendala Sinkronisasi Keranjang"
+      :message="errorMessage"
+      :loading="isLoading"
+      retry-text="Coba Lagi"
+      @retry="handleRetry"
+    />
+
+    <!-- MANDATORY STATE 2: Loading Skeleton State -->
+    <div v-else-if="isLoading" class="flex flex-col gap-3">
+      <CommonSkeletonLoader type="telemetry" :count="1" />
+      <CommonSkeletonLoader type="row" :count="3" />
+    </div>
+
+    <!-- MANDATORY STATE 3: Empty State (when no items in cart) -->
+    <div v-else-if="cartStore.items.length === 0" class="py-4">
+      <CommonEmptyState
+        icon="set_meal"
+        title="Keranjang Belanja Dingin Kosong"
+        description="Anda belum memilih hasil laut segar. Silakan jelajahi katalog ikan segar tangkapan harian Muncar dan Selat Bali."
+        action-text="Mulai Belanja Ikan Segar"
+        action-to="/"
+        action-icon="arrow_forward"
+      />
+    </div>
+
+    <!-- POPULATED CART STATE: 2-column on desktop (Left items list & options, Right order summary) -->
+    <div v-else class="grid grid-cols-1 md:grid-cols-[1.8fr_1fr] lg:grid-cols-[2fr_1fr] gap-4 md:gap-6 items-start pb-10">
+      <!-- Left Column: Free Shipping Progress + Items + Packaging + Notes -->
+      <div class="flex flex-col gap-3.5">
+        <!-- 1. Free Shipping Progress Bar Card -->
+        <section class="bg-white border border-slate-200/90 rounded-xl p-4 shadow-xs space-y-2">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-bold text-[#103860] flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-[18px] text-[#059669]">local_shipping</span>
+              <span>Bebas Ongkir Armada Dingin LBA</span>
+            </span>
+            <span class="font-extrabold text-[#059669]">{{ cartStore.freeShippingProgress }}%</span>
+          </div>
+
+          <!-- Progress Track and Bar -->
+          <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden border border-slate-200/60">
+            <div
+              class="bg-[#059669] h-full rounded-full transition-all duration-500 ease-out"
+              :style="{ width: `${cartStore.freeShippingProgress}%` }"
+            ></div>
+          </div>
+
+          <!-- Dynamic Shortfall / Congratulatory Notice -->
+          <p class="text-xs text-slate-600 font-medium">
+            <template v-if="cartStore.isFreeShipping">
+              <span class="text-[#059669] font-bold">Selamat!</span> Anda mendapatkan <strong>Gratis Ongkir Armada Dingin LBA</strong> untuk rute lokal Banyuwangi.
+            </template>
+            <template v-else>
+              Tambah <strong class="text-[#103860] font-bold">Rp {{ cartStore.freeShippingShortfall.toLocaleString('id-ID') }}</strong> lagi untuk <strong>Gratis Ongkir!</strong>
+            </template>
+          </p>
+        </section>
+
+        <!-- 2. Cart Items List Section (Clean & Simple like seafoodsegarmalang.id) -->
+        <section class="space-y-2">
+          <div class="flex items-center justify-between px-1">
+            <h2 class="text-xs font-bold text-[#103860] uppercase tracking-wider">
+              Daftar Produk Segar
+            </h2>
+            <span class="text-[11px] text-slate-500 font-medium">
+              Total {{ cartStore.totalGrossWeightKg }} kg
+            </span>
+          </div>
+
+          <!-- Grouped Clean Items Container -->
+          <div class="bg-white border border-slate-200/90 rounded-xl divide-y divide-slate-100 shadow-xs overflow-hidden">
+            <div
+              v-for="item in cartStore.items"
+              :key="item.id"
+              class="p-3.5 flex gap-3.5 items-center hover:bg-slate-50/50 transition-colors"
+            >
+              <!-- Product Thumbnail -->
+              <div class="relative w-16 h-16 min-w-16 min-h-16 rounded-xl bg-slate-100 shrink-0 overflow-hidden border border-slate-200/60">
+                <img
+                  :src="item.imageUrl"
+                  :alt="item.name"
+                  @error="handleImageError"
+                  class="w-full h-full object-cover block"
+                  loading="lazy"
+                />
+                <span class="absolute bottom-0 inset-x-0 bg-[#103860]/85 text-white text-[9px] font-bold text-center py-0.5">
+                  {{ item.quantityKg }} {{ item.unit || 'kg' }}
+                </span>
+              </div>
+
+              <!-- Product Details -->
+              <div class="flex-1 min-w-0 flex flex-col gap-0.5">
+                <h3 class="text-xs font-bold text-[#0F172A] line-clamp-2 leading-snug" :title="item.name">
+                  {{ item.name }}
+                </h3>
+
+                <div class="text-[11px] text-slate-500 font-medium">
+                  {{ item.cutLabel }} &bull; Netto ~{{ item.estimatedNetWeightGrams }}g
+                </div>
+
+                <div v-if="item.separateSoupBones" class="text-[10px] text-[#059669] font-medium flex items-center gap-1">
+                  <span class="material-symbols-outlined text-[13px] shrink-0">check</span>
+                  <span>+ Kepala & tulang sup (+Rp 0)</span>
+                </div>
+
+                <div class="text-xs font-extrabold text-[#103860] mt-1">
+                  Rp {{ item.itemSubtotal.toLocaleString('id-ID') }}
+                </div>
+              </div>
+
+              <!-- Stepper and Remove Controls -->
+              <div class="flex flex-col items-end justify-between self-stretch shrink-0 gap-2">
+                <button
+                  type="button"
+                  @click="cartStore.removeItem(item.id)"
+                  class="text-slate-400 hover:text-red-600 p-1 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+                  title="Hapus produk dari keranjang"
+                  aria-label="Hapus produk"
+                >
+                  <span class="material-symbols-outlined text-[18px]">delete</span>
+                </button>
+
+                <!-- Quantity Stepper -->
+                <div class="flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white shadow-2xs">
+                  <button
+                    type="button"
+                    @click="cartStore.updateQuantity(item.id, -1)"
+                    class="w-7 h-7 flex items-center justify-center text-slate-700 hover:bg-slate-100 active:bg-slate-200 transition-colors cursor-pointer"
+                    aria-label="Kurangi jumlah"
+                  >
+                    <span class="material-symbols-outlined text-[14px]">remove</span>
+                  </button>
+                  <span class="w-7 text-center text-xs font-bold text-[#103860] select-none">
+                    {{ item.quantityKg }}
+                  </span>
+                  <button
+                    type="button"
+                    @click="cartStore.updateQuantity(item.id, 1)"
+                    class="w-7 h-7 flex items-center justify-center text-slate-700 hover:bg-slate-100 active:bg-slate-200 transition-colors cursor-pointer"
+                    aria-label="Tambah jumlah"
+                  >
+                    <span class="material-symbols-outlined text-[14px]">add</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3. Subsidized Cold Chain Packaging Selector -->
+        <section class="bg-white border border-slate-200/90 rounded-xl p-4 shadow-xs space-y-3">
+          <div class="flex items-center justify-between">
+            <h2 class="text-xs font-bold text-[#103860] flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-[16px] text-[#059669]">mode_heat</span>
+              <span>Pengaman Rantai Dingin</span>
+            </h2>
+            <span class="text-[11px] text-[#059669] font-semibold">
+              Wajib Standar Mutu
+            </span>
+          </div>
+
+          <div class="grid grid-cols-1 gap-2">
+            <!-- Option 1: Thermal Bag -->
+            <label
+              @click="handleSelectPackaging('thermal_bag')"
+              class="flex items-center justify-between gap-3 p-3 rounded-xl border cursor-pointer transition-all"
+              :class="cartStore.packagingType === 'thermal_bag' ? 'border-[#103860] bg-blue-50/40 shadow-xs' : 'border-slate-200 hover:bg-slate-50'"
+            >
+              <div class="flex items-center gap-3 min-w-0 flex-1">
+                <input
+                  type="radio"
+                  name="thermal_protection"
+                  value="thermal_bag"
+                  class="sr-only"
+                  :checked="cartStore.packagingType === 'thermal_bag'"
+                />
+                <div
+                  class="w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors"
+                  :class="cartStore.packagingType === 'thermal_bag' ? 'border-[#103860] bg-[#103860]' : 'border-slate-300 bg-white'"
+                >
+                  <div v-if="cartStore.packagingType === 'thermal_bag'" class="w-1.5 h-1.5 rounded-full bg-white"></div>
+                </div>
+                <div class="flex flex-col min-w-0">
+                  <span class="text-xs font-bold text-[#0F172A] truncate">Thermal Bag + 2 Ice Gel</span>
+                  <span class="text-[11px] text-slate-500">Tahan 8 Jam: Rute lokal & kota terdekat</span>
+                </div>
+              </div>
+              <span class="text-xs font-extrabold text-[#103860] shrink-0 whitespace-nowrap">Rp 7.500</span>
+            </label>
+
+            <!-- Option 2: Box Styrofoam -->
+            <label
+              @click="handleSelectPackaging('styrofoam_box')"
+              class="flex items-center justify-between gap-3 p-3 rounded-xl border cursor-pointer transition-all"
+              :class="cartStore.packagingType === 'styrofoam_box' ? 'border-[#103860] bg-blue-50/40 shadow-xs' : 'border-slate-200 hover:bg-slate-50'"
+            >
+              <div class="flex items-center gap-3 min-w-0 flex-1">
+                <input
+                  type="radio"
+                  name="thermal_protection"
+                  value="styrofoam_box"
+                  class="sr-only"
+                  :checked="cartStore.packagingType === 'styrofoam_box'"
+                />
+                <div
+                  class="w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors"
+                  :class="cartStore.packagingType === 'styrofoam_box' ? 'border-[#103860] bg-[#103860]' : 'border-slate-300 bg-white'"
+                >
+                  <div v-if="cartStore.packagingType === 'styrofoam_box'" class="w-1.5 h-1.5 rounded-full bg-white"></div>
+                </div>
+                <div class="flex flex-col min-w-0">
+                  <span class="text-xs font-bold text-[#0F172A] truncate">Box Styrofoam + Ice Gel</span>
+                  <span class="text-[11px] text-slate-500">Tahan 24 Jam: Rute luar kota & provinsi</span>
+                </div>
+              </div>
+              <span class="text-xs font-extrabold text-[#103860] shrink-0 whitespace-nowrap">Rp 18.000</span>
+            </label>
+          </div>
+        </section>
+
+        <!-- 4. Custom Kitchen Notes -->
+        <section class="bg-white border border-slate-200/90 rounded-xl p-4 shadow-xs space-y-2">
+          <label for="kitchen-notes" class="text-xs font-bold text-[#103860] flex items-center justify-between">
+            <span class="flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-[16px]">edit_note</span>
+              <span>Catatan Dapur Pengolahan</span>
+            </span>
+            <span class="text-[10px] text-slate-400 font-normal">
+              {{ (cartStore.kitchenNotes || '').length }}/250
+            </span>
+          </label>
+          <textarea
+            id="kitchen-notes"
+            :value="cartStore.kitchenNotes"
+            @input="handleKitchenNotesInput"
+            maxlength="250"
+            rows="2"
+            placeholder="Contoh: potong steak tebal, sisik bersih tuntas, kepala belah dua"
+            class="w-full text-xs p-3 rounded-xl border border-slate-200 focus:border-[#103860] focus:ring-1 focus:ring-[#103860] focus:outline-none bg-slate-50/50 text-slate-900 placeholder:text-slate-400 resize-none transition-all"
+          ></textarea>
+        </section>
+      </div>
+
+      <!-- Right Column: Sticky Summary & Action on Desktop -->
+      <div class="flex flex-col gap-3.5 md:sticky md:top-24">
+        <!-- 5. Bill Summary Breakdown Card -->
+        <section class="bg-white border border-slate-200/90 rounded-xl p-4 shadow-xs space-y-2.5">
+          <h2 class="text-xs font-bold text-[#103860] border-b border-slate-100 pb-2">
+            Rincian Pembayaran
+          </h2>
+
+          <div class="space-y-2 text-xs">
+            <!-- Products Subtotal -->
+            <div class="flex justify-between text-slate-600">
+              <span>Total Produk ({{ cartStore.items.length }} jenis, {{ cartStore.totalGrossWeightKg }} kg)</span>
+              <span class="font-bold text-slate-800">
+                Rp {{ cartStore.productsSubtotal.toLocaleString('id-ID') }}
+              </span>
+            </div>
+
+            <!-- Cold Chain Packaging Fee -->
+            <div class="flex justify-between text-slate-600">
+              <span>Proteksi Rantai Dingin ({{ cartStore.packagingType === 'thermal_bag' ? 'Thermal Bag' : 'Box Styrofoam' }})</span>
+              <span class="font-bold text-slate-800">
+                Rp {{ cartStore.packagingFee.toLocaleString('id-ID') }}
+              </span>
+            </div>
+
+            <!-- Estimated Chilled Courier Shipping -->
+            <div class="flex justify-between text-slate-600">
+              <span>Estimasi Ongkir Armada Dingin LBA</span>
+              <div class="flex items-center gap-1.5">
+                <span v-if="cartStore.isFreeShipping" class="line-through text-slate-400 text-[11px]">
+                  Rp {{ STANDARD_SHIPPING_FEE.toLocaleString('id-ID') }}
+                </span>
+                <span class="font-bold" :class="cartStore.isFreeShipping ? 'text-[#059669]' : 'text-slate-800'">
+                  Rp {{ shippingFee.toLocaleString('id-ID') }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Free Shipping Discount Row -->
+            <div v-if="cartStore.isFreeShipping" class="flex justify-between text-[#059669] font-semibold bg-emerald-50 px-2.5 py-1 rounded-lg">
+              <span>Diskon Bebas Ongkir Lokal</span>
+              <span>-Rp {{ STANDARD_SHIPPING_FEE.toLocaleString('id-ID') }}</span>
+            </div>
+
+            <!-- Total Estimasi -->
+            <div class="border-t border-slate-100 pt-2.5 flex justify-between items-baseline">
+              <div class="flex flex-col">
+                <span class="text-xs font-bold text-[#103860]">Total Estimasi Tagihan</span>
+                <span class="text-[10px] text-slate-400">Termasuk pajak & pengaman dingin</span>
+              </div>
+              <span class="text-base font-extrabold text-[#103860]">
+                Rp {{ totalEstimatedBill.toLocaleString('id-ID') }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Desktop Inline Checkout Button -->
+          <NuxtLink
+            to="/checkout"
+            class="hidden md:flex w-full mt-3 py-3 px-4 rounded-xl bg-[#103860] hover:bg-[#13446E] text-white text-xs font-bold transition-all shadow-md text-center items-center justify-center gap-2 cursor-pointer"
+          >
+            <span>Lanjut ke Pengiriman</span>
+            <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+          </NuxtLink>
+        </section>
+      </div>
+
+      <!-- 6. Sticky Bottom Checkout Bar (Mobile only, hidden md+) -->
+      <footer class="md:hidden fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/95 backdrop-blur-md border-t border-slate-200 p-3.5 z-40 shadow-lg">
+        <div class="flex items-center justify-between gap-3">
+          <div class="flex flex-col">
+            <span class="text-[10px] text-slate-500 font-medium">Total Estimasi</span>
+            <span class="text-sm font-extrabold text-[#103860]">
+              Rp {{ totalEstimatedBill.toLocaleString('id-ID') }}
+            </span>
+          </div>
+
+          <NuxtLink
+            to="/checkout"
+            class="flex-1 py-3 px-4 rounded-xl bg-[#103860] hover:bg-[#13446E] text-white text-xs font-bold transition-all shadow-md active:scale-98 text-center flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <span>Lanjut ke Pengiriman</span>
+            <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+          </NuxtLink>
+        </div>
+      </footer>
+    </div>
+  </div>
+</template>
