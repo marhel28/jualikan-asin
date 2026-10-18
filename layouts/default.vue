@@ -2,10 +2,12 @@
 import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useCartStore } from '~/stores/cart'
+import { useLocale } from '~/composables/useLocale'
 
 const route = useRoute()
 const router = useRouter()
 const cartStore = useCartStore()
+const { t } = useLocale()
 
 const logoError = ref(false)
 const cartCount = computed(() => cartStore?.totalItemCount ?? 0)
@@ -71,7 +73,7 @@ const handleSearchClick = () => {
       <div class="flex items-center gap-2 mx-auto animate-pulse">
         <span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">ac_unit</span>
         <span class="font-medium tracking-wide">
-          Pengiriman Khusus Rantai Dingin Area Banyuwangi, Jember, Malang, Surabaya, dan Bali
+          {{ t('Pengiriman Khusus Rantai Dingin Area Banyuwangi, Jember, Malang, Surabaya, dan Bali', 'Special Cold-Chain Delivery for Banyuwangi, Jember, Malang, Surabaya, and Bali') }}
         </span>
       </div>
     </div>
@@ -108,28 +110,31 @@ const handleSearchClick = () => {
         <!-- Desktop Navigation Links (hidden on mobile) -->
         <nav class="hidden md:flex items-center gap-6 text-xs font-semibold text-slate-600">
           <NuxtLink to="/" class="hover:text-[#103860] transition-colors" exact-active-class="text-[#103860] font-bold">
-            Beranda
+            {{ t('Beranda', 'Home') }}
           </NuxtLink>
           <NuxtLink to="/katalog" class="hover:text-[#103860] transition-colors" active-class="text-[#103860] font-bold">
-            Katalog Ikan
+            {{ t('Katalog Ikan', 'Seafood Catalog') }}
           </NuxtLink>
           <NuxtLink to="/pesanan" class="hover:text-[#103860] transition-colors" active-class="text-[#103860] font-bold">
-            Pesanan
+            {{ t('Pesanan', 'Orders') }}
           </NuxtLink>
           <NuxtLink to="/tentang" class="hover:text-[#103860] transition-colors" active-class="text-[#103860] font-bold">
-            Tentang Kami
+            {{ t('Tentang Kami', 'About Us') }}
           </NuxtLink>
         </nav>
 
-        <!-- Right Action Cluster: Cart Button with Reactive Counter -->
-        <div class="relative flex items-center gap-3 shrink-0">
+        <!-- Right Action Cluster: Language Switcher, Account, Cart Button with Reactive Counter -->
+        <div class="relative flex items-center gap-2.5 sm:gap-3 shrink-0">
+          <!-- Language Switcher in Header -->
+          <CommonLanguageSwitcher />
+
           <NuxtLink
             to="/akun"
             class="hidden md:flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
             active-class="bg-slate-100 text-[#103860]"
           >
             <span class="material-symbols-outlined text-[18px]">account_circle</span>
-            <span>Akun Saya</span>
+            <span>{{ t('Akun Saya', 'My Account') }}</span>
           </NuxtLink>
 
           <NuxtLink 
@@ -169,7 +174,7 @@ const handleSearchClick = () => {
         exact-active-class="text-[#002242] font-bold"
       >
         <span class="material-symbols-outlined text-[22px]">home</span>
-        <span class="text-[10px] mt-0.5 font-medium">Beranda</span>
+        <span class="text-[10px] mt-0.5 font-medium">{{ t('Beranda', 'Home') }}</span>
       </NuxtLink>
 
       <!-- 2. Katalog (Pengganti Pencarian) -->
@@ -179,7 +184,7 @@ const handleSearchClick = () => {
         active-class="text-[#002242] font-bold"
       >
         <span class="material-symbols-outlined text-[22px]" style="font-variation-settings: 'FILL' 1;">storefront</span>
-        <span class="text-[10px] mt-0.5 font-medium">Katalog</span>
+        <span class="text-[10px] mt-0.5 font-medium">{{ t('Katalog', 'Catalog') }}</span>
       </NuxtLink>
 
       <!-- 3. Pesanan -->
@@ -189,7 +194,7 @@ const handleSearchClick = () => {
         active-class="text-[#002242] font-bold"
       >
         <span class="material-symbols-outlined text-[22px]">receipt_long</span>
-        <span class="text-[10px] mt-0.5 font-medium">Pesanan</span>
+        <span class="text-[10px] mt-0.5 font-medium">{{ t('Pesanan', 'Orders') }}</span>
       </NuxtLink>
 
       <!-- 4. Akun -->
@@ -199,11 +204,12 @@ const handleSearchClick = () => {
         active-class="text-[#002242] font-bold"
       >
         <span class="material-symbols-outlined text-[22px]">person</span>
-        <span class="text-[10px] mt-0.5 font-medium">Akun</span>
+        <span class="text-[10px] mt-0.5 font-medium">{{ t('Akun', 'Account') }}</span>
       </NuxtLink>
     </nav>
 
-    <!-- Floating Concierge WhatsApp -->
+    <!-- Floating Concierge WhatsApp & Floating Language Switcher -->
+    <CommonFloatingLanguage />
     <CommonFloatingWhatsApp />
   </div>
 </template>

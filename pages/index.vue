@@ -3,19 +3,27 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { PRODUCTS, type Product } from '~/data/products'
 import CatalogProductCard from '~/components/catalog/ProductCard.vue'
+import { useLocale } from '~/composables/useLocale'
 
 const route = useRoute()
 const router = useRouter()
+const { t } = useLocale()
 
 useHead({
-  title: 'Laut Berkah Abadi | D2C Cold Chain Seafood Muncar Banyuwangi',
+  title: computed(() => t(
+    'Laut Berkah Abadi | D2C Cold Chain Seafood Muncar Banyuwangi',
+    'Laut Berkah Abadi | Direct Fresh Seafood Muncar Banyuwangi Cold Chain'
+  )),
   meta: [
     {
       name: 'description',
-      content: 'Distribusi ikan segar Pelabuhan Muncar Banyuwangi langsung ke dapur Anda dengan rantai dingin presisi -20°C.'
+      content: computed(() => t(
+        'Distribusi ikan segar Pelabuhan Muncar Banyuwangi langsung ke dapur Anda dengan rantai dingin presisi -20°C.',
+        'Fresh fish from Muncar Port Banyuwangi delivered to your kitchen with precision -20°C cold chain.'
+      ))
     },
-    { property: 'og:title', content: 'Laut Berkah Abadi | D2C Cold Chain Seafood Muncar Banyuwangi' },
-    { property: 'og:description', content: 'Distribusi ikan segar Pelabuhan Muncar Banyuwangi langsung ke dapur Anda dengan rantai dingin presisi -20°C.' },
+    { property: 'og:title', content: computed(() => t('Laut Berkah Abadi | D2C Cold Chain Seafood Muncar Banyuwangi', 'Laut Berkah Abadi | Direct Fresh Seafood Muncar Banyuwangi Cold Chain')) },
+    { property: 'og:description', content: computed(() => t('Distribusi ikan segar Pelabuhan Muncar Banyuwangi langsung ke dapur Anda dengan rantai dingin presisi -20°C.', 'Fresh fish from Muncar Port Banyuwangi delivered to your kitchen with precision -20°C cold chain.')) },
     { property: 'og:type', content: 'website' }
   ],
   script: [
@@ -135,14 +143,14 @@ interface CategoryOption {
   label: string
 }
 
-const CATEGORIES: CategoryOption[] = [
-  { id: 'semua', label: 'Semua' },
-  { id: 'ikan_utuh_bersih', label: 'Ikan Utuh Bersih' },
-  { id: 'fillet', label: 'Fillet & Kupas' },
-  { id: 'steak', label: 'Steak Melintang' },
-  { id: 'tulang_sup', label: 'Kepala & Tulang Sup' },
-  { id: 'udang_cumi', label: 'Udang & Cumi' }
-]
+const CATEGORIES = computed<CategoryOption[]>(() => [
+  { id: 'semua', label: t('Semua', 'All') },
+  { id: 'ikan_utuh_bersih', label: t('Ikan Utuh Bersih', 'Whole Cleaned Fish') },
+  { id: 'fillet', label: t('Fillet & Kupas', 'Fillet & Peeled') },
+  { id: 'steak', label: t('Steak Melintang', 'Crosscut Steak') },
+  { id: 'tulang_sup', label: t('Kepala & Tulang Sup', 'Head & Soup Bones') },
+  { id: 'udang_cumi', label: t('Udang & Cumi', 'Shrimp & Squid') }
+])
 
 const products = ref<Product[]>(PRODUCTS)
 const searchQuery = ref('')
@@ -265,24 +273,30 @@ onUnmounted(() => {
           <div class="flex items-center justify-between z-10">
             <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-400/30 text-[11px] sm:text-xs font-semibold text-[#85f8c4]">
               <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              Tangkapan Baru Mendarat
+              {{ t('Tangkapan Baru Mendarat', 'Fresh Catch Just Landed') }}
             </span>
             <span class="text-[11px] sm:text-xs text-[#81a2d0] font-mono">05:30 WIB</span>
           </div>
 
           <div class="flex flex-col gap-1.5 z-10 max-w-md my-auto">
-            <h2 class="text-white text-lg sm:text-xl md:text-2xl leading-tight font-extrabold tracking-tight">Ikan Segar Pilihan Hari Ini</h2>
-            <p class="text-[#81a2d0] text-xs sm:text-sm leading-relaxed">Hasil pancing harian nelayan Selat Bali dengan penanganan rantai dingin langsung di dermaga Muncar.</p>
+            <h2 class="text-white text-lg sm:text-xl md:text-2xl leading-tight font-extrabold tracking-tight">
+              {{ t('Ikan Segar Pilihan Hari Ini', 'Today’s Selected Fresh Seafood') }}
+            </h2>
+            <p class="text-[#81a2d0] text-xs sm:text-sm leading-relaxed">
+              {{ t('Hasil pancing harian nelayan Selat Bali dengan penanganan rantai dingin langsung di dermaga Muncar.', 'Daily catch by Bali Strait handline fishermen with immediate cold-chain handling at Muncar dock.') }}
+            </p>
           </div>
 
           <div class="flex items-center justify-between pt-3 border-t border-white/10 mt-1 z-10">
-            <span class="text-[11px] text-[#81a2d0] hidden sm:inline">Rantai Dingin Terjamin -20°C</span>
+            <span class="text-[11px] text-[#81a2d0] hidden sm:inline">
+              {{ t('Rantai Dingin Terjamin -20°C', 'Guaranteed Cold Chain -20°C') }}
+            </span>
             <button 
               type="button"
               @click="onCheckTangkapan"
               class="bg-white text-[#002242] font-bold text-xs sm:text-sm px-4 py-2 rounded-lg shadow-xs hover:bg-slate-100 transition-colors flex items-center gap-1.5 cursor-pointer ml-auto sm:ml-0"
             >
-              <span>Lihat Produk</span>
+              <span>{{ t('Lihat Produk', 'View Seafood') }}</span>
               <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
             </button>
           </div>
@@ -295,24 +309,32 @@ onUnmounted(() => {
           <div class="flex items-center justify-between z-10">
             <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-400/15 border border-amber-300/30 text-[11px] sm:text-xs font-semibold text-amber-200">
               <span class="material-symbols-outlined text-[14px]">local_fire_department</span>
-              Promo Spesial Tangkapan
+              {{ t('Promo Spesial Tangkapan', 'Catch Special Promotion') }}
             </span>
-            <span class="text-[11px] sm:text-xs text-[#85f8c4] font-bold bg-[#85f8c4]/10 px-2 py-0.5 rounded-md">Hemat s.d. 30%</span>
+            <span class="text-[11px] sm:text-xs text-[#85f8c4] font-bold bg-[#85f8c4]/10 px-2 py-0.5 rounded-md">
+              {{ t('Hemat s.d. 30%', 'Save up to 30%') }}
+            </span>
           </div>
 
           <div class="flex flex-col gap-1.5 z-10 max-w-md my-auto">
-            <h2 class="text-white text-lg sm:text-xl md:text-2xl leading-tight font-extrabold tracking-tight">Borong Ikan, Diskon Ekstra</h2>
-            <p class="text-emerald-100 text-xs sm:text-sm leading-relaxed">Potongan harga otomatis untuk pesanan ikan di atas 3 kg. Bersih insang & sisik gratis.</p>
+            <h2 class="text-white text-lg sm:text-xl md:text-2xl leading-tight font-extrabold tracking-tight">
+              {{ t('Borong Ikan, Diskon Ekstra', 'Bulk Order, Extra Savings') }}
+            </h2>
+            <p class="text-emerald-100 text-xs sm:text-sm leading-relaxed">
+              {{ t('Potongan harga otomatis untuk pesanan ikan di atas 3 kg. Bersih insang & sisik gratis.', 'Automatic discount for seafood orders over 3 kg. Free scaling and gutting included.') }}
+            </p>
           </div>
 
           <div class="flex items-center justify-between pt-3 border-t border-white/10 mt-1 z-10">
-            <span class="text-[11px] text-emerald-200/80 hidden sm:inline">Khusus Pengiriman Subuh & Siang</span>
+            <span class="text-[11px] text-emerald-200/80 hidden sm:inline">
+              {{ t('Khusus Pengiriman Subuh & Siang', 'Early Morning & Noon Delivery') }}
+            </span>
             <button 
               type="button"
               @click="onClaimPromo"
               class="bg-amber-400 hover:bg-amber-300 text-[#002242] font-bold text-xs sm:text-sm px-4 py-2 rounded-lg shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer ml-auto sm:ml-0"
             >
-              <span>Klaim Promo</span>
+              <span>{{ t('Klaim Promo', 'Claim Promo') }}</span>
               <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
             </button>
           </div>
@@ -325,24 +347,30 @@ onUnmounted(() => {
           <div class="flex items-center justify-between z-10">
             <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-cyan-400/15 border border-cyan-300/30 text-[11px] sm:text-xs font-semibold text-cyan-200">
               <span class="material-symbols-outlined text-[14px]">local_shipping</span>
-              Gratis Ongkir Rantai Dingin
+              {{ t('Gratis Ongkir Rantai Dingin', 'Free Cold-Chain Delivery') }}
             </span>
             <span class="text-[11px] sm:text-xs text-cyan-100 font-mono font-bold bg-white/10 px-2 py-0.5 rounded-md">DINGINBEBAS</span>
           </div>
 
           <div class="flex flex-col gap-1.5 z-10 max-w-md my-auto">
-            <h2 class="text-white text-lg sm:text-xl md:text-2xl leading-tight font-extrabold tracking-tight">Armada Kurir Dingin LBA</h2>
-            <p class="text-cyan-100/90 text-xs sm:text-sm leading-relaxed">Bebas biaya kirim khusus pesanan area Banyuwangi & sekitarnya dengan kemasan thermal berpendingin.</p>
+            <h2 class="text-white text-lg sm:text-xl md:text-2xl leading-tight font-extrabold tracking-tight">
+              {{ t('Armada Kurir Dingin LBA', 'LBA Cold Courier Fleet') }}
+            </h2>
+            <p class="text-cyan-100/90 text-xs sm:text-sm leading-relaxed">
+              {{ t('Bebas biaya kirim khusus pesanan area Banyuwangi & sekitarnya dengan kemasan thermal berpendingin.', 'Free delivery for orders in Banyuwangi and surrounding areas with insulated thermal packaging.') }}
+            </p>
           </div>
 
           <div class="flex items-center justify-between pt-3 border-t border-white/10 mt-1 z-10">
-            <span class="text-[11px] text-cyan-200/80 hidden sm:inline">Gunakan saat checkout</span>
+            <span class="text-[11px] text-cyan-200/80 hidden sm:inline">
+              {{ t('Gunakan saat checkout', 'Apply at checkout') }}
+            </span>
             <button 
               type="button"
               @click="onUseVoucher"
               class="bg-white text-[#002242] font-bold text-xs sm:text-sm px-4 py-2 rounded-lg shadow-xs hover:bg-slate-100 transition-colors flex items-center gap-1.5 cursor-pointer ml-auto sm:ml-0"
             >
-              <span>Salin Kode</span>
+              <span>{{ t('Salin Kode', 'Copy Code') }}</span>
               <span class="material-symbols-outlined text-[16px]">content_copy</span>
             </button>
           </div>
@@ -394,7 +422,7 @@ onUnmounted(() => {
         ref="searchInputRef"
         v-model="searchQuery"
         type="text"
-        placeholder="Cari ikan laut, fillet, cumi, pancing ulur..."
+        :placeholder="t('Cari ikan laut, fillet, cumi, pancing ulur...', 'Search seafood, fillet, squid, handline catch...')"
         class="w-full pl-10 pr-10 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#103860] focus:border-transparent transition-all shadow-xs"
       />
       <!-- Clear Search Button -->
@@ -428,13 +456,13 @@ onUnmounted(() => {
     <!-- Subheader: Rekomendasi Pilihan & Link ke Katalog -->
     <div class="flex items-center justify-between pt-1">
       <div>
-        <h3 class="text-sm font-bold text-[#002242]">Rekomendasi Pilihan</h3>
+        <h3 class="text-sm font-bold text-[#002242]">{{ t('Rekomendasi Pilihan', 'Featured Recommendations') }}</h3>
       </div>
       <NuxtLink 
         to="/katalog" 
         class="text-[#006c4a] hover:text-[#005137] text-xs font-bold flex items-center gap-0.5 transition-colors"
       >
-        <span>Lihat Semua</span>
+        <span>{{ t('Lihat Semua', 'View All') }}</span>
         <span class="material-symbols-outlined text-[14px]">chevron_right</span>
       </NuxtLink>
     </div>
@@ -481,7 +509,7 @@ onUnmounted(() => {
       <div class="mb-3">
         <h3 class="text-sm font-bold text-[#002242] flex items-center gap-1.5">
           <span class="material-symbols-outlined text-[16px] text-amber-600">local_fire_department</span>
-          Produk Terlaris
+          {{ t('Produk Terlaris', 'Best Sellers') }}
         </h3>
       </div>
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
@@ -499,7 +527,8 @@ onUnmounted(() => {
         <span class="material-symbols-outlined text-[18px]">ac_unit</span>
       </div>
       <p class="text-xs text-slate-600">
-        <strong class="text-[#103860]">Proteksi Rantai Dingin:</strong> Kemasan vacuum & ice gel beku di setiap paket.
+        <strong class="text-[#103860]">{{ t('Proteksi Rantai Dingin', 'Cold Chain Protection') }}:</strong>
+        {{ t('Kemasan vacuum & ice gel beku di setiap paket.', 'Vacuum pack & frozen ice gel in every parcel.') }}
       </p>
     </div>
   </div>

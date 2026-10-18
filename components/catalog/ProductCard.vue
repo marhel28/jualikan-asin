@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { useCartStore, type CutType } from '~/stores/cart'
 import { useWishlistStore } from '~/stores/wishlist'
 import type { Product } from '~/data/products'
+import { useLocale } from '~/composables/useLocale'
 
 interface Props {
   product: Product
@@ -12,6 +13,7 @@ const props = defineProps<Props>()
 
 const cartStore = useCartStore()
 const wishlistStore = useWishlistStore()
+const { t } = useLocale()
 const isAdding = ref(false)
 const justAdded = ref(false)
 
@@ -105,20 +107,23 @@ const handleQuickAdd = () => {
         <!-- Terjual (ringan) -->
         <div class="flex items-center gap-1 mt-1 text-[11px] text-slate-500">
           <span class="material-symbols-outlined text-[13px] text-emerald-700">sell</span>
-          <span class="font-medium text-slate-700">{{ product.soldCount || 0 }} terjual</span>
+          <span class="font-medium text-slate-700">{{ product.soldCount || 0 }} {{ t('terjual', 'sold') }}</span>
         </div>
 
         <div class="flex items-center gap-1.5 mt-1">
           <span class="inline-block w-1.5 h-1.5 rounded-full bg-[#006c4a]"></span>
           <span class="text-[11px] text-[#006c4a] font-medium">
-            {{ product.unit === 'pack' ? `Sisa ${product.stockKg} pack` : `Stok: ${product.stockKg} kg` }}
+            {{ product.unit === 'pack' 
+              ? t(`Sisa ${product.stockKg} pack`, `${product.stockKg} packs left`) 
+              : t(`Stok: ${product.stockKg} kg`, `Stock: ${product.stockKg} kg`) 
+            }}
           </span>
         </div>
 
         <!-- Ide Olahan Dapur -->
         <div v-if="product.culinaryIdeas?.length" class="mt-2 flex items-center gap-1 overflow-hidden text-[10px] text-slate-600 bg-slate-50 border border-slate-100 rounded px-1.5 py-0.5">
           <span class="material-symbols-outlined text-[13px] text-amber-600 shrink-0">skillet</span>
-          <span class="truncate font-medium text-slate-700">Cocok: {{ product.culinaryIdeas.slice(0, 2).join(', ') }}</span>
+          <span class="truncate font-medium text-slate-700">{{ t('Cocok:', 'Ideas:') }} {{ product.culinaryIdeas.slice(0, 2).join(', ') }}</span>
         </div>
       </div>
     </div>
@@ -140,7 +145,7 @@ const handleQuickAdd = () => {
         <span class="material-symbols-outlined text-[16px]">
           {{ justAdded ? 'check' : 'add_shopping_cart' }}
         </span>
-        <span>{{ justAdded ? 'Ditambahkan' : '+ Keranjang' }}</span>
+        <span>{{ justAdded ? t('Ditambahkan', 'Added') : t('+ Keranjang', '+ Cart') }}</span>
       </button>
     </div>
   </article>

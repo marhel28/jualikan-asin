@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
+import { useLocale } from '~/composables/useLocale'
 
 const route = useRoute()
+const { t, isEn } = useLocale()
 
 // Sembunyikan floating button di halaman checkout, pembayaran, dan detail produk
 // (detail produk sudah punya tombol WA inline terdedikasi)
@@ -14,14 +16,19 @@ const isVisible = computed(() => {
   return true
 })
 
-const waMessage = 'Halo Laut Berkah Abadi Muncar, saya ingin konsultasi tangkapan ikan segar hari ini.'
-const waUrl = `https://wa.me/6281234567890?text=${encodeURIComponent(waMessage)}`
+const waMessage = computed(() => {
+  return isEn.value
+    ? 'Hello Laut Berkah Abadi Muncar, I would like to consult about today fresh fish catch.'
+    : 'Halo Laut Berkah Abadi Muncar, saya ingin konsultasi tangkapan ikan segar hari ini.'
+})
+
+const waUrl = computed(() => `https://wa.me/6281234567890?text=${encodeURIComponent(waMessage.value)}`)
 </script>
 
 <template>
   <aside
     v-if="isVisible"
-    aria-label="Layanan Pelanggan WhatsApp"
+    :aria-label="t('Layanan Pelanggan WhatsApp', 'WhatsApp Customer Service')"
     class="fixed z-30 transition-all duration-200 right-4 md:right-6 bottom-[4.75rem] md:bottom-6"
   >
     <a
@@ -29,7 +36,7 @@ const waUrl = `https://wa.me/6281234567890?text=${encodeURIComponent(waMessage)}
       target="_blank"
       rel="noopener noreferrer"
       class="group flex items-center gap-2.5 bg-[#059669] hover:bg-[#047857] text-white p-3 md:px-4 md:py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 active:scale-95 cursor-pointer"
-      title="Konsultasi Produk dan Pesanan via WhatsApp"
+      :title="t('Konsultasi Produk dan Pesanan via WhatsApp', 'Product & Order Consultation via WhatsApp')"
     >
       <!-- WhatsApp / Chat Icon -->
       <div class="relative flex items-center justify-center shrink-0">
@@ -46,14 +53,14 @@ const waUrl = `https://wa.me/6281234567890?text=${encodeURIComponent(waMessage)}
         <!-- Real-time Online Indicator -->
         <span
           class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-300 ring-2 ring-[#059669]"
-          title="Admin Siap Bantu"
+          :title="t('Admin Siap Bantu', 'Support Ready')"
         ></span>
       </div>
 
       <!-- Text Label (Desktop only, minimal on mobile) -->
       <div class="hidden md:flex flex-col text-left leading-tight">
-        <span class="text-[12px] font-bold tracking-tight text-white">Chat Admin</span>
-        <span class="text-[10px] text-emerald-100 font-medium">Tanya stok & pesanan</span>
+        <span class="text-[12px] font-bold tracking-tight text-white">{{ t('Chat Admin', 'Chat Support') }}</span>
+        <span class="text-[10px] text-emerald-100 font-medium">{{ t('Tanya stok & pesanan', 'Ask stock & orders') }}</span>
       </div>
     </a>
   </aside>
