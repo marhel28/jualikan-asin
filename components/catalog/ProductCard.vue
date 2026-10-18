@@ -107,7 +107,7 @@ const handleQuickAdd = () => {
       </div>
 
       <div class="p-2.5 pb-1">
-        <h2 class="text-xs font-bold text-[#002242] line-clamp-2 leading-snug group-hover:text-[#103860] group-hover:underline">
+        <h2 class="text-xs font-bold text-[#002242] line-clamp-2 leading-snug group-hover:text-[#103860] no-underline transition-colors">
           {{ product.name }}
         </h2>
 
