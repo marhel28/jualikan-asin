@@ -426,6 +426,21 @@ useHead(() => {
                 </span>
               </div>
 
+              <!-- Rekomendasi Olahan Dapur -->
+              <div v-if="product.culinaryIdeas?.length" class="mt-2.5 flex items-center flex-wrap gap-1.5">
+                <span class="text-[11px] text-slate-500 font-medium flex items-center gap-1">
+                  <span class="material-symbols-outlined text-[14px] text-amber-600">skillet</span>
+                  Cocok dimasak:
+                </span>
+                <span
+                  v-for="dish in product.culinaryIdeas"
+                  :key="dish"
+                  class="bg-amber-50 text-amber-900 border border-amber-200/60 text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                >
+                  {{ dish }}
+                </span>
+              </div>
+
               <div class="mt-2 text-xl font-bold text-slate-900" id="price-display">
                 Rp{{ selectedPrice.toLocaleString('id-ID') }}
                 <span class="text-xs text-slate-500 font-normal ml-1.5">(Rp19.968 - Rp36.306)</span>

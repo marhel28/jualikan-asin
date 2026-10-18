@@ -114,6 +114,12 @@ const handleQuickAdd = () => {
             {{ product.unit === 'pack' ? `Sisa ${product.stockKg} pack` : `Stok: ${product.stockKg} kg` }}
           </span>
         </div>
+
+        <!-- Ide Olahan Dapur -->
+        <div v-if="product.culinaryIdeas?.length" class="mt-2 flex items-center gap-1 overflow-hidden text-[10px] text-slate-600 bg-slate-50 border border-slate-100 rounded px-1.5 py-0.5">
+          <span class="material-symbols-outlined text-[13px] text-amber-600 shrink-0">skillet</span>
+          <span class="truncate font-medium text-slate-700">Cocok: {{ product.culinaryIdeas.slice(0, 2).join(', ') }}</span>
+        </div>
       </div>
     </div>
 

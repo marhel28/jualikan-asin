@@ -74,14 +74,23 @@ export interface CartItem {
   unit: 'kg' | 'pack'
 }
 
+export interface CartToastInfo {
+  name: string
+  image: string
+  price: number
+  quantity: number
+}
+
 export interface CartState {
   items: CartItem[]
   packagingType: PackagingType
   kitchenNotes: string
+  lastAddedItem: CartToastInfo | null
 }
 
 export const useCartStore = defineStore('cart', {
   state: (): CartState => ({
+    lastAddedItem: null,
     items: [
       {
         id: 'mock-1',
@@ -210,6 +219,24 @@ export const useCartStore = defineStore('cart', {
           unit: product.unit || 'kg'
         })
       }
+
+      this.lastAddedItem = {
+        name: product.name,
+        image: product.imageUrl,
+        price: product.pricePerKg,
+        quantity: safeQty
+      }
+
+      // Auto dismiss toast after 3.5s
+      setTimeout(() => {
+        if (this.lastAddedItem?.name === product.name) {
+          this.lastAddedItem = null
+        }
+      }, 3500)
+    },
+
+    clearToast() {
+      this.lastAddedItem = null
     },
 
     updateQuantity(itemId: string, delta: number) {

@@ -32,6 +32,7 @@ export interface Product {
   isFeatured: boolean
   soldCount: number
   wishlistCount: number
+  culinaryIdeas?: string[]
 }
 
 export const PRODUCTS: Product[] = [
@@ -86,7 +87,8 @@ export const PRODUCTS: Product[] = [
     supportsSoupBones: true,
     isFeatured: true,
     soldCount: 342,
-    wishlistCount: 94
+    wishlistCount: 94,
+    culinaryIdeas: ['Pempek', 'Siomay', 'Otak-otak', 'Bakso Ikan']
   },
   {
     id: 'kerapu-macan',
@@ -132,7 +134,8 @@ export const PRODUCTS: Product[] = [
     supportsSoupBones: true,
     isFeatured: true,
     soldCount: 185,
-    wishlistCount: 68
+    wishlistCount: 68,
+    culinaryIdeas: ['Tim Jahe Kecap', 'Sup Kuah Asam', 'Bakar Jimbaran']
   },
   {
     id: 'tongkol-lisong',
@@ -178,7 +181,8 @@ export const PRODUCTS: Product[] = [
     supportsSoupBones: true,
     isFeatured: false,
     soldCount: 520,
-    wishlistCount: 112
+    wishlistCount: 112,
+    culinaryIdeas: ['Pindang Bumbu Rujak', 'Balado Pedas', 'Tongkol Suwir Kemangi']
   },
   {
     id: 'lemuru-segar',
@@ -217,7 +221,8 @@ export const PRODUCTS: Product[] = [
     supportsSoupBones: false,
     isFeatured: true,
     soldCount: 890,
-    wishlistCount: 145
+    wishlistCount: 145,
+    culinaryIdeas: ['Pindang Banyuwangi', 'Goreng Tepung', 'Pepes Daun']
   },
   {
     id: 'kakap-merah',
@@ -270,7 +275,8 @@ export const PRODUCTS: Product[] = [
     supportsSoupBones: true,
     isFeatured: true,
     soldCount: 215,
-    wishlistCount: 86
+    wishlistCount: 86,
+    culinaryIdeas: ['Gulai Kepala Kakap', 'Bakar Jimbaran', 'Fillet Asam Manis']
   },
   {
     id: 'cumi-sero',
@@ -309,7 +315,8 @@ export const PRODUCTS: Product[] = [
     supportsSoupBones: false,
     isFeatured: true,
     soldCount: 268,
-    wishlistCount: 73
+    wishlistCount: 73,
+    culinaryIdeas: ['Cumi Saus Padang', 'Cumi Hitam Pedas', 'Calamari Crispy']
   },
   {
     id: 'kepala-kakap-merah',
@@ -348,7 +355,8 @@ export const PRODUCTS: Product[] = [
     supportsSoupBones: false,
     isFeatured: false,
     soldCount: 140,
-    wishlistCount: 39
+    wishlistCount: 39,
+    culinaryIdeas: ['Gulai Padang Gurih', 'Sup Bening Belimbing', 'Pindang Asam Segar']
   },
   {
     id: 'steak-tuna-yellowfin',
@@ -388,7 +396,8 @@ export const PRODUCTS: Product[] = [
     supportsSoupBones: false,
     isFeatured: true,
     soldCount: 410,
-    wishlistCount: 165
+    wishlistCount: 165,
+    culinaryIdeas: ['Pan-Seared Steak', 'Tuna Teriyaki', 'Salad Sashimi']
   },
   {
     id: 'baronang-tulis',
@@ -428,7 +437,8 @@ export const PRODUCTS: Product[] = [
     supportsSoupBones: false,
     isFeatured: true,
     soldCount: 98,
-    wishlistCount: 54
+    wishlistCount: 54,
+    culinaryIdeas: ['Fillet Goreng Tepung', 'Fillet Tumis Taoco', 'Fillet Bakar Sambal']
   }
 ]
 
