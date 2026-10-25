@@ -248,6 +248,21 @@ const selectedSkin = computed(() => {
 })
 const quantity = ref<number>(1)
 const activeTab = ref<'desc' | 'spec'>('desc')
+
+// Rich HTML / Plaintext Description Formatter
+const formattedDescription = computed(() => {
+  const desc = product.value?.description || ''
+  if (!desc) return ''
+  // If description already contains HTML tags (e.g. from VueQuill)
+  if (/<[a-z][\s\S]*>/i.test(desc)) {
+    return desc
+  }
+  // Backwards compatibility for plain text: format paragraphs and newlines
+  return desc
+    .split(/\n\n+/)
+    .map(para => `<p>${para.replace(/\n/g, '<br>')}</p>`)
+    .join('')
+})
 const activeImageIndex = ref<number>(0)
 const addedSuccess = ref<boolean>(false)
 const showToast = ref<boolean>(false)
@@ -1042,8 +1057,13 @@ useHead(() => {
           </div>
 
           <!-- Tab Content 1: Deskripsi -->
-          <div v-show="activeTab === 'desc'" class="py-3 text-xs leading-relaxed text-slate-600" id="tab-desc">
-            <p>{{ product.description }}</p>
+          <div v-show="activeTab === 'desc'" class="py-3 text-xs leading-relaxed text-slate-700" id="tab-desc">
+            <div
+              v-if="formattedDescription"
+              class="prose prose-slate max-w-none text-xs leading-relaxed text-slate-700 space-y-2 [&>p]:mb-2.5 [&>ul]:list-disc [&>ul]:ml-4 [&>ul]:space-y-1 [&>ol]:list-decimal [&>ol]:ml-4 [&>ol]:space-y-1 [&_strong]:font-bold [&_strong]:text-slate-900 [&_em]:italic [&_u]:underline"
+              v-html="formattedDescription"
+            ></div>
+            <p v-else class="text-slate-400 italic">Belum ada deskripsi untuk komoditas ini.</p>
           </div>
 
           <!-- Tab Content 2: Spesifikasi -->
