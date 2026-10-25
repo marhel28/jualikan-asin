@@ -657,7 +657,7 @@ useHead(() => {
                             :src="p.images?.hero || p.images?.primary"
                             :alt="p.name"
                             class="object-cover w-10 h-10 border rounded-md border-slate-200 shrink-0 bg-slate-100" />
-                          <div v-else class="w-10 h-10 border rounded-md border-slate-200 shrink-0 bg-slate-100 flex items-center justify-center text-slate-300">
+                          <div v-else class="flex items-center justify-center w-10 h-10 border rounded-md border-slate-200 shrink-0 bg-slate-100 text-slate-300">
                             <span class="material-symbols-outlined text-[18px]">set_meal</span>
                           </div>
                           <div class="min-w-0">
