@@ -4,7 +4,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '~/stores/auth'
 
 definePageMeta({
-  layout: 'clean'
+  layout: 'default'
 })
 
 useHead({
@@ -21,8 +21,15 @@ const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 
-// Active Mode: 'login' | 'register'
-const activeMode = ref<'login' | 'register'>('register')
+// Hardcoded developer demo credentials
+const DEV_CREDENTIALS = {
+  identifier: '081299998888',
+  password: 'Customer_Password_123!',
+  name: 'Ibu Ratna Dewi (Pelanggan Demo)',
+}
+
+// Active Mode: 'login' | 'register' (default to login unless explicitly requested)
+const activeMode = ref<'login' | 'register'>((route.query.mode as any) || 'login')
 
 // In login mode: 'password' | 'whatsapp'
 const loginMethod = ref<'password' | 'whatsapp'>('password')
@@ -34,10 +41,19 @@ const regPassword = ref('')
 const regPhone = ref('')
 const showRegPassword = ref(false)
 
-// Form State: Login Password
-const loginIdentifier = ref('')
-const loginPassword = ref('')
+// Form State: Login Password (prefilled with developer credentials for instant testing)
+const loginIdentifier = ref(DEV_CREDENTIALS.identifier)
+const loginPassword = ref(DEV_CREDENTIALS.password)
 const showLoginPassword = ref(false)
+
+const fillDeveloperCredentials = () => {
+  activeMode.value = 'login'
+  loginMethod.value = 'password'
+  loginIdentifier.value = DEV_CREDENTIALS.identifier
+  loginPassword.value = DEV_CREDENTIALS.password
+  localErrorMessage.value = null
+  authStore.errorMessage = null
+}
 
 // Form State: WhatsApp OTP
 const otpDigits = ref<string[]>(['', '', '', '', '', ''])
@@ -83,7 +99,7 @@ const handleRegister = async () => {
 
   isSubmitting.value = true
   try {
-    const ok = authStore.registerWithEmailPassword({
+    const ok = await authStore.registerWithEmailPassword({
       username: regUsername.value,
       email: regEmail.value,
       password: regPassword.value,
@@ -104,7 +120,7 @@ const handleLoginPassword = async () => {
   authStore.errorMessage = null
 
   if (!loginIdentifier.value.trim()) {
-    localErrorMessage.value = 'Masukkan email atau username Anda.'
+    localErrorMessage.value = 'Nomor WhatsApp atau email wajib diisi.'
     return
   }
   if (!loginPassword.value || loginPassword.value.length < 6) {
@@ -114,12 +130,14 @@ const handleLoginPassword = async () => {
 
   isSubmitting.value = true
   try {
-    const ok = authStore.loginWithEmailOrUsername(loginIdentifier.value, loginPassword.value)
+    const ok = await authStore.loginWithEmailOrUsername(loginIdentifier.value, loginPassword.value)
     if (ok) {
       router.push(redirectTarget.value)
+    } else if (authStore.errorMessage) {
+      localErrorMessage.value = authStore.errorMessage
     }
   } catch (err: any) {
-    localErrorMessage.value = err?.message || 'Gagal masuk akun. Periksa kembali data Anda.'
+    localErrorMessage.value = err?.detail || err?.data?.detail || err?.message || 'Nomor WhatsApp/Email atau kata sandi tidak cocok.'
   } finally {
     isSubmitting.value = false
   }
@@ -227,9 +245,9 @@ const handleVerifyOtp = async () => {
 
   isSubmitting.value = true
   try {
-    let ok = authStore.verifyOtp(enteredOtp)
+    let ok = await authStore.verifyOtp(enteredOtp)
     if (!ok && (enteredOtp.length === 6 || enteredOtp === '882100')) {
-      ok = authStore.verifyOtp('8821')
+      ok = await authStore.verifyOtp('8821')
     }
 
     if (ok) {
@@ -271,7 +289,15 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="w-full max-w-4xl mx-auto py-2 sm:py-6">
+  <div class="w-full max-w-4xl mx-auto py-2 sm:py-4">
+    <!-- Desktop Breadcrumb -->
+    <nav class="hidden md:flex items-center gap-2 text-xs text-slate-500 mb-4">
+      <NuxtLink to="/" class="hover:text-[#103860] transition-colors">Beranda</NuxtLink>
+      <span class="material-symbols-outlined text-[14px]">chevron_right</span>
+      <span class="font-semibold text-[#103860]">
+        {{ activeMode === 'register' ? 'Daftar Akun Pelanggan' : 'Masuk ke Akun' }}
+      </span>
+    </nav>
     <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
       <!-- Main Auth Card -->
       <div class="md:col-span-7 bg-white rounded-2xl border border-slate-200 p-5 sm:p-7 shadow-xs space-y-5">
@@ -442,11 +468,36 @@ onBeforeUnmount(() => {
 
         <!-- MODE 2: MASUK (Login Email/Username + Password ATAU WhatsApp OTP) -->
         <div v-else class="space-y-4">
+          <!-- Developer Quick Credential Box -->
+          <div class="p-3 bg-blue-50/90 border border-blue-200/90 rounded-xl flex items-center justify-between gap-3 text-xs">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <span class="material-symbols-outlined text-blue-700 text-[20px] shrink-0">science</span>
+              <div class="min-w-0">
+                <div class="font-bold text-blue-950 flex items-center gap-1.5">
+                  <span>Akun Uji Coba Developer</span>
+                  <span class="px-1.5 py-0.2 bg-blue-200/60 text-blue-900 rounded text-[10px] font-mono font-semibold">11 Pesanan DB</span>
+                </div>
+                <p class="text-[11px] text-blue-700/90 truncate font-mono">
+                  WA: 081299998888 • Pass: Customer_Password_123!
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              @click="fillDeveloperCredentials"
+              class="px-2.5 py-1.5 bg-[#103860] hover:bg-[#13446E] text-white text-[11px] font-bold rounded-lg shrink-0 transition shadow-2xs cursor-pointer flex items-center gap-1"
+              title="Isi form dengan akun developer"
+            >
+              <span class="material-symbols-outlined text-[14px]">auto_fix_high</span>
+              <span>Isi Cepat</span>
+            </button>
+          </div>
+
           <!-- SUB-MODE: Email / Username & Password -->
           <form v-if="loginMethod === 'password'" @submit.prevent="handleLoginPassword" class="space-y-4">
             <div class="space-y-1.5">
               <label for="login-id" class="block text-xs font-semibold text-slate-700">
-                Email atau Username
+                Nomor WhatsApp atau Email
               </label>
               <div class="relative flex items-center border border-slate-300 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#103860] focus-within:border-transparent bg-white">
                 <span class="material-symbols-outlined text-slate-400 text-[18px] ml-3 shrink-0">account_circle</span>
@@ -454,7 +505,7 @@ onBeforeUnmount(() => {
                   id="login-id"
                   v-model="loginIdentifier"
                   type="text"
-                  placeholder="Username atau email Anda"
+                  placeholder="081234567890 atau email@domain.com"
                   class="flex-1 px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none bg-white font-medium"
                   autocomplete="username"
                   required
@@ -626,6 +677,17 @@ onBeforeUnmount(() => {
           </svg>
           <span>Lanjut dengan Google</span>
         </button>
+
+        <!-- Secondary Exit / Return to Home Link -->
+        <div class="text-center pt-2">
+          <NuxtLink
+            to="/"
+            class="text-xs text-slate-500 hover:text-[#103860] font-medium inline-flex items-center gap-1.5 hover:underline transition-colors"
+          >
+            <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+            <span>Kembali ke Beranda Belanja</span>
+          </NuxtLink>
+        </div>
       </div>
 
       <!-- Right Column on Desktop / Bottom on Mobile: Value & Assistance -->

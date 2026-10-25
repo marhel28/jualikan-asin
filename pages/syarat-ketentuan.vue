@@ -172,7 +172,7 @@ useHead({
             </p>
             <ul class="list-disc pl-4 space-y-1.5 text-slate-600">
               <li>
-                <strong>Slot Subuh (06:00 – 08:30 WIB):</strong> Rekomendasi utama untuk kebutuhan olahan sarapan pagi atau katering makan siang.
+                <strong>Slot Pagi (06:00 - 08:30 WIB):</strong> Rekomendasi utama untuk kebutuhan olahan sarapan pagi atau katering makan siang.
               </li>
               <li>
                 <strong>Slot Siang (10:00 – 12:30 WIB):</strong> Untuk pesanan yang masuk malam hari atau jadwal masak sore/malam.

@@ -6,17 +6,49 @@ export interface ProductCutOption {
   yieldBadge: string
 }
 
+export interface CustomVariantTier1Option {
+  id: string
+  label: string
+  weightValue: number
+  price: number
+  stock: number
+  inStock: boolean
+}
+
+export interface CustomVariantTier2Option {
+  id: string
+  label: string
+  priceDelta: number
+  inStock: boolean
+}
+
+export interface CustomVariantsConfig {
+  tier1: {
+    name: string
+    unit: 'gram' | 'kg'
+    options: CustomVariantTier1Option[]
+  }
+  tier2: {
+    enabled: boolean
+    name: string
+    options: CustomVariantTier2Option[]
+  }
+}
+
 export interface Product {
   id: string
   slug: string
   name: string
-  scientificName: string
-  category: 'utuh' | 'fillet' | 'steak' | 'sup' | 'udang_cumi'
+  fishType?: string
+  scientificName?: string
+  category: 'Ikan Karang' | 'Ikan Pelagis' | 'Cumi & Gurita' | 'Udang & Krustasea' | 'Olahan & Sup' | string
   pricePerKg: number
   unit: 'kg' | 'pack'
   packWeightGrams?: number
+  specWeight?: string
+  specDimensions?: string
   stockKg: number
-  exportGrade: string
+  exportGrade?: string
   catchMethod: string
   landingPort: string
   originZone: string
@@ -27,12 +59,18 @@ export interface Product {
     texture: string
     scaleSlip: string
   }
-  availableCuts: ProductCutOption[]
+  availableCuts?: ProductCutOption[]
+  weightVariants?: Array<{
+    grams: number
+    price: number
+    stock: number
+    inStock: boolean
+  }>
+  customVariants?: CustomVariantsConfig
   supportsSoupBones: boolean
   isFeatured: boolean
   soldCount: number
   wishlistCount: number
-  culinaryIdeas?: string[]
 }
 
 export const PRODUCTS: Product[] = [
@@ -40,12 +78,14 @@ export const PRODUCTS: Product[] = [
     id: 'tenggiri-papan',
     slug: 'ikan-tenggiri-papan-segar',
     name: 'Ikan Tenggiri Papan Segar',
+    fishType: 'Ikan Tenggiri / Pelagis',
     scientificName: 'Scomberomorus commerson',
-    category: 'utuh',
+    specWeight: '100g - 270g per kemasan vakum',
+    specDimensions: 'P 25-35 cm, L 8-12 cm',
+    category: 'Ikan Pelagis',
     pricePerKg: 92000,
     unit: 'kg',
     stockKg: 45,
-    exportGrade: 'Grade Ekspor A',
     catchMethod: 'Pancing Ulur Muncar (Non-Pukat)',
     landingPort: 'Pelabuhan Muncar Banyuwangi',
     originZone: 'Selat Bali & Samudra Hindia',
@@ -57,9 +97,9 @@ export const PRODUCTS: Product[] = [
       'Bebas Formalin'
     ],
     images: {
-      hero: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80',
-      texture: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=800&q=80',
-      scaleSlip: 'https://images.unsplash.com/photo-1501595091296-3aa970afb3ff?auto=format&fit=crop&w=800&q=80'
+      hero: 'https://cdn.ammarabufadhel.my.id/qc/ikan-kerapu-macan-muncar-scaleSlip-292250c2.webp',
+      texture: 'https://cdn.ammarabufadhel.my.id/products/ikan-kerapu-macan-muncar-texture-668bae1c.webp',
+      scaleSlip: 'https://cdn.ammarabufadhel.my.id/products/ikan-tongkol-lisong-segar-hero-a990fbbd.webp'
     },
     availableCuts: [
       {
@@ -87,19 +127,17 @@ export const PRODUCTS: Product[] = [
     supportsSoupBones: true,
     isFeatured: true,
     soldCount: 342,
-    wishlistCount: 94,
-    culinaryIdeas: ['Pempek', 'Siomay', 'Otak-otak', 'Bakso Ikan']
+    wishlistCount: 94
   },
   {
     id: 'kerapu-macan',
     slug: 'ikan-kerapu-macan-muncar',
     name: 'Ikan Kerapu Macan Muncar',
     scientificName: 'Epinephelus fuscoguttatus',
-    category: 'utuh',
+    category: 'Ikan Karang',
     pricePerKg: 85000,
     unit: 'kg',
     stockKg: 30,
-    exportGrade: 'Grade Ekspor Super',
     catchMethod: 'Pancing Ulur Karang Selat Bali',
     landingPort: 'Pelabuhan Muncar Banyuwangi',
     originZone: 'Gugusan Karang Plawangan Muncar',
@@ -111,9 +149,9 @@ export const PRODUCTS: Product[] = [
       'Bebas Formalin'
     ],
     images: {
-      hero: 'https://images.unsplash.com/photo-1524704654690-b56c05c78a00?auto=format&fit=crop&w=800&q=80',
-      texture: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=800&q=80',
-      scaleSlip: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80'
+      hero: 'https://cdn.ammarabufadhel.my.id/products/ikan-kerapu-macan-muncar-hero-b15ce231.webp',
+      texture: 'https://cdn.ammarabufadhel.my.id/products/ikan-kerapu-macan-muncar-texture-668bae1c.webp',
+      scaleSlip: 'https://cdn.ammarabufadhel.my.id/qc/ikan-kerapu-macan-muncar-scaleSlip-292250c2.webp'
     },
     availableCuts: [
       {
@@ -134,19 +172,17 @@ export const PRODUCTS: Product[] = [
     supportsSoupBones: true,
     isFeatured: true,
     soldCount: 185,
-    wishlistCount: 68,
-    culinaryIdeas: ['Tim Jahe Kecap', 'Sup Kuah Asam', 'Bakar Jimbaran']
+    wishlistCount: 68
   },
   {
     id: 'tongkol-lisong',
     slug: 'ikan-tongkol-lisong-segar',
     name: 'Ikan Tongkol Lisong Segar',
     scientificName: 'Auxis rochei',
-    category: 'utuh',
+    category: 'Ikan Pelagis',
     pricePerKg: 36000,
     unit: 'kg',
     stockKg: 80,
-    exportGrade: 'Grade A Tangkapan Harian',
     catchMethod: 'Pancing Rawai Nelayan Muncar',
     landingPort: 'Pelabuhan Muncar Banyuwangi',
     originZone: 'Perairan Luar Teluk Pangpang',
@@ -158,9 +194,9 @@ export const PRODUCTS: Product[] = [
       'Bebas Pengawet'
     ],
     images: {
-      hero: 'https://images.unsplash.com/photo-1534043464124-3be32fe00099?auto=format&fit=crop&w=800&q=80',
-      texture: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=800&q=80',
-      scaleSlip: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80'
+      hero: 'https://cdn.ammarabufadhel.my.id/products/kakap-merah-karang-banyuwangi-primary-3f19ab8d.webp',
+      texture: 'https://cdn.ammarabufadhel.my.id/products/ikan-kerapu-macan-muncar-texture-668bae1c.webp',
+      scaleSlip: 'https://cdn.ammarabufadhel.my.id/qc/ikan-kerapu-macan-muncar-scaleSlip-292250c2.webp'
     },
     availableCuts: [
       {
@@ -188,11 +224,10 @@ export const PRODUCTS: Product[] = [
     slug: 'ikan-lemuru-segar-muncar',
     name: 'Ikan Lemuru Segar Muncar',
     scientificName: 'Sardinella lemuru',
-    category: 'utuh',
+    category: 'Ikan Pelagis',
     pricePerKg: 24000,
     unit: 'kg',
     stockKg: 120,
-    exportGrade: 'Grade Pendaratan 05:30 WIB',
     catchMethod: 'Payang Tradisional Selat Bali',
     landingPort: 'Pelabuhan Muncar Banyuwangi',
     originZone: 'Selat Bali Muncar',
@@ -204,9 +239,9 @@ export const PRODUCTS: Product[] = [
       'Bebas Formalin'
     ],
     images: {
-      hero: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=800&q=80',
-      texture: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=800&q=80',
-      scaleSlip: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80'
+      hero: 'https://cdn.ammarabufadhel.my.id/products/ikan-lemuru-segar-muncar-hero-5397da81.webp',
+      texture: 'https://cdn.ammarabufadhel.my.id/products/ikan-kerapu-macan-muncar-texture-668bae1c.webp',
+      scaleSlip: 'https://cdn.ammarabufadhel.my.id/qc/ikan-kerapu-macan-muncar-scaleSlip-292250c2.webp'
     },
     availableCuts: [
       {
@@ -227,11 +262,10 @@ export const PRODUCTS: Product[] = [
     slug: 'ikan-kakap-merah-muncar',
     name: 'Ikan Kakap Merah Muncar',
     scientificName: 'Lutjanus malabaricus',
-    category: 'utuh',
+    category: 'Ikan Karang',
     pricePerKg: 98000,
     unit: 'kg',
     stockKg: 25,
-    exportGrade: 'Grade Ekspor A',
     catchMethod: 'Pancing Ulur Karang Dalam Muncar',
     landingPort: 'Pelabuhan Muncar Banyuwangi',
     originZone: 'Perairan Karang Samudra Hindia',
@@ -243,9 +277,9 @@ export const PRODUCTS: Product[] = [
       'Bebas Formalin'
     ],
     images: {
-      hero: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=800&q=80',
-      texture: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=800&q=80',
-      scaleSlip: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80'
+      hero: 'https://cdn.ammarabufadhel.my.id/products/ikan-kerapu-macan-muncar-texture-668bae1c.webp',
+      texture: 'https://cdn.ammarabufadhel.my.id/products/ikan-kerapu-macan-muncar-texture-668bae1c.webp',
+      scaleSlip: 'https://cdn.ammarabufadhel.my.id/qc/ikan-kerapu-macan-muncar-scaleSlip-292250c2.webp'
     },
     availableCuts: [
       {
@@ -273,19 +307,17 @@ export const PRODUCTS: Product[] = [
     supportsSoupBones: true,
     isFeatured: true,
     soldCount: 215,
-    wishlistCount: 86,
-    culinaryIdeas: ['Gulai Kepala Kakap', 'Bakar Jimbaran', 'Fillet Asam Manis']
+    wishlistCount: 86
   },
   {
     id: 'cumi-sero',
     slug: 'cumi-sero-segar-muncar',
     name: 'Cumi Sero Segar Muncar',
     scientificName: 'Photololigo duvaucelii',
-    category: 'udang_cumi',
+    category: 'Cumi & Gurita',
     pricePerKg: 78000,
     unit: 'kg',
     stockKg: 35,
-    exportGrade: 'Grade A Cumi Jarum / Sero',
     catchMethod: 'Pancing Cumi Lampu Malam Selat Bali',
     landingPort: 'Pelabuhan Muncar Banyuwangi',
     originZone: 'Selat Bali Bagian Selatan',
@@ -297,9 +329,9 @@ export const PRODUCTS: Product[] = [
       'Bebas Pengawet'
     ],
     images: {
-      hero: 'https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?auto=format&fit=crop&w=800&q=80',
-      texture: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=800&q=80',
-      scaleSlip: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80'
+      hero: 'https://cdn.ammarabufadhel.my.id/products/asset-1565680018434-ebfd96f5.webp',
+      texture: 'https://cdn.ammarabufadhel.my.id/products/ikan-kerapu-macan-muncar-texture-668bae1c.webp',
+      scaleSlip: 'https://cdn.ammarabufadhel.my.id/qc/ikan-kerapu-macan-muncar-scaleSlip-292250c2.webp'
     },
     availableCuts: [
       {
@@ -312,20 +344,18 @@ export const PRODUCTS: Product[] = [
     ],
     supportsSoupBones: false,
     isFeatured: true,
-    soldCount: 268,
-    wishlistCount: 73,
-    culinaryIdeas: ['Cumi Saus Padang', 'Cumi Hitam Pedas', 'Calamari Crispy']
+    soldCount: 540,
+    wishlistCount: 73
   },
   {
     id: 'kepala-kakap-merah',
     slug: 'kepala-dan-rahang-kakap-merah-segar',
     name: 'Kepala & Rahang Kakap Merah Segar',
     scientificName: 'Lutjanus malabaricus (Head & Collar)',
-    category: 'sup',
+    category: 'Olahan & Sup',
     pricePerKg: 38000,
     unit: 'kg',
     stockKg: 15,
-    exportGrade: 'Pilihan Restoran Seafood',
     catchMethod: 'Preparasi Cold Hub Muncar',
     landingPort: 'Fasilitas Cold Hub LBA Muncar',
     originZone: 'Muncar Banyuwangi',
@@ -337,9 +367,9 @@ export const PRODUCTS: Product[] = [
       'Bebas Formalin'
     ],
     images: {
-      hero: 'https://images.unsplash.com/photo-1534043464124-3be32fe00099?auto=format&fit=crop&w=800&q=80',
-      texture: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=800&q=80',
-      scaleSlip: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80'
+      hero: 'https://cdn.ammarabufadhel.my.id/products/kakap-merah-karang-banyuwangi-primary-3f19ab8d.webp',
+      texture: 'https://cdn.ammarabufadhel.my.id/products/ikan-kerapu-macan-muncar-texture-668bae1c.webp',
+      scaleSlip: 'https://cdn.ammarabufadhel.my.id/qc/ikan-kerapu-macan-muncar-scaleSlip-292250c2.webp'
     },
     availableCuts: [
       {
@@ -353,34 +383,32 @@ export const PRODUCTS: Product[] = [
     supportsSoupBones: false,
     isFeatured: false,
     soldCount: 140,
-    wishlistCount: 39,
-    culinaryIdeas: ['Gulai Padang Gurih', 'Sup Bening Belimbing', 'Pindang Asam Segar']
+    wishlistCount: 39
   },
   {
     id: 'steak-tuna-yellowfin',
     slug: 'steak-tuna-yellowfin-200g',
     name: 'Steak Ikan Tuna Sirip Kuning (Yellowfin) 200g',
     scientificName: 'Thunnus albacares',
-    category: 'steak',
+    category: 'Ikan Pelagis',
     pricePerKg: 34000,
     unit: 'pack',
     packWeightGrams: 200,
     stockKg: 40,
-    exportGrade: 'Grade Sashimi / Grill',
     catchMethod: 'Pancing Ulur Samudra Hindia',
     landingPort: 'Pelabuhan Muncar Banyuwangi',
     originZone: 'Samudra Hindia Selatan Jawa',
     description: 'Potongan steak tuna sirip kuning dengan warna ruby-red segar pekat. Dipotong presisi tebal 2.5 cm dan dikemas vacuum sealed higienis per porsi 200 gram.',
     qualityBadges: [
-      'Grade Sashimi & Grill',
+      'Daging Segar Pilihan',
       'Ruby Red Bebas Karbon Monoksida',
       'Vacuum Sealed Pack',
       'Bebas Formalin'
     ],
     images: {
-      hero: 'https://images.unsplash.com/photo-1501595091296-3aa970afb3ff?auto=format&fit=crop&w=800&q=80',
-      texture: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=800&q=80',
-      scaleSlip: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80'
+      hero: 'https://cdn.ammarabufadhel.my.id/products/ikan-tongkol-lisong-segar-hero-a990fbbd.webp',
+      texture: 'https://cdn.ammarabufadhel.my.id/products/ikan-kerapu-macan-muncar-texture-668bae1c.webp',
+      scaleSlip: 'https://cdn.ammarabufadhel.my.id/qc/ikan-kerapu-macan-muncar-scaleSlip-292250c2.webp'
     },
     availableCuts: [
       {
@@ -394,20 +422,18 @@ export const PRODUCTS: Product[] = [
     supportsSoupBones: false,
     isFeatured: true,
     soldCount: 410,
-    wishlistCount: 165,
-    culinaryIdeas: ['Pan-Seared Steak', 'Tuna Teriyaki', 'Salad Sashimi']
+    wishlistCount: 165
   },
   {
     id: 'baronang-tulis',
     slug: 'fillet-ikan-baronang-tulis',
     name: 'Fillet Ikan Baronang Tulis',
     scientificName: 'Siganus javus',
-    category: 'fillet',
+    category: 'Ikan Karang',
     pricePerKg: 162090,
     unit: 'pack',
     packWeightGrams: 120,
     stockKg: 13,
-    exportGrade: 'Grade Resto & Ekspor',
     catchMethod: 'Pancing Nelayan Selat Bali',
     landingPort: 'Pelabuhan Muncar Banyuwangi',
     originZone: 'Selat Bali & Muncar',
@@ -419,7 +445,7 @@ export const PRODUCTS: Product[] = [
       'Timbangan Akurat Terverifikasi'
     ],
     images: {
-      hero: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAKq4wj0SSDRfGxjw8Uowg7fUbiS5NUgPdgIV8ufwsH9m8qnWoCDd03VYxKOXZXkiKTkSTt0jgHRgM7--Vgf_oN90GNEzraTSixRwYrQqFrZk-nhcaYzeh1tnhiqLJ5lhorOydBeDn78xn9SN_hCPOx8UR_he7Q4saMhHQFaJJv7RrxlLHM_JR1S_xaGpXlXfXRHishJ2xIY9ucYozw-f4QNqF_JDeShY-yhg3icWsEXNj_57xVrsp_1w',
+      hero: 'https://cdn.ammarabufadhel.my.id/products/asset-fa6c90fc.webp',
       texture: 'https://lh3.googleusercontent.com/aida/AEtjO1WwLof93E6LGMtVedhj4a7Vd-cMrwGO3RMidHHayttfFDqavnduO2WDbx58uVEdpWSqdvTB1BZ8nz0k5zXe3JYMme67fbx6MRGWjXhM2_-dCC9qP5JzKCFJBUyPJSeH7-10F-4f0dI8Rs__3QibhJDCb3b-exs7-1e5N8RXr6Dtj2iRCqn0bCPBiadbaZ8jHBeCgV8VhulK1X51BO92z7mLkUO8_qz88WiHXK8Xq6-esPXYQ8z06tv7Yahp',
       scaleSlip: 'https://lh3.googleusercontent.com/aida/AEtjO1XpAA_7I4IAuh4Jt92vzCoaGrm4FCNeimbDXBRk2uazVkwTJPTFZrikkQ9xgNRL0EDTiVv5_G5cXEY-FtaeRNU2typXuyvO73QKLx5jUCtxO8d881h03FlrqMUnPPbFKvKbBVgEwqpDep88jkxxwZX1-J9ShbQbjX5SwJjKD92Btz_Ew5QBfeRfQAVgD79QrPVRq2uacf_pm25NsQ297WqcioU72HP2PaDS0B83hHPAJya7uzSdiz5dEY0'
     },

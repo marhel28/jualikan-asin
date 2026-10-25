@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore, type UserAddress } from '~/stores/auth'
 import { useOrderStore } from '~/stores/order'
 import { useWishlistStore } from '~/stores/wishlist'
 import { useCartStore } from '~/stores/cart'
+import AddressFormModal from '~/components/address/AddressFormModal.vue'
 import {
   getProvinces,
   getCities,
@@ -20,39 +21,51 @@ useHead({
 })
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 const orderStore = useOrderStore()
 const wishlistStore = useWishlistStore()
 const cartStore = useCartStore()
 
-onMounted(() => {
+const activeTab = ref<'alamat' | 'pesanan' | 'keamanan' | 'wishlist'>('alamat')
+const isLoadingOrders = ref(false)
+
+onMounted(async () => {
+  if (route.query.tab && ['alamat', 'pesanan', 'keamanan', 'wishlist'].includes(route.query.tab as string)) {
+    activeTab.value = route.query.tab as any
+  }
   wishlistStore.initFromStorage()
-  if (authStore.user && (!authStore.user.addresses || authStore.user.addresses.length === 0)) {
-    authStore.user.addresses = [
-      {
-        id: 'addr_default_1',
-        recipientName: authStore.user.fullName || 'Ibu Ratna Dewi',
-        recipientPhone: authStore.user.phoneWhatsApp || '0812-3456-7890',
-        label: 'Rumah',
-        street: 'Jl. Basuki Rahmat No. 42, Kel. Tukangkayu',
-        benchmark: 'Seberang Bank BCA Banyuwangi Kota',
-        provinsiKode: '35',
-        kabupatenKode: '35.10',
-        kecamatanKode: '35.10.19',
-        desaKode: '35.10.19.1004',
-        provinsiNama: 'JAWA TIMUR',
-        kabupatenNama: 'KAB. BANYUWANGI',
-        kecamatanNama: 'BANYUWANGI',
-        desaNama: 'TUKANGKAYU',
-        isDefault: true
+  if (authStore.isAuthenticated) {
+    wishlistStore.fetchWishlist()
+  }
+
+  if (typeof window !== 'undefined') {
+    if (!authStore.isAuthenticated) {
+      const token = localStorage.getItem('lba_auth_token')
+      if (token) {
+        await authStore.initAuth()
       }
-    ]
+    }
+
+    if (!authStore.isAuthenticated) {
+      router.push('/auth?redirect=/akun')
+      return
+    }
+    wishlistStore.fetchWishlist()
+
+    try {
+      isLoadingOrders.value = true
+      await orderStore.fetchMyOrders()
+    } catch {} finally {
+      isLoadingOrders.value = false
+    }
+
+    try {
+      await authStore.fetchAddresses()
+    } catch {}
   }
 })
-
-// Navigation tabs
-type AccountTab = 'profil' | 'alamat' | 'keamanan' | 'wishlist'
-const activeTab = ref<AccountTab>('alamat')
+type AccountTab = 'profil' | 'alamat' | 'pesanan' | 'keamanan' | 'wishlist'
 
 // Toast state
 const showToast = ref(false)
@@ -83,185 +96,71 @@ const defaultAddress = computed<UserAddress | undefined>(() => {
   return addresses.value.find(a => a.isDefault) || addresses.value[0]
 })
 
-const filteredAddresses = computed(() => {
-  if (!searchQuery.value.trim()) return addresses.value
-  const q = searchQuery.value.toLowerCase()
+const filteredAddresses = computed<UserAddress[]>(() => {
+  const q = searchQuery.value.trim().toLowerCase()
+  if (!q) return addresses.value
+
   return addresses.value.filter(a =>
-    a.street.toLowerCase().includes(q) ||
-    a.recipientName.toLowerCase().includes(q) ||
-    a.label.toLowerCase().includes(q) ||
-    (a.kabupatenNama && a.kabupatenNama.toLowerCase().includes(q)) ||
-    (a.kecamatanNama && a.kecamatanNama.toLowerCase().includes(q))
+    (a.street || '').toLowerCase().includes(q) ||
+    (a.recipientName || '').toLowerCase().includes(q) ||
+    (a.recipientPhone || '').toLowerCase().includes(q) ||
+    (a.label || '').toLowerCase().includes(q) ||
+    (a.benchmark || '').toLowerCase().includes(q) ||
+    (a.kabupatenNama || '').toLowerCase().includes(q) ||
+    (a.kecamatanNama || '').toLowerCase().includes(q) ||
+    (a.desaNama || '').toLowerCase().includes(q)
   )
 })
 
-// ================= ADDRESS MODAL & LIVE KECAMATAN SEARCH =================
-const isModalOpen = ref(false)
-const editingId = ref<string | null>(null)
-
-// Form fields
-const formLabel = ref('Rumah')
-const formName = ref('')
-const formPhone = ref('')
-const formStreet = ref('')
-const formBenchmark = ref('')
-
-// Cascading region state
-const selectedProv = ref('')
-const selectedKab = ref('')
-const selectedKec = ref('')
-const selectedDesa = ref('')
-
-// Live Kecamatan search query & dropdown control
-const kecamatanSearchInput = ref('')
-const isKecDropdownOpen = ref(false)
-
-const provinceList = computed(() => getProvinces())
-const cityList = computed(() => getCities(selectedProv.value))
-const villageList = computed(() => getVillages(selectedKec.value))
-
-// Fast in-memory live search for kecamatan (under 1ms)
-const liveKecamatanResults = computed<WilayahItem[]>(() => {
-  const query = kecamatanSearchInput.value.trim().toLowerCase()
-  
-  // Scoped to selectedKabupaten if already chosen
-  if (selectedKab.value) {
-    const list = getDistricts(selectedKab.value)
-    if (!query) return list
-    return list.filter(item => item.nama.toLowerCase().includes(query))
-  }
-  
-  // Otherwise global search across all kecamatan in dataset (len 8)
-  const allDistricts = WILAYAH_DATA.filter(w => w.kode.length === 8)
-  if (!query) return allDistricts.slice(0, 20)
-  return allDistricts.filter(item => item.nama.toLowerCase().includes(query)).slice(0, 30)
-})
-
-const selectKecamatan = (item: WilayahItem) => {
-  selectedKec.value = item.kode
-  kecamatanSearchInput.value = item.nama
-  isKecDropdownOpen.value = false
-  selectedDesa.value = ''
-  
-  // Auto-resolve parent Kab & Prov if not already chosen
-  const parentKabKode = item.kode.substring(0, 5)
-  const parentProvKode = item.kode.substring(0, 2)
-  if (!selectedKab.value || selectedKab.value !== parentKabKode) {
-    selectedProv.value = parentProvKode
-    selectedKab.value = parentKabKode
-  }
-}
-
-// Watch parent resets
-watch(selectedProv, () => {
-  selectedKab.value = ''
-  selectedKec.value = ''
-  kecamatanSearchInput.value = ''
-  selectedDesa.value = ''
-})
-
-watch(selectedKab, (newKab) => {
-  if (newKab && selectedKec.value && !selectedKec.value.startsWith(newKab)) {
-    selectedKec.value = ''
-    kecamatanSearchInput.value = ''
-    selectedDesa.value = ''
-  }
-})
+// ================= ADDRESS MODAL STATE & ACTIONS =================
+const isAddressFormOpen = ref(false)
+const editingAddress = ref<UserAddress | null>(null)
 
 const openAddModal = () => {
-  editingId.value = null
-  formLabel.value = 'Rumah'
-  formName.value = authStore.user?.fullName || ''
-  formPhone.value = authStore.user?.phoneWhatsApp || ''
-  formStreet.value = searchQuery.value.trim()
-  formBenchmark.value = ''
-  selectedProv.value = '35'
-  selectedKab.value = '35.10'
-  selectedKec.value = '35.10.10'
-  kecamatanSearchInput.value = 'MUNCAR'
-  selectedDesa.value = '35.10.10.2001'
-  isModalOpen.value = true
+  editingAddress.value = null
+  isAddressFormOpen.value = true
 }
 
 const openEditModal = (addr: UserAddress) => {
-  editingId.value = addr.id
-  formLabel.value = addr.label
-  formName.value = addr.recipientName
-  formPhone.value = addr.recipientPhone
-  formStreet.value = addr.street
-  formBenchmark.value = addr.benchmark || ''
-  selectedProv.value = addr.provinsiKode || '35'
-  selectedKab.value = addr.kabupatenKode || '35.10'
-  selectedKec.value = addr.kecamatanKode || ''
-  kecamatanSearchInput.value = addr.kecamatanNama || (addr.kecamatanKode ? getWilayahName(addr.kecamatanKode) : '')
-  selectedDesa.value = addr.desaKode || ''
-  isModalOpen.value = true
+  editingAddress.value = addr
+  isAddressFormOpen.value = true
 }
 
-const closeModal = () => {
-  isModalOpen.value = false
-  isKecDropdownOpen.value = false
+const makeDefault = async (id: string) => {
+  await authStore.setDefaultAddress(id)
+  triggerToast('Alamat utama berhasil diperbarui')
 }
 
-const saveAddress = () => {
-  if (!formStreet.value.trim() || !formName.value.trim()) {
-    triggerToast('Nama penerima dan alamat jalan wajib diisi.')
-    return
+const deleteAddress = async (id: string) => {
+  if (confirm('Apakah Anda yakin ingin menghapus alamat ini?')) {
+    await authStore.deleteAddress(id)
+    triggerToast('Alamat berhasil dihapus')
   }
+}
 
-  const provNama = getWilayahName(selectedProv.value)
-  const kabNama = getWilayahName(selectedKab.value)
-  const kecNama = kecamatanSearchInput.value.trim() || getWilayahName(selectedKec.value)
-  const desaNama = getWilayahName(selectedDesa.value)
 
-  if (editingId.value) {
-    authStore.updateAddress(editingId.value, {
-      label: formLabel.value,
-      recipientName: formName.value.trim(),
-      recipientPhone: formPhone.value.trim() || authStore.user?.phoneWhatsApp,
-      street: formStreet.value.trim(),
-      benchmark: formBenchmark.value.trim(),
-      provinsiKode: selectedProv.value,
-      kabupatenKode: selectedKab.value,
-      kecamatanKode: selectedKec.value,
-      desaKode: selectedDesa.value,
-      provinsiNama: provNama,
-      kabupatenNama: kabNama,
-      kecamatanNama: kecNama,
-      desaNama: desaNama
-    })
-    triggerToast('Alamat berhasil diperbarui.')
-  } else {
-    authStore.addAddress({
-      label: formLabel.value,
-      recipientName: formName.value.trim(),
-      recipientPhone: formPhone.value.trim() || authStore.user?.phoneWhatsApp || '0812-3456-7890',
-      street: formStreet.value.trim(),
-      benchmark: formBenchmark.value.trim(),
-      provinsiKode: selectedProv.value,
-      kabupatenKode: selectedKab.value,
-      kecamatanKode: selectedKec.value,
-      desaKode: selectedDesa.value,
-      provinsiNama: provNama,
-      kabupatenNama: kabNama,
-      kecamatanNama: kecNama,
-      desaNama: desaNama
-    })
-    searchQuery.value = ''
-    triggerToast('Alamat pengiriman baru tersimpan.')
+const activeOrdersCount = computed(() => {
+  return orderStore.ordersHistory.filter(o => o.status !== 'DELIVERED' && o.status !== 'EXPIRED').length
+})
+
+const getStatusBadge = (status: string) => {
+  switch (status) {
+    case 'PENDING_PAYMENT':
+      return { label: 'Menunggu Bayar', class: 'bg-amber-50 text-amber-700 border-amber-200' }
+    case 'CONFIRMED':
+    case 'COLD_ROOM_INTAKE':
+      return { label: 'Cold Room Intake', class: 'bg-blue-50 text-blue-700 border-blue-200' }
+    case 'BUTCHERING_PREP':
+      return { label: 'Penyiangan Bersih', class: 'bg-cyan-50 text-cyan-700 border-cyan-200' }
+    case 'COLD_PACKED':
+      return { label: 'Dikemas Dingin', class: 'bg-teal-50 text-teal-700 border-teal-200' }
+    case 'OUT_FOR_DELIVERY':
+      return { label: 'Dalam Pengantaran', class: 'bg-indigo-50 text-indigo-700 border-indigo-200' }
+    case 'DELIVERED':
+      return { label: 'Telah Diterima', class: 'bg-emerald-50 text-emerald-700 border-emerald-200' }
+    default:
+      return { label: status, class: 'bg-slate-50 text-slate-700 border-slate-200' }
   }
-
-  closeModal()
-}
-
-const deleteAddress = (id: string) => {
-  authStore.deleteAddress(id)
-  triggerToast('Alamat dihapus.')
-}
-
-const makeDefault = (id: string) => {
-  authStore.setDefaultAddress(id)
-  triggerToast('Alamat utama pengiriman diubah.')
 }
 
 // Security & Credentials
@@ -273,23 +172,26 @@ const confirmPasswordInput = ref('')
 const isUpdatingProfile = ref(false)
 const isUpdatingPassword = ref(false)
 
-const handleSaveProfile = () => {
+const handleSaveProfile = async () => {
   if (!emailInput.value.trim() || !emailInput.value.includes('@')) {
     triggerToast('Format email tidak valid.')
     return
   }
   isUpdatingProfile.value = true
-  setTimeout(() => {
-    authStore.updateEmail(emailInput.value.trim())
+  try {
+    await authStore.updateEmail(emailInput.value.trim())
     if (authStore.user) {
       authStore.user.phoneWhatsApp = phoneInput.value.trim()
     }
-    isUpdatingProfile.value = false
     triggerToast('Data profil WhatsApp & Email berhasil disimpan.')
-  }, 350)
+  } catch {
+    triggerToast('Gagal memperbarui profil.')
+  } finally {
+    isUpdatingProfile.value = false
+  }
 }
 
-const handleSavePassword = () => {
+const handleSavePassword = async () => {
   if (newPasswordInput.value.length < 6) {
     triggerToast('Password baru minimal 6 karakter.')
     return
@@ -299,20 +201,33 @@ const handleSavePassword = () => {
     return
   }
   isUpdatingPassword.value = true
-  setTimeout(() => {
-    authStore.updatePassword(newPasswordInput.value)
+  try {
+    await authStore.updatePassword(newPasswordInput.value, currentPasswordInput.value)
     currentPasswordInput.value = ''
     newPasswordInput.value = ''
     confirmPasswordInput.value = ''
-    isUpdatingPassword.value = false
     triggerToast('Kata sandi berhasil diperbarui.')
-  }, 400)
+  } catch {
+    triggerToast('Gagal memperbarui kata sandi.')
+  } finally {
+    isUpdatingPassword.value = false
+  }
 }
 
 // Wishlist
-const addWishlistToCart = (productId: string) => {
-  cartStore.addItem(productId, 'utuh_bersih')
-  triggerToast('Produk ditambahkan ke keranjang.')
+const addWishlistToCart = (prod: any) => {
+  const item = typeof prod === 'object' ? prod : wishlistStore.items.find(i => i.id === prod)
+  if (item) {
+    cartStore.addItem({
+      id: item.id,
+      name: item.name,
+      slug: item.slug || item.id,
+      imageUrl: item.images?.hero || item.imageUrl || 'https://cdn.ammarabufadhel.my.id/products/asset-1544551763-ced7aa4f.webp',
+      pricePerKg: item.pricePerKg || item.price || 50000,
+      unit: item.unit || 'kg',
+    }, 'utuh_bersih', false, 1)
+    triggerToast('Produk berhasil ditambahkan ke keranjang belanja.')
+  }
 }
 
 const handleLogout = () => {
@@ -324,24 +239,24 @@ const handleLogout = () => {
 <template>
   <div class="bg-[#F8FAFC] text-slate-900 font-sans antialiased min-h-screen flex flex-col items-center">
     <!-- Desktop Breadcrumb (hidden on mobile, aligned with max-w-6xl container) -->
-    <nav class="hidden md:flex w-full max-w-5xl lg:max-w-6xl px-6 pt-4 pb-1 items-center gap-2 text-xs text-slate-500">
+    <nav class="items-center hidden w-full max-w-5xl gap-2 px-6 pt-4 pb-1 text-xs md:flex lg:max-w-6xl text-slate-500">
       <NuxtLink to="/" class="hover:text-[#103860] transition-colors">Beranda</NuxtLink>
       <span class="text-slate-300">/</span>
-      <span class="text-slate-900 font-medium">Akun Pelanggan</span>
+      <span class="font-medium text-slate-900">Akun Pelanggan</span>
     </nav>
 
-    <div class="w-full max-w-md md:max-w-5xl lg:max-w-6xl px-3 md:px-6 py-3 md:py-5 flex flex-col gap-5">
+    <div class="flex flex-col w-full max-w-md gap-5 px-3 py-3 md:max-w-5xl lg:max-w-6xl md:px-6 md:py-5">
       
       <!-- User Profile Header & Identity Card -->
-      <div class="bg-white border border-slate-200/90 rounded-xl p-4 md:p-6 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div class="flex items-start md:items-center gap-3 md:gap-4">
+      <div class="flex flex-col justify-between gap-4 p-4 bg-white border border-slate-200/90 rounded-xl md:p-6 shadow-2xs md:flex-row md:items-center">
+        <div class="flex items-start gap-3 md:items-center md:gap-4">
           <div class="w-12 h-12 md:w-16 md:h-16 rounded-full bg-gradient-to-br from-[#103860] to-[#081a2e] text-white flex items-center justify-center font-bold text-base md:text-xl tracking-wider shrink-0 shadow-xs">
             {{ authStore.user?.fullName?.charAt(0) || 'U' }}
           </div>
           
-          <div class="flex flex-col gap-1 min-w-0">
-            <div class="flex items-center gap-2 flex-wrap">
-              <h1 class="text-sm md:text-lg font-bold text-slate-900 leading-tight">
+          <div class="flex flex-col min-w-0 gap-1">
+            <div class="flex flex-wrap items-center gap-2">
+              <h1 class="text-sm font-bold leading-tight md:text-lg text-slate-900">
                 {{ authStore.user?.fullName || 'Pelanggan Laut Berkah Abadi' }}
               </h1>
               <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 text-[10px] md:text-[11px] font-semibold text-emerald-700 border border-emerald-200/60">
@@ -351,10 +266,10 @@ const handleLogout = () => {
             </div>
 
             <!-- Identity Badges: Username, WA, Email -->
-            <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
+            <div class="flex flex-wrap items-center text-xs gap-x-3 gap-y-1 text-slate-500">
               <span class="inline-flex items-center gap-1">
                 <span class="material-symbols-outlined text-[15px] text-slate-400">badge</span>
-                <span class="font-mono text-slate-700 font-medium">@{{ usernameComputed }}</span>
+                <span class="font-mono font-medium text-slate-700">@{{ usernameComputed }}</span>
               </span>
               <span class="text-slate-300">•</span>
               <span class="inline-flex items-center gap-1">
@@ -370,15 +285,27 @@ const handleLogout = () => {
           </div>
         </div>
 
-        <button
-          type="button"
-          @click="handleLogout"
-          class="self-end md:self-center text-slate-400 hover:text-red-600 p-2 rounded-lg hover:bg-red-50/60 transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-semibold"
-          title="Keluar dari akun"
-        >
-          <span class="material-symbols-outlined text-[18px]">logout</span>
-          <span>Keluar</span>
-        </button>
+        <div class="flex items-center gap-2">
+          <NuxtLink
+            v-if="authStore.user?.role === 'admin' || authStore.user?.role === 'courier'"
+            to="/admin"
+            class="px-3 py-1.5 rounded-lg bg-cyan-50 border border-cyan-200 text-cyan-800 hover:bg-cyan-100 transition-colors flex items-center gap-1.5 text-xs font-semibold"
+            title="Masuk ke Dashboard Operasional"
+          >
+            <span class="material-symbols-outlined text-[16px]">warehouse</span>
+            <span>Dashboard Operasional</span>
+          </NuxtLink>
+
+          <button
+            type="button"
+            @click="handleLogout"
+            class="text-slate-400 hover:text-red-600 p-2 rounded-lg hover:bg-red-50/60 transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-semibold"
+            title="Keluar dari akun"
+          >
+            <span class="material-symbols-outlined text-[18px]">logout</span>
+            <span>Keluar</span>
+          </button>
+        </div>
       </div>
 
       <!-- Quick Summary Card: Alamat Utama Saat Ini -->
@@ -422,6 +349,24 @@ const handleLogout = () => {
             <span class="material-symbols-outlined text-[15px] md:text-[18px] shrink-0">location_on</span>
             <span class="truncate">Alamat</span>
           </button>
+
+          <button
+            type="button"
+            @click="activeTab = 'pesanan'"
+            class="flex-1 md:flex-none py-2 md:py-2.5 px-1.5 md:px-3 rounded-lg transition-all text-center md:text-left cursor-pointer flex items-center justify-center md:justify-between gap-1 md:gap-2 min-w-0"
+            :class="activeTab === 'pesanan' ? 'bg-white text-slate-900 font-semibold shadow-2xs' : 'text-slate-500 hover:text-slate-900'"
+          >
+            <div class="flex items-center min-w-0 gap-1 md:gap-2">
+              <span class="material-symbols-outlined text-[15px] md:text-[18px] shrink-0">receipt_long</span>
+              <span class="truncate">Pesanan</span>
+            </div>
+            <span
+              v-if="activeOrdersCount > 0"
+              class="px-1.5 py-0.5 rounded-full text-[9px] bg-emerald-600 text-white font-bold shrink-0 leading-none"
+            >
+              {{ activeOrdersCount }}
+            </span>
+          </button>
           
           <button
             type="button"
@@ -439,7 +384,7 @@ const handleLogout = () => {
             class="flex-1 md:flex-none py-2 md:py-2.5 px-1.5 md:px-3 rounded-lg transition-all text-center md:text-left cursor-pointer flex items-center justify-center md:justify-between gap-1 md:gap-2 min-w-0"
             :class="activeTab === 'wishlist' ? 'bg-white text-slate-900 font-semibold shadow-2xs' : 'text-slate-500 hover:text-slate-900'"
           >
-            <div class="flex items-center gap-1 md:gap-2 min-w-0">
+            <div class="flex items-center min-w-0 gap-1 md:gap-2">
               <span class="material-symbols-outlined text-[15px] md:text-[18px] shrink-0">favorite</span>
               <span class="whitespace-nowrap">Wishlist</span>
             </div>
@@ -453,98 +398,125 @@ const handleLogout = () => {
         </aside>
 
         <!-- Main Content Panel per Tab -->
-        <div class="flex flex-col gap-4 min-w-0">
+        <div class="flex flex-col min-w-0 gap-4">
           
-          <!-- ================= TAB 1: ALAMAT PENGIRIMAN ================= -->
+          <!-- ================= TAB 1: ALAMAT PENGIRIMAN (TOKOPEDIA-STYLE) ================= -->
           <section v-if="activeTab === 'alamat'" class="flex flex-col gap-3">
             <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
-              <!-- Search Bar Alamat -->
+              <!-- Tokopedia-Style Instant Address Search Bar -->
               <div class="relative flex-1">
-                <div class="flex items-center w-full bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 shadow-2xs hover:border-slate-300 transition-all">
+                <div class="flex items-center w-full bg-white border border-slate-200/90 rounded-xl px-3.5 py-2 text-xs focus-within:border-[#103860] focus-within:ring-1 focus-within:ring-[#103860]/20 shadow-2xs transition-all">
                   <span class="material-symbols-outlined text-[18px] text-slate-400 mr-2 shrink-0 select-none">
                     search
                   </span>
                   <input
                     v-model="searchQuery"
                     type="text"
-                    placeholder="Cari jalan / kecamatan / kota tujuan..."
-                    class="w-full bg-transparent text-xs text-slate-800 placeholder:text-slate-400 outline-none border-none focus:ring-0 p-0 font-normal"
+                    placeholder="Cari jalan, penerima, patokan, kecamatan..."
+                    class="w-full p-0 text-xs font-normal bg-transparent border-none outline-none text-slate-800 placeholder:text-slate-400 focus:ring-0"
                   />
                   <button
                     v-if="searchQuery"
                     type="button"
                     @click="searchQuery = ''"
-                    class="text-slate-400 hover:text-slate-600 text-xs ml-1 shrink-0 cursor-pointer"
+                    class="ml-1 text-slate-400 hover:text-slate-600 cursor-pointer p-0.5 rounded-full hover:bg-slate-100 transition-colors shrink-0"
+                    title="Hapus pencarian"
                   >
                     <span class="material-symbols-outlined text-[16px]">close</span>
                   </button>
                 </div>
               </div>
 
-              <!-- Button Add Address -->
+              <!-- Button Add Address (Max 3 Limit) -->
               <button
                 type="button"
                 @click="openAddModal"
-                class="bg-slate-900 hover:bg-slate-800 text-white rounded-xl py-2.5 px-4 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs shrink-0"
+                :disabled="addresses.length >= 3"
+                class="rounded-xl py-2 px-4 text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-2xs shrink-0"
+                :class="[
+                  addresses.length >= 3
+                    ? 'bg-slate-100 text-slate-500 border border-slate-200 cursor-not-allowed opacity-80'
+                    : 'bg-[#103860] hover:bg-[#13446E] text-white cursor-pointer'
+                ]"
+                :title="addresses.length >= 3 ? 'Batas maksimal 3 alamat telah tercapai. Ubah atau hapus alamat untuk menambahkan yang baru.' : 'Tambah Alamat Baru'"
               >
-                <span class="material-symbols-outlined text-[18px]">add</span>
-                <span>Tambah Alamat Baru</span>
+                <span class="material-symbols-outlined text-[17px]">
+                  {{ addresses.length >= 3 ? 'lock' : 'add_location_alt' }}
+                </span>
+                <span>{{ addresses.length >= 3 ? 'Maksimal 3 Alamat' : 'Tambah Alamat Baru' }}</span>
               </button>
             </div>
 
             <!-- Empty State -->
             <div v-if="filteredAddresses.length === 0" class="w-full">
               <div
-                @click="openAddModal"
-                class="w-full bg-white border border-slate-200/90 rounded-xl p-10 flex flex-col items-center justify-center text-center shadow-2xs cursor-pointer hover:border-slate-300 hover:bg-slate-50/40 transition-all group"
+                class="flex flex-col items-center justify-center w-full p-10 text-center transition-all bg-white border border-slate-200/90 rounded-2xl shadow-2xs"
               >
-                <div class="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 mb-3 group-hover:scale-105 transition-transform">
-                  <span class="material-symbols-outlined text-[26px]">location_on</span>
+                <div class="flex items-center justify-center mb-3 rounded-full w-14 h-14 bg-slate-100 text-slate-400">
+                  <span class="material-symbols-outlined text-[26px]">location_off</span>
                 </div>
-                <h3 class="text-sm font-semibold text-slate-700 tracking-tight">
-                  {{ searchQuery ? 'Alamat tidak ditemukan' : 'Belum ada alamat tersimpan' }}
+                <h3 class="text-sm font-bold tracking-tight text-slate-800">
+                  {{ searchQuery ? 'Alamat Tidak Ditemukan' : 'Belum Ada Alamat Tersimpan' }}
                 </h3>
-                <p class="text-[11px] text-slate-400 mt-1">
-                  {{ searchQuery ? 'Ketuk untuk menambahkan alamat baru dengan kata kunci ini' : 'Ketuk untuk menambahkan alamat pengiriman baru' }}
+                <p class="text-[11px] text-slate-500 mt-1 max-w-sm">
+                  {{ searchQuery ? `Tidak ada alamat yang cocok dengan kata kunci "${searchQuery}".` : 'Tambahkan alamat pengiriman pertama Anda untuk memudahkan proses pesanan rantai dingin.' }}
                 </p>
+                <div class="flex items-center gap-2 mt-4">
+                  <button
+                    v-if="searchQuery"
+                    type="button"
+                    @click="searchQuery = ''"
+                    class="px-3.5 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 border border-slate-200 rounded-xl transition cursor-pointer"
+                  >
+                    Reset Pencarian
+                  </button>
+                  <button
+                    type="button"
+                    @click="openAddModal"
+                    class="px-3.5 py-1.5 text-xs font-bold text-white bg-[#103860] hover:bg-[#13446E] rounded-xl transition cursor-pointer shadow-xs flex items-center gap-1"
+                  >
+                    <span class="material-symbols-outlined text-[15px]">add</span>
+                    <span>Tambah Alamat Baru</span>
+                  </button>
+                </div>
               </div>
             </div>
 
-            <!-- Address Cards Grid -->
+            <!-- Address Cards Grid (Tokopedia-Style Clean Maritime) -->
             <div v-else class="grid grid-cols-1 gap-3">
               <div
                 v-for="addr in filteredAddresses"
                 :key="addr.id"
-                class="bg-white border rounded-xl p-4 shadow-2xs flex flex-col gap-2.5 transition-all"
-                :class="addr.isDefault ? 'border-slate-900 ring-1 ring-slate-900/10' : 'border-slate-200/90 hover:border-slate-300'"
+                class="bg-white border rounded-2xl p-4 sm:p-5 shadow-2xs flex flex-col gap-2.5 transition-all"
+                :class="addr.isDefault ? 'border-[#103860] ring-1 ring-[#103860]/20 bg-blue-50/10' : 'border-slate-200/90 hover:border-slate-300'"
               >
+                <!-- Card Header: Badges & Ubah/Hapus -->
                 <div class="flex items-start justify-between gap-3">
-                  <div class="flex items-start gap-2.5 min-w-0">
-                    <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 shrink-0 mt-0.5">
-                      <span class="material-symbols-outlined text-[18px]">location_on</span>
-                    </div>
-                    <div class="flex flex-col min-w-0">
-                      <div class="flex items-center gap-1.5 flex-wrap">
-                        <span class="text-xs font-bold text-slate-800">{{ addr.recipientName }}</span>
-                        <span class="px-2 py-0.5 rounded-md bg-slate-100 text-[10px] font-medium text-slate-600">
-                          {{ addr.label }}
-                        </span>
-                        <span
-                          v-if="addr.isDefault"
-                          class="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-semibold"
-                        >
-                          Utama
-                        </span>
-                      </div>
-                      <span class="text-[11px] text-slate-400 mt-0.5 font-mono">{{ addr.recipientPhone }}</span>
-                    </div>
+                  <div class="flex items-center gap-2 flex-wrap min-w-0">
+                    <span class="px-2 py-0.5 rounded-md bg-slate-100 text-[10px] font-bold text-slate-700 tracking-wide">
+                      {{ addr.label || 'Alamat' }}
+                    </span>
+                    <span
+                      v-if="addr.isDefault"
+                      class="px-2 py-0.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-800 text-[10px] font-bold inline-flex items-center gap-0.5"
+                    >
+                      <span class="material-symbols-outlined text-[11px] text-[#059669]">check</span>
+                      <span>Utama</span>
+                    </span>
+                    <span
+                      v-if="addr.isGpsVerified"
+                      class="px-1.5 py-0.5 rounded-md text-[10px] font-semibold text-emerald-700 bg-emerald-50/80 inline-flex items-center gap-0.5"
+                    >
+                      <span class="material-symbols-outlined text-[11px]">verified</span>
+                      <span>GPS</span>
+                    </span>
                   </div>
 
                   <div class="flex items-center gap-1 shrink-0">
                     <button
                       type="button"
                       @click="openEditModal(addr)"
-                      class="text-xs font-medium text-slate-600 hover:text-slate-900 px-2 py-1 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+                      class="px-2.5 py-1 text-xs font-semibold transition-colors rounded-lg cursor-pointer text-[#103860] hover:bg-blue-50"
                     >
                       Ubah
                     </button>
@@ -552,31 +524,46 @@ const handleLogout = () => {
                       v-if="!addr.isDefault"
                       type="button"
                       @click="deleteAddress(addr.id)"
-                      class="text-slate-400 hover:text-red-500 p-1 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
-                      title="Hapus"
+                      class="p-1 transition-colors rounded-lg cursor-pointer text-slate-400 hover:text-rose-600 hover:bg-rose-50"
+                      title="Hapus Alamat"
                     >
                       <span class="material-symbols-outlined text-[16px]">delete</span>
                     </button>
                   </div>
                 </div>
 
+                <!-- Recipient & Phone -->
+                <div class="text-xs text-slate-900 font-bold flex items-center gap-2">
+                  <span>{{ addr.recipientName }}</span>
+                  <span class="text-slate-400 font-normal">|</span>
+                  <span class="font-mono text-slate-600 font-normal">{{ addr.recipientPhone }}</span>
+                </div>
+
                 <!-- Street & Hierarchy -->
-                <div class="text-xs text-slate-700 leading-relaxed pl-10.5">
+                <div class="text-xs text-slate-600 leading-relaxed space-y-0.5">
                   <p class="font-medium text-slate-800">{{ addr.street }}</p>
-                  <p v-if="addr.desaNama || addr.kecamatanNama || addr.kabupatenNama" class="text-[11px] text-slate-500 mt-0.5">
-                    {{ [addr.desaNama, 'Kec. ' + (addr.kecamatanNama || ''), addr.kabupatenNama, addr.provinsiNama].filter(Boolean).join(', ') }}
+                  <p v-if="addr.desaNama || addr.kecamatanNama || addr.kabupatenNama" class="text-[11px] text-slate-500">
+                    {{ [addr.desaNama, addr.kecamatanNama ? 'Kec. ' + addr.kecamatanNama : null, addr.kabupatenNama, addr.provinsiNama].filter(Boolean).join(', ') }}
                   </p>
-                  <p v-if="addr.benchmark" class="text-[11px] text-slate-400 mt-0.5 italic">
+                  <p v-if="addr.benchmark" class="text-[11px] text-slate-400 italic">
                     Patokan: {{ addr.benchmark }}
                   </p>
                 </div>
 
                 <!-- Action: Set as Default -->
-                <div v-if="!addr.isDefault" class="pl-10.5 pt-2 border-t border-slate-100">
+                <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
+                  <div class="text-[11px] text-slate-500">
+                    <span v-if="addr.isDefault" class="text-emerald-700 font-semibold flex items-center gap-1">
+                      <span class="material-symbols-outlined text-[14px]">check_circle</span>
+                      Alamat Utama untuk Checkout
+                    </span>
+                  </div>
+
                   <button
+                    v-if="!addr.isDefault"
                     type="button"
                     @click="makeDefault(addr.id)"
-                    class="text-[11px] font-semibold text-slate-600 hover:text-slate-900 flex items-center gap-1 cursor-pointer"
+                    class="text-[11px] font-bold text-[#103860] hover:text-[#13446E] flex items-center gap-1 cursor-pointer px-2.5 py-1 rounded-lg hover:bg-blue-50 transition-colors"
                   >
                     <span class="material-symbols-outlined text-[14px]">check_circle</span>
                     <span>Jadikan Alamat Utama</span>
@@ -586,11 +573,113 @@ const handleLogout = () => {
             </div>
           </section>
 
-          <!-- ================= TAB 2: KEAMANAN & DATA PENGGUNA ================= -->
+          <!-- ================= TAB: RIWAYAT & STATUS PESANAN ================= -->
+          <section v-else-if="activeTab === 'pesanan'" class="flex flex-col gap-3">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+              <div>
+                <h3 class="text-xs font-bold text-slate-900">Pesanan Saya</h3>
+                <p class="text-[11px] text-slate-500">Pantau status pesanan, pengemasan, dan pengiriman.</p>
+              </div>
+              <button
+                type="button"
+                @click="orderStore.fetchMyOrders()"
+                class="px-2.5 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-[11px] font-semibold text-slate-600 flex items-center gap-1 cursor-pointer transition-colors"
+              >
+                <span class="material-symbols-outlined text-[14px]">refresh</span>
+                <span>Segarkan</span>
+              </button>
+            </div>
+
+            <!-- Loading State -->
+            <div v-if="isLoadingOrders" class="flex flex-col gap-3">
+              <div v-for="i in 2" :key="i" class="bg-white border border-slate-200/90 rounded-xl p-4 shadow-2xs flex flex-col gap-2.5 animate-pulse">
+                <div class="w-1/4 h-4 rounded bg-slate-200"></div>
+                <div class="w-1/3 h-3 rounded bg-slate-100"></div>
+                <div class="h-12 rounded bg-slate-100"></div>
+              </div>
+            </div>
+
+            <!-- Empty State -->
+            <div
+              v-else-if="orderStore.ordersHistory.length === 0"
+              class="flex flex-col items-center justify-center w-full p-10 text-center bg-white border border-slate-200/90 rounded-xl shadow-2xs"
+            >
+              <div class="flex items-center justify-center w-12 h-12 mb-3 rounded-full bg-slate-100 text-slate-400">
+                <span class="material-symbols-outlined text-[24px]">receipt_long</span>
+              </div>
+              <h4 class="mb-1 text-xs font-bold text-slate-800">Belum Ada Transaksi Pesanan</h4>
+              <p class="text-[11px] text-slate-500 max-w-xs mb-4">
+                Pilih ikan segar tangkapan Muncar langsung dari nelayan untuk pengiriman subuh besok.
+              </p>
+              <NuxtLink
+                to="/katalog"
+                class="px-4 py-2 bg-[#103860] hover:bg-[#13446E] text-white rounded-xl text-xs font-semibold shadow-xs transition-all"
+              >
+                Jelajahi Katalog Ikan
+              </NuxtLink>
+            </div>
+
+            <!-- Orders List -->
+            <div v-else class="flex flex-col gap-3">
+              <div
+                v-for="ord in orderStore.ordersHistory"
+                :key="ord.id"
+                class="flex flex-col gap-3 p-4 transition-colors bg-white border border-slate-200/90 rounded-xl shadow-2xs hover:border-slate-300"
+              >
+                <div class="flex items-center justify-between pb-2.5 border-b border-slate-100">
+                  <div class="flex flex-col">
+                    <span class="font-mono text-xs font-bold text-[#103860]">#{{ ord.id }}</span>
+                    <span class="text-[10px] text-slate-400">{{ ord.deliverySlot }}</span>
+                  </div>
+                  <span
+                    class="px-2 py-0.5 rounded-full text-[10px] font-bold border"
+                    :class="getStatusBadge(ord.status).class"
+                  >
+                    {{ getStatusBadge(ord.status).label }}
+                  </span>
+                </div>
+
+                <!-- Items list -->
+                <div class="flex flex-col text-xs divide-y divide-slate-100">
+                  <div
+                    v-for="(itm, itmIdx) in ord.items"
+                    :key="itmIdx"
+                    class="py-1.5 flex items-center justify-between text-slate-700"
+                  >
+                    <div class="flex flex-col">
+                      <span class="font-medium text-slate-800">{{ itm.productName }}</span>
+                      <span class="text-[10px] text-slate-400">
+                        {{ itm.grossWeight }} kg bruto (Est. netto {{ itm.estimatedNetWeight }} kg) - {{ itm.cutTypeTitle }}
+                      </span>
+                    </div>
+                    <span class="font-semibold text-slate-900 shrink-0">
+                      Rp {{ (itm.subtotal || 0).toLocaleString('id-ID') }}
+                    </span>
+                  </div>
+                </div>
+
+                <div class="flex items-center justify-between pt-2 text-xs border-t border-slate-100">
+                  <div class="flex items-center gap-1.5 text-slate-500 text-[11px]">
+                    <span class="material-symbols-outlined text-[15px] text-blue-600">ac_unit</span>
+                    <span class="truncate">{{ ord.packagingType === 'thermal_bag' ? 'Thermal Bag' : 'Styrofoam Box' }}</span>
+                  </div>
+                  <div class="flex items-center gap-2 shrink-0">
+                    <span class="font-bold text-slate-900">Rp {{ (ord.totalAmount || 0).toLocaleString('id-ID') }}</span>
+                    <NuxtLink
+                      :to="`/pesanan`"
+                      class="px-2.5 py-1.5 rounded-lg bg-[#103860] hover:bg-[#13446E] text-white font-semibold text-[11px] transition-colors"
+                    >
+                      Lacak
+                    </NuxtLink>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
           <section v-else-if="activeTab === 'keamanan'" class="flex flex-col gap-4">
             
             <!-- User Credentials & Contact Update -->
-            <div class="bg-white border border-slate-200/90 rounded-xl p-5 shadow-2xs flex flex-col gap-4">
+            <div class="flex flex-col gap-4 p-5 bg-white border border-slate-200/90 rounded-xl shadow-2xs">
               <div class="flex items-center gap-2 pb-2 border-b border-slate-100">
                 <span class="material-symbols-outlined text-[20px] text-[#103860]">person_pin</span>
                 <div>
@@ -602,7 +691,7 @@ const handleLogout = () => {
               <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                 <div>
                   <label class="block text-[11px] font-medium text-slate-500 mb-1">Username Akun</label>
-                  <div class="flex items-center gap-2 px-3 py-2 text-xs bg-slate-100 border border-slate-200 rounded-lg text-slate-600 font-mono">
+                  <div class="flex items-center gap-2 px-3 py-2 font-mono text-xs border rounded-lg bg-slate-100 border-slate-200 text-slate-600">
                     <span>@{{ usernameComputed }}</span>
                     <span class="text-[10px] text-slate-400 ml-auto">Tetap</span>
                   </div>
@@ -614,7 +703,7 @@ const handleLogout = () => {
                     v-model="phoneInput"
                     type="tel"
                     placeholder="0812-3456-7890"
-                    class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg outline-none focus:bg-white focus:border-slate-900 transition-all font-mono"
+                    class="w-full px-3 py-2 font-mono text-xs transition-all border rounded-lg outline-none bg-slate-50 border-slate-200 focus:bg-white focus:border-slate-900"
                   />
                 </div>
 
@@ -624,7 +713,7 @@ const handleLogout = () => {
                     v-model="emailInput"
                     type="email"
                     placeholder="nama@email.com"
-                    class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg outline-none focus:bg-white focus:border-slate-900 transition-all"
+                    class="w-full px-3 py-2 text-xs transition-all border rounded-lg outline-none bg-slate-50 border-slate-200 focus:bg-white focus:border-slate-900"
                   />
                 </div>
               </div>
@@ -649,14 +738,14 @@ const handleLogout = () => {
                 </div>
               </div>
 
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
                 <div class="md:col-span-2">
                   <label class="block text-[11px] font-medium text-slate-500 mb-1">Kata Sandi Saat Ini</label>
                   <input
                     v-model="currentPasswordInput"
                     type="password"
                     placeholder="••••••••"
-                    class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg outline-none focus:bg-white focus:border-slate-900 transition-all"
+                    class="w-full px-3 py-2 text-xs transition-all border rounded-lg outline-none bg-slate-50 border-slate-200 focus:bg-white focus:border-slate-900"
                   />
                 </div>
                 <div>
@@ -665,7 +754,7 @@ const handleLogout = () => {
                     v-model="newPasswordInput"
                     type="password"
                     placeholder="Minimal 6 karakter"
-                    class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg outline-none focus:bg-white focus:border-slate-900 transition-all"
+                    class="w-full px-3 py-2 text-xs transition-all border rounded-lg outline-none bg-slate-50 border-slate-200 focus:bg-white focus:border-slate-900"
                   />
                 </div>
                 <div>
@@ -674,7 +763,7 @@ const handleLogout = () => {
                     v-model="confirmPasswordInput"
                     type="password"
                     placeholder="Ulangi kata sandi baru"
-                    class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg outline-none focus:bg-white focus:border-slate-900 transition-all"
+                    class="w-full px-3 py-2 text-xs transition-all border rounded-lg outline-none bg-slate-50 border-slate-200 focus:bg-white focus:border-slate-900"
                   />
                 </div>
               </div>
@@ -708,8 +797,8 @@ const handleLogout = () => {
             </div>
 
             <!-- Empty Wishlist State -->
-            <div v-if="wishlistStore.items.length === 0" class="w-full bg-white border border-slate-200/90 rounded-xl p-10 flex flex-col items-center justify-center text-center shadow-2xs">
-              <div class="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-3">
+            <div v-if="wishlistStore.items.length === 0" class="flex flex-col items-center justify-center w-full p-10 text-center bg-white border border-slate-200/90 rounded-xl shadow-2xs">
+              <div class="flex items-center justify-center mb-3 rounded-full w-14 h-14 bg-slate-100 text-slate-400">
                 <span class="material-symbols-outlined text-[26px]">favorite</span>
               </div>
               <h4 class="text-xs font-bold text-slate-800">Wishlist Anda Masih Kosong</h4>
@@ -718,24 +807,28 @@ const handleLogout = () => {
               </p>
               <NuxtLink
                 to="/katalog"
-                class="mt-4 px-4 py-2 rounded-lg bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition-colors"
+                class="px-4 py-2 mt-4 text-xs font-semibold text-white transition-colors rounded-lg bg-slate-900 hover:bg-slate-800"
               >
                 Jelajahi Katalog Segar
               </NuxtLink>
             </div>
 
             <!-- Wishlist Product Cards -->
-            <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div v-else class="grid grid-cols-1 gap-3 md:grid-cols-2">
               <div
                 v-for="product in wishlistStore.items"
                 :key="product.id"
                 class="bg-white border border-slate-200/90 rounded-xl p-3.5 shadow-2xs flex items-center justify-between gap-3 hover:border-slate-300 transition-colors"
               >
-                <div class="flex items-center gap-3 min-w-0">
-                  <img
+                <div class="flex items-center min-w-0 gap-3">
+                  <NuxtImg
                     :src="product.images.hero"
                     :alt="product.name"
-                    class="w-14 h-14 rounded-lg object-cover bg-slate-100 shrink-0"
+                    class="object-cover rounded-lg w-14 h-14 bg-slate-100 shrink-0"
+                    width="56"
+                    height="56"
+                    format="webp"
+                    loading="lazy"
                   />
                   <div class="flex flex-col min-w-0">
                     <NuxtLink
@@ -744,9 +837,9 @@ const handleLogout = () => {
                     >
                       {{ product.name }}
                     </NuxtLink>
-                    <span class="text-[10px] text-slate-400 italic truncate">{{ product.scientificName }}</span>
+                    <span class="text-[10px] text-slate-500 font-medium truncate">{{ product.fishType || 'Ikan Laut Segar' }}</span>
                     <div class="text-[10px] text-slate-500 mt-0.5 font-medium text-slate-700">{{ product.soldCount || 0 }} terjual</div>
-                    <span class="text-xs font-semibold text-slate-900 mt-1">
+                    <span class="mt-1 text-xs font-semibold text-slate-900">
                       Rp {{ product.pricePerKg.toLocaleString('id-ID') }}
                       <span class="text-[10px] text-slate-400 font-normal">/ {{ product.unit }}</span>
                     </span>
@@ -756,7 +849,7 @@ const handleLogout = () => {
                 <div class="flex items-center gap-1.5 shrink-0">
                   <button
                     type="button"
-                    @click="addWishlistToCart(product.id)"
+                    @click="addWishlistToCart(product)"
                     class="px-2.5 py-1.5 rounded-lg bg-slate-900 text-white text-[11px] font-semibold hover:bg-slate-800 transition-all cursor-pointer flex items-center gap-1"
                     title="Tambah ke Keranjang"
                   >
@@ -777,12 +870,12 @@ const handleLogout = () => {
           </section>
 
           <!-- Quick Links (Pesanan & CS WhatsApp) -->
-          <div class="bg-white border border-slate-200/90 rounded-xl divide-y divide-slate-100 shadow-2xs text-xs overflow-hidden">
+          <div class="overflow-hidden text-xs bg-white border divide-y border-slate-200/90 rounded-xl divide-slate-100 shadow-2xs">
             <NuxtLink
               to="/pesanan"
               class="p-3.5 flex items-center justify-between hover:bg-slate-50 transition-colors"
             >
-              <div class="flex items-center gap-3 text-slate-700 font-medium">
+              <div class="flex items-center gap-3 font-medium text-slate-700">
                 <span class="material-symbols-outlined text-[18px] text-slate-400">receipt_long</span>
                 <span>Riwayat Pesanan & Resi Pengiriman</span>
               </div>
@@ -798,7 +891,7 @@ const handleLogout = () => {
               rel="noopener noreferrer"
               class="p-3.5 flex items-center justify-between hover:bg-slate-50 transition-colors"
             >
-              <div class="flex items-center gap-3 text-slate-700 font-medium">
+              <div class="flex items-center gap-3 font-medium text-slate-700">
                 <span class="material-symbols-outlined text-[18px] text-emerald-600">support_agent</span>
                 <span>Bantuan Pelanggan (WhatsApp Concierge)</span>
               </div>
@@ -809,209 +902,18 @@ const handleLogout = () => {
         </div>
       </div>
 
-      <!-- ================= MODAL TAMBAH & EDIT ALAMAT DENGAN LIVE KECAMATAN SEARCH ================= -->
-      <div
-        v-if="isModalOpen"
-        class="fixed inset-0 z-50 bg-black/40 backdrop-blur-2xs flex items-center justify-center p-4 overflow-y-auto"
-      >
-        <div class="bg-white rounded-xl max-w-sm md:max-w-2xl w-full p-5 md:p-6 flex flex-col gap-4 shadow-xl border border-slate-100 animate-in fade-in zoom-in duration-150 my-auto">
-          <div class="flex items-center justify-between pb-1 border-b border-slate-100">
-            <h3 class="text-sm md:text-base font-bold text-slate-900">
-              {{ editingId ? 'Ubah Alamat Pengiriman' : 'Tambah Alamat Baru' }}
-            </h3>
-            <button
-              type="button"
-              @click="closeModal"
-              class="text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
-            >
-              <span class="material-symbols-outlined text-[18px]">close</span>
-            </button>
-          </div>
-
-          <div class="flex flex-col gap-3.5">
-            <!-- Label pilihan -->
-            <div class="flex items-center gap-2">
-              <button
-                v-for="lbl in ['Rumah', 'Kantor', 'Resto / Dapur']"
-                :key="lbl"
-                type="button"
-                @click="formLabel = lbl"
-                class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer"
-                :class="formLabel === lbl ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
-              >
-                {{ lbl }}
-              </button>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <label class="block text-[11px] font-medium text-slate-500 mb-1">Nama Penerima</label>
-                <input
-                  v-model="formName"
-                  type="text"
-                  placeholder="Contoh: Ibu Ratna Dewi"
-                  class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg outline-none focus:bg-white focus:border-slate-900 transition-all"
-                />
-              </div>
-
-              <div>
-                <label class="block text-[11px] font-medium text-slate-500 mb-1">Nomor WhatsApp</label>
-                <input
-                  v-model="formPhone"
-                  type="tel"
-                  placeholder="Contoh: 0812-3456-7890"
-                  class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg outline-none focus:bg-white focus:border-slate-900 transition-all"
-                />
-              </div>
-            </div>
-
-            <!-- Regional Selection with Live Kecamatan Combobox -->
-            <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 flex flex-col gap-3">
-              <div class="flex items-center justify-between">
-                <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                  Wilayah Tujuan (Live Search Kecamatan)
-                </span>
-                <span class="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md font-medium border border-emerald-200/50">
-                  Cepat & Presisi
-                </span>
-              </div>
-
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-                <!-- 1. Provinsi -->
-                <div>
-                  <label class="block text-[10px] font-medium text-slate-500 mb-0.5">Provinsi</label>
-                  <select
-                    v-model="selectedProv"
-                    class="w-full px-2.5 py-2 text-xs bg-white border border-slate-200 rounded-lg outline-none focus:border-slate-900 cursor-pointer"
-                  >
-                    <option value="" disabled>Pilih Provinsi</option>
-                    <option v-for="p in provinceList" :key="p.kode" :value="p.kode">
-                      {{ p.nama }}
-                    </option>
-                  </select>
-                </div>
-
-                <!-- 2. Kabupaten / Kota -->
-                <div>
-                  <label class="block text-[10px] font-medium text-slate-500 mb-0.5">Kabupaten / Kota</label>
-                  <select
-                    v-model="selectedKab"
-                    :disabled="!selectedProv"
-                    class="w-full px-2.5 py-2 text-xs bg-white border border-slate-200 rounded-lg outline-none focus:border-slate-900 cursor-pointer disabled:bg-slate-100 disabled:text-slate-400"
-                  >
-                    <option value="" disabled>Pilih Kab/Kota</option>
-                    <option v-for="c in cityList" :key="c.kode" :value="c.kode">
-                      {{ c.nama }}
-                    </option>
-                  </select>
-                </div>
-
-                <!-- 3. Kecamatan : LIVE SEARCH COMBOBOX -->
-                <div class="relative md:col-span-2">
-                  <label class="block text-[10px] font-medium text-slate-500 mb-0.5">
-                    Kecamatan (Ketik untuk Live Search)
-                  </label>
-                  <div class="relative">
-                    <input
-                      v-model="kecamatanSearchInput"
-                      type="text"
-                      placeholder="Ketik nama kecamatan (contoh: Muncar, Genteng, Wonokromo)..."
-                      class="w-full pl-8 pr-8 py-2 text-xs bg-white border border-slate-200 rounded-lg outline-none focus:border-slate-900 transition-all font-medium"
-                      @focus="isKecDropdownOpen = true"
-                    />
-                    <span class="material-symbols-outlined text-[16px] text-slate-400 absolute left-2.5 top-2.5 pointer-events-none">
-                      search
-                    </span>
-                    <button
-                      v-if="kecamatanSearchInput"
-                      type="button"
-                      @click="kecamatanSearchInput = ''; selectedKec = ''"
-                      class="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 cursor-pointer"
-                    >
-                      <span class="material-symbols-outlined text-[16px]">cancel</span>
-                    </button>
-                  </div>
-
-                  <!-- Live Dropdown Results -->
-                  <div
-                    v-if="isKecDropdownOpen && liveKecamatanResults.length > 0"
-                    class="absolute z-20 left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-lg divide-y divide-slate-100"
-                  >
-                    <button
-                      v-for="k in liveKecamatanResults"
-                      :key="k.kode"
-                      type="button"
-                      @click="selectKecamatan(k)"
-                      class="w-full px-3 py-2 text-left text-xs hover:bg-slate-50 flex items-center justify-between cursor-pointer transition-colors"
-                      :class="selectedKec === k.kode ? 'bg-[#103860]/8 text-[#103860] font-bold' : 'text-slate-700'"
-                    >
-                      <span class="truncate">{{ k.nama }}</span>
-                      <span class="text-[10px] text-slate-400 font-mono ml-2 shrink-0">Kode {{ k.kode }}</span>
-                    </button>
-                  </div>
-                </div>
-
-                <!-- 4. Desa / Kelurahan -->
-                <div class="md:col-span-2">
-                  <label class="block text-[10px] font-medium text-slate-500 mb-0.5">Desa / Kelurahan</label>
-                  <select
-                    v-model="selectedDesa"
-                    :disabled="!selectedKec"
-                    class="w-full px-2.5 py-2 text-xs bg-white border border-slate-200 rounded-lg outline-none focus:border-slate-900 cursor-pointer disabled:bg-slate-100 disabled:text-slate-400"
-                  >
-                    <option value="" disabled>{{ selectedKec ? 'Pilih Desa/Kelurahan' : 'Pilih Kecamatan terlebih dahulu' }}</option>
-                    <option v-for="v in villageList" :key="v.kode" :value="v.kode">
-                      {{ v.nama }}
-                    </option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <label class="block text-[11px] font-medium text-slate-500 mb-1">Alamat Jalan, RT/RW, No. Rumah</label>
-              <textarea
-                v-model="formStreet"
-                rows="2"
-                placeholder="Contoh: Jl. Basuki Rahmat No. 42 RT 02 / RW 01"
-                class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg outline-none focus:bg-white focus:border-slate-900 transition-all resize-none"
-              ></textarea>
-            </div>
-
-            <div>
-              <label class="block text-[11px] font-medium text-slate-500 mb-1">Patokan Lokasi (Opsional)</label>
-              <input
-                v-model="formBenchmark"
-                type="text"
-                placeholder="Contoh: Pagar hitam seberang Bank BCA"
-                class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg outline-none focus:bg-white focus:border-slate-900 transition-all"
-              />
-            </div>
-          </div>
-
-          <div class="flex items-center gap-2 pt-2">
-            <button
-              type="button"
-              @click="saveAddress"
-              class="flex-1 py-2.5 rounded-lg bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition-all cursor-pointer shadow-xs"
-            >
-              Simpan Alamat
-            </button>
-            <button
-              type="button"
-              @click="closeModal"
-              class="px-4 py-2.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-100 transition-all cursor-pointer"
-            >
-              Batal
-            </button>
-          </div>
-        </div>
-      </div>
+      <!-- ================= MODAL TAMBAH & EDIT ALAMAT (LEAFLET GPS MAP & WILAYAH API) ================= -->
+      <AddressFormModal
+        :is-open="isAddressFormOpen"
+        :initial-data="editingAddress"
+        @close="isAddressFormOpen = false"
+        @saved="async () => { triggerToast('Alamat berhasil disimpan'); await authStore.fetchAddresses(); }"
+      />
 
       <!-- Toast Notification -->
       <div
         v-if="showToast"
-        class="fixed bottom-20 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs px-4 py-2 rounded-lg shadow-lg z-50 transition-all"
+        class="fixed z-50 px-4 py-2 text-xs text-white transition-all -translate-x-1/2 rounded-lg shadow-lg bottom-20 left-1/2 bg-slate-900"
       >
         {{ toastMessage }}
       </div>

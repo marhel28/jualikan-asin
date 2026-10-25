@@ -52,10 +52,13 @@ const handleSimulatePayment = () => {
 
       <!-- QR Code Image -->
       <div class="p-3 border border-slate-200 rounded-xl bg-white shadow-xs">
-        <img 
+        <NuxtImg 
           :src="orderStore.currentOrder?.qrisImageUrl || 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=LAUT_BERKAH_ABADI'" 
           alt="Kode QRIS Dinamis Laut Berkah Abadi" 
           class="w-52 h-52 object-contain rounded-lg"
+          width="208"
+          height="208"
+          loading="eager"
         />
       </div>
 

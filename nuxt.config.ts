@@ -10,13 +10,43 @@ export default defineNuxtConfig({
   modules: [
     '@nuxtjs/tailwindcss',
     '@pinia/nuxt',
+    '@nuxt/image',
   ],
 
-  // Hybrid rendering: SWR for public catalog, SPA for transactional flows
+  image: {
+    domains: [
+      'api-muncar.ammarabufadhel.my.id',
+      'cdn.ammarabufadhel.my.id',
+      'images.unsplash.com',
+      'unsplash.com',
+      'localhost',
+      '127.0.0.1',
+      'api.qrserver.com',
+    ],
+    format: ['webp', 'avif'],
+    quality: 85,
+  },
+
+  runtimeConfig: {
+    public: {
+      apiBase: process.env.NUXT_PUBLIC_API_BASE || 'https://api-muncar.ammarabufadhel.my.id',
+      siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'https://lautberkahabadi.com',
+    },
+  },
+
+  $production: {
+    routeRules: {
+      '/': { swr: 300 },
+      '/katalog': { swr: 300 },
+      '/produk/**': { swr: 600 },
+    },
+  },
+
+  // Hybrid rendering: SPA for transactional flows, dynamic SSR in dev, SWR in production
   routeRules: {
-    '/': { swr: 300 },
-    '/katalog': { swr: 300 },
-    '/produk/**': { swr: 600 },
+    '/login': { redirect: '/auth?mode=login' },
+    '/signup': { redirect: '/auth?mode=register' },
+    '/daftar': { redirect: '/auth?mode=register' },
     '/auth': { ssr: false },
     '/keranjang': { ssr: false },
     '/checkout': { ssr: false },
@@ -45,6 +75,7 @@ export default defineNuxtConfig({
           content: 'Distribusi hasil laut segar Muncar, Banyuwangi dengan garansi rantai dingin presisi, kalkulasi rendemen transparan, dan pengiriman armada dingin subuh.',
         },
         { name: 'theme-color', content: '#103860' },
+        { name: 'robots', content: 'index, follow' },
         // OpenGraph
         { property: 'og:site_name', content: 'Laut Berkah Abadi' },
         { property: 'og:type', content: 'website' },
@@ -53,10 +84,18 @@ export default defineNuxtConfig({
           property: 'og:description',
           content: 'Pesan ikan segar Muncar dengan standar rantai dingin -20°C ke dapur Anda. Garansi kesegaran 100%.',
         },
-        { property: 'og:image', content: '/brand/logo.png' },
+        { property: 'og:image', content: '/brand/logo.webp' },
+        // Twitter Card
+        { name: 'twitter:card', content: 'summary_large_image' },
+        { name: 'twitter:title', content: 'Laut Berkah Abadi | D2C Cold Chain Seafood Muncar' },
+        {
+          name: 'twitter:description',
+          content: 'Pesan ikan segar Muncar dengan standar rantai dingin -20°C ke dapur Anda. Garansi kesegaran 100%.',
+        },
+        { name: 'twitter:image', content: '/brand/logo.webp' },
       ],
       link: [
-        { rel: 'icon', type: 'image/png', href: '/brand/logo.png' },
+        { rel: 'icon', type: 'image/webp', href: '/brand/logo.webp' },
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
         { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
         {
@@ -80,4 +119,3 @@ export default defineNuxtConfig({
     typeCheck: false,
   },
 })
-

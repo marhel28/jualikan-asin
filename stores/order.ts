@@ -63,45 +63,36 @@ export interface OrderState {
 const DEFAULT_STAGES: TrackingStage[] = [
   {
     stageIndex: 1,
-    key: 'confirmed',
-    title: 'Pesanan Terkonfirmasi',
-    description: '16:40 WIB - Pembayaran diterima sistem',
-    timestamp: '16:40 WIB',
+    key: 'created',
+    title: 'Pesanan Dibuat',
+    description: 'Pesanan tercatat dan pembayaran terverifikasi',
+    timestamp: 'Tercatat',
     isCompleted: true,
     isActive: false
   },
   {
     stageIndex: 2,
-    key: 'cold_room',
-    title: 'Ikan Disiapkan di Cold Room Muncar',
-    description: '16:45 WIB - Suhu terkontrol -18 derajat Celsius',
-    timestamp: '16:45 WIB',
-    isCompleted: true,
-    isActive: false
-  },
-  {
-    stageIndex: 3,
-    key: 'butchering',
-    title: 'Proses Bersih & Potong di Meja Preparasi',
-    description: 'Sedang Berjalan (Estimasi selesai 5 menit)',
-    timestamp: null,
+    key: 'prep',
+    title: 'Sedang Disiapkan',
+    description: 'Ikan segar disiangi dan dikemas rantai dingin',
+    timestamp: 'Proses',
     isCompleted: false,
     isActive: true
   },
   {
-    stageIndex: 4,
-    key: 'cold_packed',
-    title: 'Kemas Rantai Dingin Thermal Bag & Ice Gel',
-    description: 'Menunggu proses pemotongan selesai',
+    stageIndex: 3,
+    key: 'delivery',
+    title: 'Dalam Pengiriman',
+    description: 'Kurir dalam perjalanan menuju alamat tujuan',
     timestamp: null,
     isCompleted: false,
     isActive: false
   },
   {
-    stageIndex: 5,
-    key: 'out_for_delivery',
-    title: 'Pengantaran Kurir Box Chilled ke Rumah Anda',
-    description: 'Estimasi tiba pukul 17:45 WIB',
+    stageIndex: 4,
+    key: 'delivered',
+    title: 'Pesanan Tiba',
+    description: 'Menunggu paket diterima di alamat tujuan',
     timestamp: null,
     isCompleted: false,
     isActive: false
@@ -111,7 +102,7 @@ const DEFAULT_STAGES: TrackingStage[] = [
 export const useOrderStore = defineStore('order', {
   state: (): OrderState => ({
     currentOrder: {
-      id: 'LBA-202610-098',
+      id: 'LBA-20261022-15B9',
       createdAt: new Date().toISOString(),
       status: 'CONFIRMED',
       items: [
@@ -120,7 +111,7 @@ export const useOrderStore = defineStore('order', {
           productId: 'tenggiri-papan',
           name: 'Ikan Tenggiri Papan Segar',
           slug: 'ikan-tenggiri-papan-segar',
-          imageUrl: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=600&q=80',
+          imageUrl: 'https://cdn.ammarabufadhel.my.id/products/asset-1544551763-ced7aa4f.webp',
           pricePerKg: 92000,
           quantityKg: 2,
           cutType: 'utuh_bersih',
@@ -137,7 +128,7 @@ export const useOrderStore = defineStore('order', {
           productId: 'kerapu-macan',
           name: 'Ikan Kerapu Macan Muncar',
           slug: 'ikan-kerapu-macan-muncar',
-          imageUrl: 'https://images.unsplash.com/photo-1524704654690-b56c05c78a00?auto=format&fit=crop&w=600&q=80',
+          imageUrl: 'https://cdn.ammarabufadhel.my.id/products/asset-1524704654690-8ae8d959.webp',
           pricePerKg: 85000,
           quantityKg: 1,
           cutType: 'fillet_tanpa_kulit',
@@ -155,7 +146,7 @@ export const useOrderStore = defineStore('order', {
       courierType: 'lba_cold_courier',
       courierFee: 12000,
       deliverySlot: 'subuh',
-      deliverySlotLabel: 'Slot Pagi Subuh: 06:00 - 08:30 WIB (Terbaik)',
+      deliverySlotLabel: 'Slot Pagi: 06:00 - 08:30 WIB (Terbaik)',
       kitchenNotes: 'Potong bersih, pisahkan kepala dan tulang untuk kuah sup',
       address: {
         recipientName: 'Ibu Ratna Dewi',
@@ -172,8 +163,8 @@ export const useOrderStore = defineStore('order', {
       qrisPayloadString: '00020101021226670016ID.CO.LBA.WWW011893600999000000000152045812530336054072855005802ID5919LAUT BERKAH ABADI6010BANYUWANGI61056841162070703A016304C92A',
       qrisImageUrl: 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=00020101021226670016ID.CO.LBA.WWW011893600999000000000152045812530336054072855005802ID5919LAUT%20BERKAH%20ABADI6010BANYUWANGI61056841162070703A016304C92A',
       virtualAccountNumber: '8801981234567890',
-      scaleSlipImageUrl: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=600&q=80',
-      qualityCertificateUrl: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=600&q=80',
+      scaleSlipImageUrl: 'https://cdn.ammarabufadhel.my.id/products/asset-1544551763-ced7aa4f.webp',
+      qualityCertificateUrl: 'https://cdn.ammarabufadhel.my.id/products/asset-1519708227418-ea35d7d8.webp',
       scaleWeightGrossKg: 4.0,
       trackingStages: JSON.parse(JSON.stringify(DEFAULT_STAGES))
     },
@@ -199,12 +190,37 @@ export const useOrderStore = defineStore('order', {
   },
 
   actions: {
-    createOrder() {
+    async createOrder() {
       const cartStore = useCartStore()
       const checkoutStore = useCheckoutStore()
 
-      const orderNumber = `LBA-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}-${Math.floor(100 + Math.random() * 900)}`
+      let orderNumber = `LBA-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}-${Math.floor(100 + Math.random() * 900)}`
       const total = checkoutStore.totalBill
+
+      // Attempt to generate real order in backend first if logged in
+      if (typeof window !== 'undefined') {
+        try {
+          const api = useApi()
+          const backendPayload = {
+            items: cartStore.items.map(it => ({
+              product_id: it.productId,
+              cut_type: it.cutType,
+              gross_weight: it.quantityKg,
+              estimated_net_weight: it.estimatedNetWeightKg,
+              soup_bones_separated: it.separateSoupBones || false,
+            })),
+            delivery_slot: checkoutStore.slotDetails.title,
+            packaging_type: cartStore.packagingType,
+            shipping_courier: checkoutStore.selectedCourier,
+            shipping_address: checkoutStore.address,
+            payment_method: 'qris',
+          }
+          const res = await api.post<any>('/orders', backendPayload)
+          if (res && (res.orderNumber || res.order_number || res.id)) {
+            orderNumber = res.orderNumber || res.order_number || res.id
+          }
+        } catch {}
+      }
 
       const newOrder: Order = {
         id: orderNumber,
@@ -225,8 +241,8 @@ export const useOrderStore = defineStore('order', {
         qrisPayloadString: `00020101021226670016ID.CO.LBA.WWW0118936009990000000001520458125303360540${total}5802ID5919LAUT BERKAH ABADI6010BANYUWANGI61056841162070703A016304C92A`,
         qrisImageUrl: `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=00020101021226670016ID.CO.LBA.WWW0118936009990000000001520458125303360540${total}5802ID5919LAUT%20BERKAH%20ABADI6010BANYUWANGI61056841162070703A016304C92A`,
         virtualAccountNumber: `8801${Math.floor(100000000000 + Math.random() * 900000000000)}`,
-        scaleSlipImageUrl: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=600&q=80',
-        qualityCertificateUrl: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=600&q=80',
+        scaleSlipImageUrl: '',
+        qualityCertificateUrl: '',
         scaleWeightGrossKg: cartStore.totalGrossWeightKg,
         trackingStages: JSON.parse(JSON.stringify(DEFAULT_STAGES))
       }
@@ -271,6 +287,15 @@ export const useOrderStore = defineStore('order', {
         return
       }
       this.isLoading = true
+
+      // Sync with backend if available
+      if (typeof window !== 'undefined') {
+        try {
+          const api = useApi()
+          api.post(`/orders/${this.currentOrder.id}/simulate-payment`).catch(() => {})
+        } catch {}
+      }
+
       setTimeout(() => {
         this.isLoading = false
         if (this.currentOrder && this.currentOrder.status === 'PENDING_PAYMENT') {
@@ -287,6 +312,115 @@ export const useOrderStore = defineStore('order', {
           this.currentOrder.trackingStages[2].isActive = true
         }
       }, 500)
+    },
+
+    async fetchOrderStatus(orderId: string) {
+      if (typeof window === 'undefined') return null
+      try {
+        const api = useApi()
+        const data = await api.get<any>(`/orders/track/${orderId}`)
+        if (data && (data.id || data.order_number)) {
+          const ordNum = data.order_number || data.id
+          const status = data.cold_chain_status || 'PENDING_PAYMENT'
+
+          // Build dynamic 4 simple tracking stages based on current backend status
+          const stages: TrackingStage[] = [
+            {
+              stageIndex: 1,
+              key: 'created',
+              title: 'Pesanan Dibuat',
+              description: data.payment_status === 'PAID' || status !== 'PENDING_PAYMENT'
+                ? 'Pesanan tercatat dan pembayaran terverifikasi'
+                : 'Menunggu penyelesaian pembayaran',
+              timestamp: data.created_at ? new Date(data.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB' : 'Tercatat',
+              isCompleted: data.payment_status === 'PAID' || status !== 'PENDING_PAYMENT',
+              isActive: status === 'PENDING_PAYMENT'
+            },
+            {
+              stageIndex: 2,
+              key: 'prep',
+              title: 'Sedang Disiapkan',
+              description: ['COLD_PACKED', 'OUT_FOR_DELIVERY', 'DELIVERED'].includes(status)
+                ? 'Ikan segar telah disiangi dan dikemas rantai dingin'
+                : (['CONFIRMED', 'COLD_ROOM_INTAKE', 'BUTCHERING_PREP'].includes(status)
+                    ? 'Ikan sedang disiangi dan dikemas rapi'
+                    : 'Menunggu giliran penyiapan'),
+              timestamp: ['COLD_PACKED', 'OUT_FOR_DELIVERY', 'DELIVERED'].includes(status) ? 'Selesai Dikemas' : null,
+              isCompleted: ['OUT_FOR_DELIVERY', 'DELIVERED'].includes(status),
+              isActive: ['CONFIRMED', 'COLD_ROOM_INTAKE', 'BUTCHERING_PREP', 'COLD_PACKED'].includes(status)
+            },
+            {
+              stageIndex: 3,
+              key: 'delivery',
+              title: 'Dalam Pengiriman',
+              description: status === 'OUT_FOR_DELIVERY'
+                ? (data.courier_notes ? data.courier_notes : 'Kurir LBA sedang mengantar paket ke alamat tujuan')
+                : (status === 'DELIVERED' ? 'Kurir telah tiba di alamat tujuan' : 'Menunggu kurir berangkat'),
+              timestamp: status === 'OUT_FOR_DELIVERY' || status === 'DELIVERED' ? 'Dalam Perjalanan' : null,
+              isCompleted: status === 'DELIVERED',
+              isActive: status === 'OUT_FOR_DELIVERY'
+            },
+            {
+              stageIndex: 4,
+              key: 'delivered',
+              title: 'Pesanan Tiba',
+              description: status === 'DELIVERED'
+                ? (data.received_by ? `Paket telah diterima oleh ${data.received_by}` : 'Paket hasil laut telah diterima dengan baik')
+                : 'Menunggu paket diserahkan ke penerima',
+              timestamp: status === 'DELIVERED' ? 'Terkirim' : null,
+              isCompleted: status === 'DELIVERED',
+              isActive: status === 'DELIVERED'
+            }
+          ]
+
+          const mappedItems = (data.items || []).map((it: any, i: number) => ({
+            id: `item-${i}`,
+            productId: it.product_name,
+            name: it.product_name,
+            price: Number(it.price_per_kg) || 0,
+            quantity: Number(it.gross_weight) || 1,
+            selectedCut: it.cut_type || 'utuh_bersih',
+            grossWeightKg: Number(it.gross_weight) || 1,
+            netWeightKg: Number(it.estimated_net_weight) || Number(it.gross_weight) || 1,
+            soupBonesSeparated: false,
+            imageUrl: it.image_url || it.imageUrl || 'https://cdn.ammarabufadhel.my.id/products/asset-1544551763-ced7aa4f.webp',
+            subtotal: Number(it.subtotal) || ((Number(it.price_per_kg) || 0) * (Number(it.gross_weight) || 1))
+          }))
+
+          this.currentOrder = {
+            id: ordNum,
+            createdAt: data.created_at || new Date().toISOString(),
+            status: status,
+            items: mappedItems,
+            packagingType: data.packaging_type || 'thermal_bag',
+            packagingFee: Number(data.packaging_fee || 0),
+            courierType: data.shipping_courier || 'kurir_lba',
+            courierFee: Number(data.shipping_fee || 0),
+            deliverySlot: 'subuh_06_08',
+            deliverySlotLabel: data.delivery_slot || 'Slot Pagi (06:00 - 08:30 WIB)',
+            kitchenNotes: data.courier_notes ? `Catatan: ${data.courier_notes}` : '',
+            address: {
+              recipientName: data.received_by || 'Pelanggan LBA',
+              phoneNumber: '',
+              streetAddress: '',
+              district: 'Banyuwangi',
+              city: 'Banyuwangi'
+            },
+            productsSubtotal: Number(data.total_amount || 0),
+            totalAmount: Number(data.total_amount || 0),
+            paymentMethod: (data.payment_method || 'qris') as any,
+            qrisPayloadString: '',
+            qrisImageUrl: '',
+            scaleSlipImageUrl: data.scale_slip_url || '',
+            qualityCertificateUrl: '',
+            scaleWeightGrossKg: Number(data.scale_weight_gross_kg || 0),
+            trackingStages: stages
+          }
+
+          return data
+        }
+      } catch {}
+      return null
     },
 
     advanceTrackingStage() {
@@ -313,6 +447,126 @@ export const useOrderStore = defineStore('order', {
         stages[activeIndex].isCompleted = true
         this.currentOrder.status = 'DELIVERED'
       }
+    },
+
+    async fetchMyOrders() {
+      if (typeof window === 'undefined') return []
+      this.isLoading = true
+      this.error = null
+      try {
+        const api = useApi()
+        const data = await api.get<any[]>('/orders')
+        if (data && Array.isArray(data)) {
+          const mappedOrders: Order[] = data.map((o: any) => {
+            const items = (o.items || []).map((it: any, idx: number) => ({
+              id: `item-${idx}-${it.product_id || 'prod'}`,
+              productId: it.product_id || it.product_name,
+              name: it.product_name || 'Komoditas Segar',
+              slug: it.product_id || '',
+              imageUrl: it.image_url || 'https://cdn.ammarabufadhel.my.id/products/asset-1544551763-ced7aa4f.webp',
+              pricePerKg: Number(it.price_per_kg) || 0,
+              quantityKg: Number(it.gross_weight) || 1,
+              cutType: it.cut_type || 'utuh_bersih',
+              cutLabel: it.cut_type ? it.cut_type.replace(/_/g, ' ') : 'Utuh Bersih',
+              yieldRatio: 0.85,
+              estimatedNetWeightKg: Number(it.estimated_net_weight) || Number(it.gross_weight) || 1,
+              estimatedNetWeightGrams: Math.round((Number(it.estimated_net_weight) || Number(it.gross_weight) || 1) * 1000),
+              separateSoupBones: false,
+              itemSubtotal: Number(it.subtotal) || ((Number(it.price_per_kg) || 0) * (Number(it.gross_weight) || 1)),
+              unit: 'kg'
+            }))
+
+            const status = (o.cold_chain_status || o.payment_status || 'CONFIRMED') as OrderStatus
+            const stages: TrackingStage[] = [
+              {
+                stageIndex: 1,
+                key: 'created',
+                title: 'Pesanan Dibuat',
+                description: o.payment_status === 'PAID' || status !== 'PENDING_PAYMENT'
+                  ? 'Pesanan tercatat dan pembayaran terverifikasi'
+                  : 'Menunggu penyelesaian pembayaran',
+                timestamp: o.created_at ? new Date(o.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB' : 'Tercatat',
+                isCompleted: o.payment_status === 'PAID' || status !== 'PENDING_PAYMENT',
+                isActive: status === 'PENDING_PAYMENT'
+              },
+              {
+                stageIndex: 2,
+                key: 'prep',
+                title: 'Sedang Disiapkan',
+                description: ['COLD_PACKED', 'OUT_FOR_DELIVERY', 'DELIVERED'].includes(status)
+                  ? 'Ikan segar telah disiangi dan dikemas rantai dingin'
+                  : (['CONFIRMED', 'COLD_ROOM_INTAKE', 'BUTCHERING_PREP'].includes(status)
+                      ? 'Ikan sedang disiangi dan dikemas rapi'
+                      : 'Menunggu giliran penyiapan'),
+                timestamp: ['COLD_PACKED', 'OUT_FOR_DELIVERY', 'DELIVERED'].includes(status) ? 'Selesai Dikemas' : null,
+                isCompleted: ['OUT_FOR_DELIVERY', 'DELIVERED'].includes(status),
+                isActive: ['CONFIRMED', 'COLD_ROOM_INTAKE', 'BUTCHERING_PREP', 'COLD_PACKED'].includes(status)
+              },
+              {
+                stageIndex: 3,
+                key: 'delivery',
+                title: 'Dalam Pengiriman',
+                description: status === 'OUT_FOR_DELIVERY'
+                  ? 'Kurir LBA sedang mengantar paket ke alamat tujuan'
+                  : (status === 'DELIVERED' ? 'Kurir telah tiba di alamat tujuan' : 'Menunggu kurir berangkat'),
+                timestamp: status === 'OUT_FOR_DELIVERY' || status === 'DELIVERED' ? 'Dalam Perjalanan' : null,
+                isCompleted: status === 'DELIVERED',
+                isActive: status === 'OUT_FOR_DELIVERY'
+              },
+              {
+                stageIndex: 4,
+                key: 'delivered',
+                title: 'Pesanan Tiba',
+                description: status === 'DELIVERED'
+                  ? 'Paket hasil laut telah diterima dengan baik'
+                  : 'Menunggu paket diserahkan ke penerima',
+                timestamp: status === 'DELIVERED' ? 'Terkirim' : null,
+                isCompleted: status === 'DELIVERED',
+                isActive: status === 'DELIVERED'
+              }
+            ]
+
+            return {
+              id: o.order_number || o.id,
+              createdAt: o.created_at || new Date().toISOString(),
+              status,
+              items,
+              packagingType: o.packaging_type || 'thermal_bag',
+              packagingFee: Number(o.packaging_fee || 0),
+              courierType: o.shipping_courier || 'kurir_lba',
+              courierFee: Number(o.shipping_fee || 0),
+              deliverySlot: 'subuh_06_0830',
+              deliverySlotLabel: o.delivery_slot || '06:00 - 08:30 WIB (Slot Pagi Siap Masak)',
+              kitchenNotes: '',
+              address: typeof o.shipping_address === 'string' ? JSON.parse(o.shipping_address) : (o.shipping_address || {}),
+              productsSubtotal: Number(o.products_subtotal || 0),
+              totalAmount: Number(o.total_amount || 0),
+              paymentMethod: (o.payment_method || 'qris_dynamic') as PaymentMethod,
+              qrisPayloadString: '',
+              qrisImageUrl: '',
+              scaleSlipImageUrl: o.scale_slip_url || 'https://cdn.ammarabufadhel.my.id/banners/banner-packing-thermal-aa77a0a0.webp',
+              qualityCertificateUrl: '',
+              scaleWeightGrossKg: Number(o.scale_weight_gross_kg || 0) || (items.reduce((s: number, it: any) => s + it.quantityKg, 0)) || 1.0,
+              trackingStages: stages,
+            }
+          })
+
+          this.ordersHistory = mappedOrders
+          if (mappedOrders.length > 0) {
+            const active = mappedOrders.find(o => o.status !== 'DELIVERED') || mappedOrders[0]
+            if (active) {
+              this.currentOrder = active
+            }
+          }
+          this.isLoading = false
+          return mappedOrders
+        }
+      } catch (err: any) {
+        this.isLoading = false
+        this.error = err?.detail || err?.message || 'Gagal memuat daftar pesanan Anda.'
+      }
+      this.isLoading = false
+      return this.ordersHistory
     },
 
     openScaleSlipModal() {

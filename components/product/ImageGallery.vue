@@ -39,11 +39,14 @@ const handleViewChange = (view: GalleryView) => {
   <div class="flex flex-col gap-2.5 w-full">
     <!-- Main Hero Image Box with Origin & Perspective Overlays -->
     <div class="relative w-full h-72 rounded-xl overflow-hidden bg-slate-100 border border-slate-200/90 shadow-xs group">
-      <img 
+      <NuxtImg 
         :src="activeImage" 
         :alt="`${productName} (Tampilan ${viewNumber} dari 3)`" 
         class="w-full h-full object-cover transition-all duration-300"
         loading="eager"
+        width="800"
+        height="600"
+        format="webp"
       />
 
       <!-- Perspective Counter Pill (Top-Right) -->
@@ -69,10 +72,14 @@ const handleViewChange = (view: GalleryView) => {
         :class="activeView === 'hero' ? 'border-[#103860] ring-2 ring-[#103860]/20 shadow-xs' : 'border-slate-200 opacity-75 hover:opacity-100 hover:border-slate-300'"
         aria-label="Tampilkan Foto Ikan Utuh Segar"
       >
-        <img 
+        <NuxtImg 
           :src="images.hero" 
           alt="Foto Utuh Segar" 
           class="w-full h-full object-cover"
+          width="200"
+          height="150"
+          format="webp"
+          loading="lazy"
         />
         <div class="absolute bottom-0 inset-x-0 bg-[#002242]/85 backdrop-blur-xs text-white text-[10px] font-semibold text-center py-0.5 truncate px-1">
           Utuh Segar
@@ -87,10 +94,14 @@ const handleViewChange = (view: GalleryView) => {
         :class="activeView === 'texture' ? 'border-[#103860] ring-2 ring-[#103860]/20 shadow-xs' : 'border-slate-200 opacity-75 hover:opacity-100 hover:border-slate-300'"
         aria-label="Tampilkan Foto Tekstur Daging Ikan"
       >
-        <img 
+        <NuxtImg 
           :src="images.texture" 
           alt="Foto Tekstur Daging" 
           class="w-full h-full object-cover"
+          width="200"
+          height="150"
+          format="webp"
+          loading="lazy"
         />
         <div class="absolute bottom-0 inset-x-0 bg-[#002242]/85 backdrop-blur-xs text-white text-[10px] font-semibold text-center py-0.5 truncate px-1">
           Tekstur Daging
@@ -105,8 +116,15 @@ const handleViewChange = (view: GalleryView) => {
         :class="activeView === 'scaleSlip' ? 'border-[#103860] ring-2 ring-[#103860]/20 shadow-xs' : 'border-slate-200 opacity-75 hover:opacity-100 hover:border-slate-300'"
         aria-label="Tampilkan Foto Timbangan Riil Cold Hub"
       >
-        <img 
+        <NuxtImg 
           :src="images.scaleSlip" 
+          alt="Foto Timbangan Riil" 
+          class="w-full h-full object-cover"
+          width="200"
+          height="150"
+          format="webp"
+          loading="lazy"
+        /> 
           alt="Foto Timbangan Riil" 
           class="w-full h-full object-cover"
         />

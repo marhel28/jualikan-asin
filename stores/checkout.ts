@@ -1,62 +1,75 @@
 import { defineStore } from 'pinia'
 import { useCartStore } from './cart'
+import { useApi } from '~/composables/useApi'
 
-export type CourierType = 'lba_cold_courier' | 'paxel_cold' | 'self_pickup'
-export type DeliverySlot = 'subuh' | 'siang' | 'sore'
-
-export interface CourierOption {
-  id: CourierType
-  name: string
-  baseFee: number
-  vehicleDescription: string
-  guaranteeText: string
-  eligibleForFreeShipping: boolean
-}
+export type CourierType = 'lba_cold_courier'
+export type DeliverySlot = string
 
 export interface DeliverySlotOption {
-  id: DeliverySlot
+  id: string
   title: string
   timeRange: string
-  badge: string | null
+  badge?: string | null
   description: string
-  tempGuarantee: string
+  isActive?: boolean
+  isRecommended?: boolean
 }
 
-export const COURIER_OPTIONS: CourierOption[] = [
-  {
-    id: 'lba_cold_courier',
-    name: 'Armada Kurir Dingin LBA',
-    baseFee: 12000,
-    vehicleDescription: 'Motor Box Insulasi Chilled 0-4 C',
-    guaranteeText: 'Garansi suhu stabil terjaga',
-    eligibleForFreeShipping: true
-  },
-  {
-    id: 'paxel_cold',
-    name: 'Paxel Cold Express',
-    baseFee: 25000,
-    vehicleDescription: 'Luar Kota / Next Day Chilled',
-    guaranteeText: 'Jangkauan Jawa Timur & Bali',
-    eligibleForFreeShipping: false
-  },
-  {
-    id: 'self_pickup',
-    name: 'Ambil Mandiri Cold Storage Muncar',
-    baseFee: 0,
-    vehicleDescription: 'Bebas Biaya (Langsung dari Gudang Utama)',
-    guaranteeText: 'Cold Storage Muncar dock',
-    eligibleForFreeShipping: false
+export interface AddressInfo {
+  id?: string
+  recipientName: string
+  recipientPhone: string
+  label: string
+  street: string
+  benchmark: string
+  isGpsVerified: boolean
+  isDefault?: boolean
+  provinsiKode?: string
+  kabupatenKode?: string
+  kecamatanKode?: string
+  desaKode?: string
+  provinsiNama?: string
+  kabupatenNama?: string
+  kecamatanNama?: string
+  desaNama?: string
+  coordinates: {
+    lat: number
+    lng: number
   }
-]
+}
 
-export const DELIVERY_SLOTS: DeliverySlotOption[] = [
+export interface ShippingPolicy {
+  freeShippingBanyuwangi: boolean
+  onlyBanyuwangi?: boolean
+  standardFee: number
+  localFee?: number
+  longDistanceFee?: number
+  freeShippingThreshold?: number
+  warehouseLat: number
+  warehouseLng: number
+  warehouseAddress: string
+  distancePricingEnabled: boolean
+  pricePerKm: number
+}
+
+export interface CheckoutState {
+  address: AddressInfo
+  selectedCourier: CourierType
+  selectedDeliverySlot: DeliverySlot
+  deliverySlots: DeliverySlotOption[]
+  shippingPolicy: ShippingPolicy
+  isLoadingSlots: boolean
+}
+
+const DEFAULT_SLOTS: DeliverySlotOption[] = [
   {
     id: 'subuh',
-    title: 'Slot Pagi Subuh',
+    title: 'Slot Pagi',
     timeRange: '06:00 - 08:30 WIB',
-    badge: 'Terbaik',
-    description: 'Pilihan terbaik untuk langsung dimasak sarapan dan makan siang',
-    tempGuarantee: 'Chilled 0 - 4°C'
+    badge: 'Rekomendasi',
+    description: 'Tiba segar siap masak sarapan dan makan siang',
+    isActive: true,
+    isRecommended: true
   },
   {
     id: 'siang',
@@ -64,40 +77,19 @@ export const DELIVERY_SLOTS: DeliverySlotOption[] = [
     timeRange: '10:30 - 13:00 WIB',
     badge: null,
     description: 'Pengiriman reguler tengah hari',
-    tempGuarantee: 'Chilled 0 - 4°C'
+    isActive: true,
+    isRecommended: false
   },
   {
     id: 'sore',
     title: 'Slot Sore',
     timeRange: '16:00 - 18:30 WIB',
     badge: null,
-    description: 'Cocok untuk persiapan makan malam keluarga',
-    tempGuarantee: 'Chilled 0 - 4°C'
+    description: 'Persiapan santap malam keluarga',
+    isActive: true,
+    isRecommended: false
   }
 ]
-
-export interface AddressInfo {
-  recipientName: string
-  recipientPhone: string
-  label: string
-  street: string
-  benchmark: string
-  isGpsVerified: boolean
-  coordinates: {
-    lat: number
-    lng: number
-  }
-}
-
-export interface CheckoutState {
-  address: AddressInfo
-  selectedCourier: CourierType
-  selectedDeliverySlot: DeliverySlot
-  unboxingNoticeAcknowledged: boolean
-  defaultLongDistance: boolean
-  longDistanceFee: number
-  localFee: number
-}
 
 export const useCheckoutStore = defineStore('checkout', {
   state: (): CheckoutState => ({
@@ -106,7 +98,7 @@ export const useCheckoutStore = defineStore('checkout', {
       recipientPhone: '0812-3456-7890',
       label: 'Rumah / Dapur Pribadi',
       street: 'Jl. Basuki Rahmat No. 42, Banyuwangi Kota',
-      benchmark: 'Patokan seberang Bank BCA',
+      benchmark: 'Patokan seberang Bank BCA Banyuwangi',
       isGpsVerified: true,
       coordinates: {
         lat: -8.2192,
@@ -115,35 +107,58 @@ export const useCheckoutStore = defineStore('checkout', {
     },
     selectedCourier: 'lba_cold_courier',
     selectedDeliverySlot: 'subuh',
-    unboxingNoticeAcknowledged: true,
-    defaultLongDistance: false,
-    longDistanceFee: 25000,
-    localFee: 12000
+    deliverySlots: DEFAULT_SLOTS,
+    shippingPolicy: {
+      onlyBanyuwangi: true,
+      freeShippingBanyuwangi: true,
+      standardFee: 0,
+      warehouseLat: -8.4328,
+      warehouseLng: 114.3361,
+      warehouseAddress: 'Dermaga Pelabuhan Perikanan Pantai Muncar, Banyuwangi',
+      distancePricingEnabled: false,
+      pricePerKm: 2500
+    },
+    isLoadingSlots: false
   }),
 
   getters: {
-    courierDetails: (state): CourierOption => {
-      const option = COURIER_OPTIONS.find(c => c.id === state.selectedCourier) || COURIER_OPTIONS[0]
-      if (option.id === 'paxel_cold') {
-        return { ...option, baseFee: state.longDistanceFee }
-      }
-      if (option.id === 'lba_cold_courier') {
-        return { ...option, baseFee: state.localFee }
-      }
-      return option
+    isAddressInBanyuwangi: (state): boolean => {
+      const addr = state.address
+      if (!addr) return false
+      const kab = (addr.kabupatenNama || '').toLowerCase()
+      const kec = (addr.kecamatanNama || '').toLowerCase()
+      const street = (addr.street || '').toLowerCase()
+      const kode = String(addr.kabupatenKode || '')
+      return kab.includes('banyuwangi') || kec.includes('muncar') || street.includes('banyuwangi') || kode === '35.10'
+    },
+    isDeliveryAllowed: (state): boolean => {
+      if (state.shippingPolicy.onlyBanyuwangi === false) return true
+      const addr = state.address
+      if (!addr) return false
+      const kab = (addr.kabupatenNama || '').toLowerCase()
+      const kec = (addr.kecamatanNama || '').toLowerCase()
+      const street = (addr.street || '').toLowerCase()
+      const kode = String(addr.kabupatenKode || '')
+      return kab.includes('banyuwangi') || kec.includes('muncar') || street.includes('banyuwangi') || kode === '35.10'
+    },
+    activeSlots: (state): DeliverySlotOption[] => {
+      const active = state.deliverySlots.filter(s => s.isActive !== false)
+      return active.length > 0 ? active : DEFAULT_SLOTS
     },
     slotDetails: (state): DeliverySlotOption => {
-      return DELIVERY_SLOTS.find(s => s.id === state.selectedDeliverySlot) || DELIVERY_SLOTS[0]
+      const found = state.deliverySlots.find(s => s.id === state.selectedDeliverySlot)
+      return found || state.deliverySlots[0] || DEFAULT_SLOTS[0]
     },
     shippingFee: (state): number => {
+      // Default: Bebas ongkos kirim seluruh area Banyuwangi
+      if (state.shippingPolicy.freeShippingBanyuwangi) {
+        return 0
+      }
       const cartStore = useCartStore()
-      if (state.selectedCourier === 'lba_cold_courier') {
-        return cartStore.isFreeShipping ? 0 : state.localFee
+      if (cartStore.isFreeShipping) {
+        return 0
       }
-      if (state.selectedCourier === 'paxel_cold') {
-        return state.longDistanceFee
-      }
-      return 0
+      return state.shippingPolicy.standardFee ?? (state.shippingPolicy.localFee || 12000)
     },
     totalBill(): number {
       const cartStore = useCartStore()
@@ -152,34 +167,53 @@ export const useCheckoutStore = defineStore('checkout', {
   },
 
   actions: {
-    setCourier(courier: CourierType) {
-      this.selectedCourier = courier
+    setDeliverySlot(slotId: string) {
+      this.selectedDeliverySlot = slotId
     },
-    setDeliverySlot(slot: DeliverySlot) {
-      this.selectedDeliverySlot = slot
-    },
-    updateAddress(newAddress: Partial<AddressInfo>) {
+    setAddress(newAddress: Partial<AddressInfo>) {
       this.address = {
         ...this.address,
-        ...newAddress
+        ...newAddress,
+        coordinates: {
+          lat: newAddress.coordinates?.lat ?? this.address.coordinates.lat,
+          lng: newAddress.coordinates?.lng ?? this.address.coordinates.lng
+        },
+        isGpsVerified: true
       }
     },
-    updateAdminShippingSettings(settings: {
-      defaultLongDistance?: boolean
-      longDistanceFee?: number
-      localFee?: number
-    }) {
-      if (settings.defaultLongDistance !== undefined) {
-        this.defaultLongDistance = settings.defaultLongDistance
-        if (settings.defaultLongDistance) {
-          this.selectedCourier = 'paxel_cold'
+    updateAddressCoordinates(lat: number, lng: number) {
+      this.address.coordinates = { lat, lng }
+      this.address.isGpsVerified = true
+    },
+    async fetchDeliveryConfig() {
+      this.isLoadingSlots = true
+      try {
+        const api = useApi()
+        const data = await api.get<{
+          deliverySlots?: DeliverySlotOption[]
+          shippingPolicy?: ShippingPolicy
+        }>('/settings/delivery-config')
+
+        if (data) {
+          if (data.deliverySlots && Array.isArray(data.deliverySlots) && data.deliverySlots.length > 0) {
+            this.deliverySlots = data.deliverySlots
+            // If current selected slot is inactive, pick the first active slot
+            const isCurrentActive = this.deliverySlots.some(s => s.id === this.selectedDeliverySlot && s.isActive !== false)
+            if (!isCurrentActive) {
+              const firstActive = this.deliverySlots.find(s => s.isActive !== false)
+              if (firstActive) {
+                this.selectedDeliverySlot = firstActive.id
+              }
+            }
+          }
+          if (data.shippingPolicy) {
+            this.shippingPolicy = data.shippingPolicy
+          }
         }
-      }
-      if (settings.longDistanceFee !== undefined) {
-        this.longDistanceFee = settings.longDistanceFee
-      }
-      if (settings.localFee !== undefined) {
-        this.localFee = settings.localFee
+      } catch (err) {
+        // Graceful fallback to default slots
+      } finally {
+        this.isLoadingSlots = false
       }
     }
   }

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useAuthStore } from '~/stores/auth'
 import { useRoute, useRouter } from 'vue-router'
 import { useCartStore } from '~/stores/cart'
 import { useLocale } from '~/composables/useLocale'
@@ -7,7 +8,20 @@ import { useLocale } from '~/composables/useLocale'
 const route = useRoute()
 const router = useRouter()
 const cartStore = useCartStore()
+const authStore = useAuthStore()
 const { t } = useLocale()
+
+onMounted(async () => {
+  if (typeof window !== 'undefined') {
+    cartStore.initCart()
+    if (!authStore.isAuthenticated) {
+      const token = localStorage.getItem('lba_auth_token')
+      if (token) {
+        await authStore.initAuth()
+      }
+    }
+  }
+})
 
 const logoError = ref(false)
 const cartCount = computed(() => cartStore?.totalItemCount ?? 0)
@@ -90,11 +104,14 @@ const handleSearchClick = () => {
         <!-- Brand Link & Anchor / Logo -->
         <NuxtLink to="/" class="flex items-center gap-3 group shrink-0">
           <div class="w-11 h-11 flex items-center justify-center flex-shrink-0">
-            <img 
+            <NuxtImg 
               v-if="!logoError"
-              src="/brand/logo.png" 
+              src="/brand/logo.webp" 
               alt="Laut Berkah Abadi" 
               class="w-full h-full object-contain rounded-full"
+              width="44"
+              height="44"
+              format="webp"
               @error="logoError = true"
             />
             <div v-else class="w-full h-full rounded-full bg-[#103860] flex items-center justify-center text-white">
@@ -117,7 +134,7 @@ const handleSearchClick = () => {
           <NuxtLink to="/katalog" class="hover:text-[#103860] transition-colors" active-class="text-[#103860] font-bold">
             {{ t('Katalog Ikan', 'Seafood Catalog') }}
           </NuxtLink>
-          <NuxtLink to="/pesanan" class="hover:text-[#103860] transition-colors" active-class="text-[#103860] font-bold">
+          <NuxtLink v-if="authStore.isAuthenticated" to="/pesanan" class="hover:text-[#103860] transition-colors" active-class="text-[#103860] font-bold">
             {{ t('Pesanan', 'Orders') }}
           </NuxtLink>
           <NuxtLink to="/tentang" class="hover:text-[#103860] transition-colors" active-class="text-[#103860] font-bold">
@@ -130,13 +147,35 @@ const handleSearchClick = () => {
           <!-- Language Switcher in Header -->
           <CommonLanguageSwitcher />
 
+          <!-- User / Auth Profile Link (Desktop) -->
+          <div v-if="authStore.isAuthenticated" class="hidden md:flex items-center gap-2">
+            <NuxtLink
+              to="/akun"
+              class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors border border-slate-200/80"
+              active-class="bg-slate-100 text-[#103860]"
+            >
+              <div class="w-6 h-6 rounded-full bg-[#103860] text-white flex items-center justify-center text-[11px] font-bold">
+                {{ (authStore.user?.fullName || 'P').charAt(0).toUpperCase() }}
+              </div>
+              <span class="max-w-[120px] truncate text-slate-800">{{ authStore.user?.fullName || 'Akun Saya' }}</span>
+            </NuxtLink>
+            <button
+              type="button"
+              @click="authStore.logout()"
+              title="Keluar dari akun"
+              class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+            >
+              <span class="material-symbols-outlined text-[18px]">logout</span>
+            </button>
+          </div>
           <NuxtLink
-            to="/akun"
-            class="hidden md:flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
-            active-class="bg-slate-100 text-[#103860]"
+            v-else
+            to="/auth"
+            class="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[#103860] bg-blue-50/80 hover:bg-blue-100 border border-blue-200/60 transition-colors"
+            active-class="!bg-[#103860] !text-white !border-[#103860]"
           >
-            <span class="material-symbols-outlined text-[18px]">account_circle</span>
-            <span>{{ t('Akun Saya', 'My Account') }}</span>
+            <span class="material-symbols-outlined text-[18px]">login</span>
+            <span>Masuk / Daftar</span>
           </NuxtLink>
 
           <NuxtLink 
@@ -189,8 +228,9 @@ const handleSearchClick = () => {
         <span class="text-[10px] mt-0.5 font-medium">{{ t('Katalog', 'Catalog') }}</span>
       </NuxtLink>
 
-      <!-- 3. Pesanan -->
+      <!-- 3. Pesanan (Hanya jika login) -->
       <NuxtLink 
+        v-if="authStore.isAuthenticated"
         to="/pesanan" 
         class="flex flex-col items-center justify-center w-full py-1 text-slate-500 hover:text-[#002242] transition-colors"
         active-class="text-[#002242] font-bold"
@@ -203,9 +243,9 @@ const handleSearchClick = () => {
       <NuxtLink 
         to="/akun" 
         class="flex flex-col items-center justify-center w-full py-1 text-slate-500 hover:text-[#002242] transition-colors"
-        active-class="text-[#002242] font-bold"
+        :class="{ 'text-[#002242] font-bold': route.path === '/akun' || route.path.startsWith('/auth') }"
       >
-        <span class="material-symbols-outlined text-[22px]">person</span>
+        <span class="material-symbols-outlined text-[22px]" :style="(route.path === '/akun' || route.path.startsWith('/auth')) ? 'font-variation-settings: \'FILL\' 1;' : ''">person</span>
         <span class="text-[10px] mt-0.5 font-medium">{{ t('Akun', 'Account') }}</span>
       </NuxtLink>
     </nav>

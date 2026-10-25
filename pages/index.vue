@@ -1,13 +1,16 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { PRODUCTS, type Product } from '~/data/products'
 import CatalogProductCard from '~/components/catalog/ProductCard.vue'
 import { useLocale } from '~/composables/useLocale'
+import { useApi } from '~/composables/useApi'
 
 const route = useRoute()
 const router = useRouter()
 const { t } = useLocale()
+const runtimeConfig = useRuntimeConfig()
+const siteUrl = (runtimeConfig.public?.siteUrl as string) || 'https://lautberkahabadi.com'
 
 useHead({
   title: computed(() => t(
@@ -24,43 +27,211 @@ useHead({
     },
     { property: 'og:title', content: computed(() => t('Laut Berkah Abadi | D2C Cold Chain Seafood Muncar Banyuwangi', 'Laut Berkah Abadi | Direct Fresh Seafood Muncar Banyuwangi Cold Chain')) },
     { property: 'og:description', content: computed(() => t('Distribusi ikan segar Pelabuhan Muncar Banyuwangi langsung ke dapur Anda dengan rantai dingin presisi -20°C.', 'Fresh fish from Muncar Port Banyuwangi delivered to your kitchen with precision -20°C cold chain.')) },
-    { property: 'og:type', content: 'website' }
+    { property: 'og:type', content: 'website' },
+    { property: 'og:url', content: `${siteUrl}/` },
+    { property: 'og:image', content: `${siteUrl}/brand/logo.webp` },
+    { name: 'twitter:card', content: 'summary_large_image' },
+    { name: 'twitter:title', content: 'Laut Berkah Abadi | D2C Cold Chain Seafood Muncar' },
+    { name: 'twitter:description', content: 'Distribusi ikan segar Pelabuhan Muncar Banyuwangi langsung ke dapur Anda dengan rantai dingin presisi -20°C.' },
+    { name: 'twitter:image', content: `${siteUrl}/brand/logo.webp` }
+  ],
+  link: [
+    { rel: 'canonical', href: `${siteUrl}/` }
   ],
   script: [
     {
       type: 'application/ld+json',
       children: JSON.stringify({
         '@context': 'https://schema.org',
-        '@type': 'ItemList',
-        name: 'Katalog Ikan Segar Cold Chain Muncar',
-        itemListElement: PRODUCTS.map((p, idx) => ({
-          '@type': 'ListItem',
-          position: idx + 1,
-          item: {
-            '@type': 'Product',
-            name: p.name,
-            description: p.description,
-            image: p.images?.hero,
-            offers: {
-              '@type': 'Offer',
-              price: p.pricePerKg,
-              priceCurrency: 'IDR',
-              availability: p.stockKg > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock'
+        '@graph': [
+          {
+            '@type': 'WebSite',
+            name: 'Laut Berkah Abadi',
+            alternateName: 'LBA Banyuwangi Seafood',
+            url: siteUrl,
+            potentialAction: {
+              '@type': 'SearchAction',
+              target: {
+                '@type': 'EntryPoint',
+                urlTemplate: `${siteUrl}/katalog?q={search_term_string}`
+              },
+              'query-input': 'required name=search_term_string'
             }
+          },
+          {
+            '@type': 'FishStore',
+            name: 'Laut Berkah Abadi Banyuwangi',
+            image: `${siteUrl}/brand/logo.webp`,
+            url: siteUrl,
+            telephone: '+6281234567890',
+            priceRange: 'Rp 25.000 - Rp 150.000',
+            address: {
+              '@type': 'PostalAddress',
+              streetAddress: 'Kawasan Pelabuhan Perikanan Muncar',
+              addressLocality: 'Banyuwangi',
+              addressRegion: 'Jawa Timur',
+              postalCode: '68472',
+              addressCountry: 'ID'
+            },
+            geo: {
+              '@type': 'GeoCoordinates',
+              latitude: -8.4333,
+              longitude: 114.3333
+            },
+            openingHoursSpecification: [
+              {
+                '@type': 'OpeningHoursSpecification',
+                dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+                opens: '05:00',
+                closes: '21:00'
+              }
+            ]
+          },
+          {
+            '@type': 'ItemList',
+            name: 'Katalog Ikan Segar Cold Chain Muncar',
+            itemListElement: PRODUCTS.map((p, idx) => ({
+              '@type': 'ListItem',
+              position: idx + 1,
+              url: `${siteUrl}/produk/${p.slug}`,
+              item: {
+                '@type': 'Product',
+                name: p.name,
+                url: `${siteUrl}/produk/${p.slug}`,
+                description: p.description,
+                image: p.images?.hero,
+                offers: {
+                  '@type': 'Offer',
+                  url: `${siteUrl}/produk/${p.slug}`,
+                  price: p.pricePerKg,
+                  priceCurrency: 'IDR',
+                  availability: p.stockKg > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock'
+                }
+              }
+            }))
           }
-        }))
+        ]
       })
     }
   ]
 })
 
+// Dynamic Banner Data with Fallback
+export interface BannerItem {
+  id: string
+  type: 'text' | 'image'
+  title: string
+  subtitle: string
+  imageUrl?: string
+  badgeText?: string
+  badgeIcon?: string
+  tagText?: string
+  ctaText?: string
+  ctaAction?: 'link' | 'copy_voucher' | 'none'
+  ctaLink?: string
+  voucherCode?: string
+  gradientPreset?: 'navy' | 'cyan' | 'ocean' | 'emerald' | string
+  isActive?: boolean
+  order?: number
+}
+
+const DEFAULT_BANNERS: BannerItem[] = [
+  {
+    id: 'banner-1',
+    type: 'text',
+    title: 'Ikan Segar Pilihan Hari Ini',
+    subtitle: 'Hasil pancing harian nelayan Selat Bali dengan penanganan rantai dingin langsung di dermaga Muncar.',
+    badgeText: 'Tangkapan Baru Mendarat',
+    badgeIcon: 'verified',
+    tagText: '05:30 WIB',
+    ctaText: 'Lihat Produk',
+    ctaAction: 'link',
+    ctaLink: '/katalog',
+    gradientPreset: 'navy',
+    isActive: true,
+    order: 1,
+  },
+  {
+    id: 'banner-2',
+    type: 'image',
+    title: 'Promo Tangkapan Segar Pagi Hari',
+    subtitle: 'Ikan laut segar langsung ditimbang dari perahu nelayan Muncar.',
+    imageUrl: 'https://cdn.ammarabufadhel.my.id/products/asset-1534483509719-49b99676.webp',
+    badgeText: 'Diskon s.d. 30%',
+    badgeIcon: 'local_fire_department',
+    tagText: 'Khusus Hari Ini',
+    ctaText: 'Beli Sekarang',
+    ctaAction: 'link',
+    ctaLink: '/katalog',
+    isActive: true,
+    order: 2,
+  },
+  {
+    id: 'banner-3',
+    type: 'text',
+    title: 'Armada Kurir Dingin LBA',
+    subtitle: 'Bebas biaya kirim khusus pesanan area Banyuwangi & sekitarnya dengan kemasan thermal berpendingin.',
+    badgeText: 'Gratis Ongkir Rantai Dingin',
+    badgeIcon: 'local_shipping',
+    tagText: 'DINGINBEBAS',
+    ctaText: 'Salin Kode',
+    ctaAction: 'copy_voucher',
+    ctaLink: '',
+    voucherCode: 'DINGINBEBAS',
+    gradientPreset: 'cyan',
+    isActive: true,
+    order: 3,
+  },
+  {
+    id: 'banner-4',
+    type: 'image',
+    title: 'Spesial Fillet & Steak Siap Masak',
+    subtitle: 'Rendemen daging bersih presisi, tanpa duri dan sisik, siap masak.',
+    imageUrl: 'https://cdn.ammarabufadhel.my.id/products/fillet-ikan-baronang-tulis-texture-bec184e3.webp',
+    badgeText: 'Higienis & Bersih',
+    badgeIcon: 'restaurant',
+    tagText: 'Grade Ekspor',
+    ctaText: 'Pilih Potongan',
+    ctaAction: 'link',
+    ctaLink: '/katalog',
+    isActive: true,
+    order: 4,
+  },
+]
+
+const api = useApi()
+const { data: fetchedBanners } = await useAsyncData<BannerItem[]>('home-banners', async () => {
+  try {
+    const res = await api.get<BannerItem[]>('/banners')
+    if (res && Array.isArray(res) && res.length > 0) {
+      return res.filter(b => b.isActive !== false)
+    }
+  } catch {
+    // Graceful offline fallback
+  }
+  return DEFAULT_BANNERS
+}, {
+  default: () => DEFAULT_BANNERS,
+})
+
+const banners = computed<BannerItem[]>(() => {
+  const list = fetchedBanners.value && fetchedBanners.value.length > 0 ? fetchedBanners.value : DEFAULT_BANNERS
+  return [...list].sort((a, b) => (a.order || 0) - (b.order || 0))
+})
+
 // Carousel Reactive Logic
 const currentSlide = ref(0)
-const totalSlides = 3
+const totalSlides = computed(() => banners.value.length)
 let slideInterval: any = null
 const isHovered = ref(false)
 const toastText = ref('')
 const showToast = ref(false)
+
+watch(totalSlides, (count) => {
+  if (currentSlide.value >= count) {
+    currentSlide.value = 0
+  }
+})
 
 const triggerToast = (msg: string) => {
   toastText.value = msg
@@ -71,7 +242,11 @@ const triggerToast = (msg: string) => {
 }
 
 const updateCarousel = (index: number) => {
-  currentSlide.value = (index + totalSlides) % totalSlides
+  if (totalSlides.value <= 0) {
+    currentSlide.value = 0
+    return
+  }
+  currentSlide.value = (index + totalSlides.value) % totalSlides.value
 }
 
 const prevSlide = () => {
@@ -121,7 +296,41 @@ const onTouchEnd = (e: TouchEvent) => {
   }
 }
 
-// Slide Call to Actions
+const getBannerGradient = (preset?: string) => {
+  switch (preset) {
+    case 'cyan':
+      return 'from-[#102a4e] via-[#1a3c6e] to-[#004d61]'
+    case 'emerald':
+      return 'from-[#0c3756] via-[#005137] to-[#04281e]'
+    case 'ocean':
+      return 'from-[#0d2137] via-[#143b60] to-[#0f4c75]'
+    case 'navy':
+    default:
+      return 'from-[#103860] via-[#0b2542] to-[#081a2e]'
+  }
+}
+
+// Banner Call to Actions
+const onBannerCta = (banner: BannerItem) => {
+  if (banner.ctaAction === 'copy_voucher') {
+    const code = banner.voucherCode || banner.tagText || 'DINGINBEBAS'
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(code)
+    }
+    triggerToast(`Kode voucher ${code} berhasil disalin!`)
+  } else if (banner.ctaAction === 'none') {
+    // No action
+  } else {
+    const target = banner.ctaLink || '/katalog'
+    if (target.startsWith('http')) {
+      window.open(target, '_blank', 'noopener,noreferrer')
+    } else {
+      router.push(target)
+    }
+  }
+}
+
+// Backwards-compatible handlers
 const onCheckTangkapan = () => {
   router.push('/katalog')
 }
@@ -159,6 +368,169 @@ const isLoading = ref(false)
 const hasError = ref(false)
 const searchInputRef = ref<HTMLInputElement | null>(null)
 
+// Smart Live Search & Suggestions State (Typesense + Redis)
+const isSearchDropdownOpen = ref(false)
+const isLoadingSuggestions = ref(false)
+const isSearching = ref(false)
+const typesenseMatchedSlugs = ref<string[]>([])
+let debounceTimer: any = null
+
+const searchSuggestData = ref<{
+  suggestions: string[]
+  products: Product[]
+  is_trending?: boolean
+}>({
+  suggestions: ['Kakap Merah', 'Cumi Sero', 'Tenggiri Papan', 'Ikan Lemuru', 'Fillet Baronang', 'Tongkol Lisong'],
+  products: [],
+  is_trending: true
+})
+
+// In-memory client cache for 0ms keystroke & backspace response
+const clientSuggestCache: Record<string, any> = {}
+
+const fetchSearchSuggestions = async (term: string) => {
+  if (!import.meta.client) return
+  const cleanTerm = (term || '').trim().toLowerCase()
+  if (clientSuggestCache[cleanTerm]) {
+    searchSuggestData.value = clientSuggestCache[cleanTerm]
+    return
+  }
+  isLoadingSuggestions.value = true
+  try {
+    const url = cleanTerm
+      ? `http://localhost:8000/products/search/suggest?q=${encodeURIComponent(cleanTerm)}&limit=5`
+      : 'http://localhost:8000/products/search/suggest'
+    const res = await $fetch<any>(url, { timeout: 2500 })
+    if (res) {
+      searchSuggestData.value = {
+        suggestions: res.suggestions || [],
+        products: res.products || [],
+        is_trending: res.is_trending ?? false
+      }
+      clientSuggestCache[cleanTerm] = searchSuggestData.value
+    }
+  } catch (err) {
+    if (!cleanTerm) {
+      searchSuggestData.value = {
+        suggestions: ['Kakap Merah', 'Cumi Sero', 'Tenggiri Papan', 'Ikan Lemuru', 'Fillet Baronang'],
+        products: products.value.slice(0, 3),
+        is_trending: true
+      }
+    }
+  } finally {
+    isLoadingSuggestions.value = false
+  }
+}
+
+const performTypesenseSearch = async (term: string) => {
+  if (!term || !term.trim()) {
+    typesenseMatchedSlugs.value = []
+    return
+  }
+  try {
+    const res = await $fetch<any>(`http://localhost:8000/products/search/instant?q=${encodeURIComponent(term.trim())}`)
+    if (res?.hits && Array.isArray(res.hits)) {
+      typesenseMatchedSlugs.value = res.hits.map((h: any) => h.document.slug)
+    }
+  } catch (err) {
+    typesenseMatchedSlugs.value = []
+  }
+}
+
+const onSearchInput = (val: string) => {
+  searchQuery.value = val
+  isSearching.value = true
+  isSearchDropdownOpen.value = true
+  if (debounceTimer) clearTimeout(debounceTimer)
+  debounceTimer = setTimeout(() => {
+    isSearching.value = false
+    const term = val.trim()
+    performTypesenseSearch(term)
+    fetchSearchSuggestions(term)
+  }, 150)
+}
+
+const onSearchFocus = () => {
+  isSearchDropdownOpen.value = true
+  fetchSearchSuggestions(searchQuery.value)
+}
+
+const onSearchBlur = () => {
+  setTimeout(() => {
+    isSearchDropdownOpen.value = false
+  }, 220)
+}
+
+const selectSuggestion = (keyword: string) => {
+  searchQuery.value = keyword
+  isSearchDropdownOpen.value = false
+  performTypesenseSearch(keyword)
+}
+
+const navigateToProduct = (prodSlug: string) => {
+  isSearchDropdownOpen.value = false
+  router.push(`/produk/${prodSlug}`)
+}
+
+const handleSearchSubmit = () => {
+  if (searchQuery.value.trim()) {
+    isSearchDropdownOpen.value = false
+    router.push(`/katalog?q=${encodeURIComponent(searchQuery.value.trim())}`)
+  }
+}
+
+const clearSearch = () => {
+  searchQuery.value = ''
+  isSearching.value = false
+  typesenseMatchedSlugs.value = []
+  fetchSearchSuggestions('')
+}
+
+onMounted(async () => {
+  try {
+    const api = useApi()
+    const backendProducts = await api.get<any[]>('/products')
+    if (backendProducts && Array.isArray(backendProducts) && backendProducts.length > 0) {
+      products.value = backendProducts.map(bp => {
+        const local = PRODUCTS.find(p => p.id === bp.id || p.slug === bp.slug)
+        const heroImg = bp.images?.hero || bp.image_url || local?.images?.hero || 'https://cdn.ammarabufadhel.my.id/products/asset-1544551763-ced7aa4f.webp'
+        return {
+          id: bp.id,
+          name: bp.name,
+          fishType: bp.fishType || bp.fish_type || bp.category || local?.fishType || 'Ikan Laut Segar',
+          scientificName: bp.scientificName || bp.latin_name || local?.scientificName || '',
+          slug: bp.slug,
+          category: bp.category || local?.category || 'utuh',
+          pricePerKg: Number(bp.pricePerKg ?? bp.price_per_kg) || local?.pricePerKg || 0,
+          originalPricePerKg: bp.originalPricePerKg ?? local?.originalPricePerKg,
+          rating: Number(bp.rating) || local?.rating || 4.9,
+          reviewCount: bp.reviewCount ?? bp.review_count ?? local?.reviewCount ?? 100,
+          freshnessScore: bp.freshnessScore ?? bp.freshness_score ?? local?.freshnessScore ?? 98,
+          catchMethod: bp.catchMethod ?? bp.catch_method ?? local?.catchMethod ?? 'Pancing Ulur Tradisional Muncar',
+          landingTime: bp.landingTime ?? bp.landing_time ?? local?.landingTime ?? '05:30 WIB Subuh',
+          storageTemp: bp.storageTemp ?? bp.storage_temp ?? local?.storageTemp ?? 'Chilled 1.5 C',
+          images: bp.images || local?.images || { hero: heroImg, gallery: [heroImg] },
+          stockKg: Number(bp.stockKg ?? bp.stock_kg) ?? local?.stockKg ?? 50,
+          minOrderKg: Number(bp.minOrderKg ?? bp.min_order_kg) || local?.minOrderKg || 1,
+          description: bp.description || local?.description || '',
+          isFeatured: bp.isFeatured ?? bp.is_featured ?? local?.isFeatured ?? false,
+          availableCuts: bp.availableCuts || local?.availableCuts || [
+            { type: 'utuh_bersih', label: 'Utuh Bersih', yieldRatio: 0.85, description: 'Insang & jeroan dibuang' },
+            { type: 'fillet_tanpa_kulit', label: 'Fillet Tanpa Kulit', yieldRatio: 0.52, description: 'Daging murni tanpa tulang' },
+            { type: 'steak_melintang', label: 'Steak Melintang', yieldRatio: 0.80, description: 'Potong bulat melintang' },
+          ],
+          tags: bp.tags || local?.tags || ['Segar Muncar', 'Cold Chain'],
+          unit: bp.unit || local?.unit || 'kg',
+          soldCount: Number(bp.soldCount ?? bp.sold_count ?? local?.soldCount ?? 0),
+          wishlistCount: Number(bp.wishlistCount ?? bp.wishlist_count ?? local?.wishlistCount ?? 0),
+          qualityBadges: bp.qualityBadges || local?.qualityBadges || ['Tangkapan Hari Ini', 'Bebas Formalin'],
+          supportsSoupBones: bp.supportsSoupBones ?? local?.supportsSoupBones ?? false
+        } as Product
+      })
+    }
+  } catch { }
+})
+
 // Category matching logic
 const isCategoryMatch = (p: Product, catId: string): boolean => {
   if (catId === 'semua') return true
@@ -180,15 +552,16 @@ const isCategoryMatch = (p: Product, catId: string): boolean => {
   return (p.category as string) === catId
 }
 
-// Search matching logic
+// Search matching logic (Typesense Synonyms & Typo-Tolerance + Local Fallback)
 const isSearchMatch = (p: Product, query: string): boolean => {
   if (!query || !query.trim()) return true
+  if (typesenseMatchedSlugs.value.includes(p.slug)) return true
   const q = query.trim().toLowerCase()
   const nameMatch = p.name ? p.name.toLowerCase().includes(q) : false
-  const latinMatch = p.scientificName ? p.scientificName.toLowerCase().includes(q) : false
+  const typeMatch = p.fishType ? p.fishType.toLowerCase().includes(q) : false
   const catchMatch = p.catchMethod ? p.catchMethod.toLowerCase().includes(q) : false
   const descMatch = p.description ? p.description.toLowerCase().includes(q) : false
-  return nameMatch || latinMatch || catchMatch || descMatch
+  return nameMatch || typeMatch || catchMatch || descMatch
 }
 
 // Filtered catalog results
@@ -201,6 +574,7 @@ const filteredProducts = computed(() => {
 // Produk Terlaris berdasarkan kuantitas terjual (soldCount tertinggi)
 const topSellingProducts = computed(() => {
   return [...products.value]
+    .filter(p => (p.soldCount || 0) > 0)
     .sort((a, b) => (b.soldCount || 0) - (a.soldCount || 0))
     .slice(0, 4)
 })
@@ -242,226 +616,264 @@ onUnmounted(() => {
 <template>
   <div class="flex flex-col gap-5">
     <!-- Toast Notification -->
-    <div 
-      v-if="showToast" 
-      class="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-[#002242] text-white text-xs py-2 px-4 rounded-full shadow-lg flex items-center gap-2 animate-bounce"
-    >
+    <div v-if="showToast"
+      class="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-[#002242] text-white text-xs py-2 px-4 rounded-full shadow-lg flex items-center gap-2 animate-bounce">
       <span class="material-symbols-outlined text-[16px] text-emerald-400">check_circle</span>
       <span>{{ toastText }}</span>
     </div>
 
     <!-- Enhanced Interactive Hero Auto-Slider / Carousel (Stitch Code Implementation) -->
-    <div 
-      id="hero-carousel"
-      class="relative overflow-hidden rounded-xl shadow-md group"
-      @mouseenter="isHovered = true"
-      @mouseleave="isHovered = false"
-      @touchstart="onTouchStart"
-      @touchend="onTouchEnd"
-    >
+    <div id="hero-carousel" class="relative overflow-hidden shadow-md rounded-xl group" @mouseenter="isHovered = true"
+      @mouseleave="isHovered = false" @touchstart="onTouchStart" @touchend="onTouchEnd">
       <!-- Carousel Track -->
-      <div 
-        id="carousel-track"
-        class="carousel-track flex transition-transform duration-500 ease-out will-change-transform"
-        :style="{ transform: `translateX(-${currentSlide * 100}%)` }"
-      >
-        <!-- Slide 1: Info Lelang Harian -->
-        <!-- ponytail: mobile height increased ~1.4x (min-h-[210px] sm:min-h-[240px] md:min-h-[260px]) with larger spacing for promotion banner room -->
-        <div class="min-w-full min-h-[210px] sm:min-h-[240px] md:min-h-[260px] bg-gradient-to-br from-[#103860] via-[#0b2542] to-[#081a2e] text-white p-5 sm:p-6 md:p-7 flex flex-col justify-between gap-3 relative overflow-hidden select-none">
-          <div class="absolute -right-8 -bottom-10 w-52 h-52 rounded-full bg-cyan-500/10 blur-2xl pointer-events-none"></div>
-          
-          <div class="flex items-center justify-between z-10">
-            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-400/30 text-[11px] sm:text-xs font-semibold text-[#85f8c4]">
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              {{ t('Tangkapan Baru Mendarat', 'Fresh Catch Just Landed') }}
-            </span>
-            <span class="text-[11px] sm:text-xs text-[#81a2d0] font-mono">05:30 WIB</span>
+      <div id="carousel-track"
+        class="flex transition-transform duration-500 ease-out carousel-track will-change-transform"
+        :style="{ transform: `translateX(-${currentSlide * 100}%)` }">
+        <!-- Dynamic Slides -->
+        <div v-for="(banner, idx) in banners" :key="banner.id || idx"
+          class="min-w-full min-h-[210px] sm:min-h-[240px] md:min-h-[260px] relative flex flex-col justify-between overflow-hidden select-none">
+          <!-- Background Layer -->
+          <div class="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+            <template v-if="banner.type === 'image' && banner.imageUrl">
+              <NuxtImg :src="banner.imageUrl" :alt="banner.title" class="object-cover w-full h-full"
+                :loading="idx === 0 ? 'eager' : 'lazy'" width="1200" height="500" format="webp" />
+              <div
+                class="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-900/70 to-slate-950/30 sm:to-transparent">
+              </div>
+            </template>
+            <template v-else>
+              <div :class="['w-full h-full bg-gradient-to-br', getBannerGradient(banner.gradientPreset)]"></div>
+              <div class="absolute rounded-full -right-8 -bottom-10 w-52 h-52 bg-cyan-500/10 blur-2xl"></div>
+            </template>
           </div>
 
-          <div class="flex flex-col gap-1.5 z-10 max-w-md my-auto">
-            <h2 class="text-white text-lg sm:text-xl md:text-2xl leading-tight font-extrabold tracking-tight">
-              {{ t('Ikan Segar Pilihan Hari Ini', 'Today’s Selected Fresh Seafood') }}
-            </h2>
-            <p class="text-[#81a2d0] text-xs sm:text-sm leading-relaxed">
-              {{ t('Hasil pancing harian nelayan Selat Bali dengan penanganan rantai dingin langsung di dermaga Muncar.', 'Daily catch by Bali Strait handline fishermen with immediate cold-chain handling at Muncar dock.') }}
-            </p>
-          </div>
+          <!-- Foreground Content Layer -->
+          <div class="relative z-10 flex flex-col justify-between flex-1 h-full gap-3 p-5 text-white sm:p-6 md:p-7">
+            <!-- Top Badges / Tag Bar -->
+            <div class="flex items-center justify-between gap-2">
+              <span v-if="banner.badgeText"
+                class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] sm:text-xs font-semibold backdrop-blur-xs shadow-2xs"
+                :class="banner.type === 'image'
+                  ? 'bg-white/20 border border-white/30 text-white'
+                  : (banner.gradientPreset === 'cyan'
+                    ? 'bg-cyan-400/15 border border-cyan-300/30 text-cyan-200'
+                    : (banner.gradientPreset === 'emerald'
+                      ? 'bg-amber-400/15 border border-amber-300/30 text-amber-200'
+                      : 'bg-emerald-500/15 border border-emerald-400/30 text-[#85f8c4]'))">
+                <span v-if="banner.badgeIcon" class="material-symbols-outlined text-[14px]">{{ banner.badgeIcon
+                }}</span>
+                <span v-else class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>{{ banner.badgeText }}</span>
+              </span>
 
-          <div class="flex items-center justify-between pt-3 border-t border-white/10 mt-1 z-10">
-            <span class="text-[11px] text-[#81a2d0] hidden sm:inline">
-              {{ t('Rantai Dingin Terjamin -20°C', 'Guaranteed Cold Chain -20°C') }}
-            </span>
-            <button 
-              type="button"
-              @click="onCheckTangkapan"
-              class="bg-white text-[#002242] font-bold text-xs sm:text-sm px-4 py-2 rounded-lg shadow-xs hover:bg-slate-100 transition-colors flex items-center gap-1.5 cursor-pointer ml-auto sm:ml-0"
-            >
-              <span>{{ t('Lihat Produk', 'View Seafood') }}</span>
-              <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
-            </button>
-          </div>
-        </div>
+              <span v-if="banner.tagText" class="text-[11px] sm:text-xs font-mono font-bold px-2 py-0.5 rounded-md"
+                :class="banner.type === 'image'
+                  ? 'bg-black/50 text-amber-300 border border-amber-300/30'
+                  : 'text-[#81a2d0] bg-white/10'">
+                {{ banner.tagText }}
+              </span>
+            </div>
 
-        <!-- Slide 2: Promo & Diskon Tangkapan Grosir -->
-        <div class="min-w-full min-h-[210px] sm:min-h-[240px] md:min-h-[260px] bg-gradient-to-br from-[#0c3756] via-[#005137] to-[#04281e] text-white p-5 sm:p-6 md:p-7 flex flex-col justify-between gap-3 relative overflow-hidden select-none">
-          <div class="absolute -right-6 -bottom-6 w-48 h-48 rounded-full bg-[#85f8c4]/15 blur-2xl pointer-events-none"></div>
+            <!-- Middle Headline & Subtitle -->
+            <div class="flex flex-col gap-1.5 max-w-md my-auto">
+              <h2
+                class="text-lg font-extrabold leading-tight tracking-tight text-white sm:text-xl md:text-2xl line-clamp-2">
+                {{ banner.title }}
+              </h2>
+              <p v-if="banner.subtitle" class="text-xs leading-relaxed sm:text-sm line-clamp-2"
+                :class="banner.type === 'image' ? 'text-slate-200' : 'text-[#81a2d0]'">
+                {{ banner.subtitle }}
+              </p>
+            </div>
 
-          <div class="flex items-center justify-between z-10">
-            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-400/15 border border-amber-300/30 text-[11px] sm:text-xs font-semibold text-amber-200">
-              <span class="material-symbols-outlined text-[14px]">local_fire_department</span>
-              {{ t('Promo Spesial Tangkapan', 'Catch Special Promotion') }}
-            </span>
-            <span class="text-[11px] sm:text-xs text-[#85f8c4] font-bold bg-[#85f8c4]/10 px-2 py-0.5 rounded-md">
-              {{ t('Hemat s.d. 30%', 'Save up to 30%') }}
-            </span>
-          </div>
-
-          <div class="flex flex-col gap-1.5 z-10 max-w-md my-auto">
-            <h2 class="text-white text-lg sm:text-xl md:text-2xl leading-tight font-extrabold tracking-tight">
-              {{ t('Borong Ikan, Diskon Ekstra', 'Bulk Order, Extra Savings') }}
-            </h2>
-            <p class="text-emerald-100 text-xs sm:text-sm leading-relaxed">
-              {{ t('Potongan harga otomatis untuk pesanan ikan di atas 3 kg. Bersih insang & sisik gratis.', 'Automatic discount for seafood orders over 3 kg. Free scaling and gutting included.') }}
-            </p>
-          </div>
-
-          <div class="flex items-center justify-between pt-3 border-t border-white/10 mt-1 z-10">
-            <span class="text-[11px] text-emerald-200/80 hidden sm:inline">
-              {{ t('Khusus Pengiriman Subuh & Siang', 'Early Morning & Noon Delivery') }}
-            </span>
-            <button 
-              type="button"
-              @click="onClaimPromo"
-              class="bg-amber-400 hover:bg-amber-300 text-[#002242] font-bold text-xs sm:text-sm px-4 py-2 rounded-lg shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer ml-auto sm:ml-0"
-            >
-              <span>{{ t('Klaim Promo', 'Claim Promo') }}</span>
-              <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Slide 3: Voucher Gratis Ongkir Cold Chain -->
-        <div class="min-w-full min-h-[210px] sm:min-h-[240px] md:min-h-[260px] bg-gradient-to-br from-[#102a4e] via-[#1a3c6e] to-[#004d61] text-white p-5 sm:p-6 md:p-7 flex flex-col justify-between gap-3 relative overflow-hidden select-none">
-          <div class="absolute -right-6 -bottom-6 w-48 h-48 rounded-full bg-cyan-400/20 blur-2xl pointer-events-none"></div>
-
-          <div class="flex items-center justify-between z-10">
-            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-cyan-400/15 border border-cyan-300/30 text-[11px] sm:text-xs font-semibold text-cyan-200">
-              <span class="material-symbols-outlined text-[14px]">local_shipping</span>
-              {{ t('Gratis Ongkir Rantai Dingin', 'Free Cold-Chain Delivery') }}
-            </span>
-            <span class="text-[11px] sm:text-xs text-cyan-100 font-mono font-bold bg-white/10 px-2 py-0.5 rounded-md">DINGINBEBAS</span>
-          </div>
-
-          <div class="flex flex-col gap-1.5 z-10 max-w-md my-auto">
-            <h2 class="text-white text-lg sm:text-xl md:text-2xl leading-tight font-extrabold tracking-tight">
-              {{ t('Armada Kurir Dingin LBA', 'LBA Cold Courier Fleet') }}
-            </h2>
-            <p class="text-cyan-100/90 text-xs sm:text-sm leading-relaxed">
-              {{ t('Bebas biaya kirim khusus pesanan area Banyuwangi & sekitarnya dengan kemasan thermal berpendingin.', 'Free delivery for orders in Banyuwangi and surrounding areas with insulated thermal packaging.') }}
-            </p>
-          </div>
-
-          <div class="flex items-center justify-between pt-3 border-t border-white/10 mt-1 z-10">
-            <span class="text-[11px] text-cyan-200/80 hidden sm:inline">
-              {{ t('Gunakan saat checkout', 'Apply at checkout') }}
-            </span>
-            <button 
-              type="button"
-              @click="onUseVoucher"
-              class="bg-white text-[#002242] font-bold text-xs sm:text-sm px-4 py-2 rounded-lg shadow-xs hover:bg-slate-100 transition-colors flex items-center gap-1.5 cursor-pointer ml-auto sm:ml-0"
-            >
-              <span>{{ t('Salin Kode', 'Copy Code') }}</span>
-              <span class="material-symbols-outlined text-[16px]">content_copy</span>
-            </button>
+            <!-- Bottom Action & Info Bar -->
+            <div class="flex items-center justify-between pt-3 mt-1 border-t border-white/10">
+              <span class="text-[11px] text-[#81a2d0] hidden sm:inline">
+                {{ banner.voucherCode ? 'Gunakan saat checkout' : 'Rantai Dingin Terjamin -20°C' }}
+              </span>
+              <button v-if="banner.ctaAction !== 'none'" type="button" @click="onBannerCta(banner)"
+                class="bg-white hover:bg-slate-100 text-[#002242] font-bold text-xs sm:text-sm px-4 py-2 rounded-lg shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer ml-auto sm:ml-0">
+                <span>{{ banner.ctaText || 'Lihat Produk' }}</span>
+                <span class="material-symbols-outlined text-[16px]">
+                  {{ banner.ctaAction === 'copy_voucher' ? 'content_copy' : 'arrow_forward' }}
+                </span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
       <!-- Micro Prev / Next Controls -->
-      <button 
-        id="carousel-prev"
-        type="button"
-        aria-label="Slide sebelumnya" 
-        @click="prevSlide"
-        class="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/30 hover:bg-black/55 text-white/90 flex items-center justify-center backdrop-blur-xs transition-opacity opacity-0 group-hover:opacity-100 focus:opacity-100 z-20 cursor-pointer"
-      >
+      <button id="carousel-prev" type="button" aria-label="Slide sebelumnya" @click="prevSlide"
+        class="absolute z-20 flex items-center justify-center w-8 h-8 transition-opacity -translate-y-1/2 rounded-full opacity-0 cursor-pointer left-2 top-1/2 bg-black/30 hover:bg-black/55 text-white/90 backdrop-blur-xs group-hover:opacity-100 focus:opacity-100">
         <span class="material-symbols-outlined text-[20px]">chevron_left</span>
       </button>
 
-      <button 
-        id="carousel-next"
-        type="button"
-        aria-label="Slide berikutnya" 
-        @click="nextSlide"
-        class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/30 hover:bg-black/55 text-white/90 flex items-center justify-center backdrop-blur-xs transition-opacity opacity-0 group-hover:opacity-100 focus:opacity-100 z-20 cursor-pointer"
-      >
+      <button id="carousel-next" type="button" aria-label="Slide berikutnya" @click="nextSlide"
+        class="absolute z-20 flex items-center justify-center w-8 h-8 transition-opacity -translate-y-1/2 rounded-full opacity-0 cursor-pointer right-2 top-1/2 bg-black/30 hover:bg-black/55 text-white/90 backdrop-blur-xs group-hover:opacity-100 focus:opacity-100">
         <span class="material-symbols-outlined text-[20px]">chevron_right</span>
       </button>
 
       <!-- Slide Indicators (Dots / Pills) -->
       <div class="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20 pointer-events-auto">
-        <button 
-          v-for="i in totalSlides" 
-          :key="i - 1"
-          type="button"
-          :aria-label="`Pindah ke slide ${i}`" 
-          @click="goToSlide(i - 1)"
-          class="carousel-dot h-1.5 rounded-full transition-all duration-300 cursor-pointer"
-          :class="currentSlide === (i - 1) ? 'bg-white w-6' : 'bg-white/40 hover:bg-white/70 w-1.5'"
-        ></button>
+        <button v-for="i in totalSlides" :key="i - 1" type="button" :aria-label="`Pindah ke slide ${i}`"
+          @click="goToSlide(i - 1)" class="carousel-dot h-1.5 rounded-full transition-all duration-300 cursor-pointer"
+          :class="currentSlide === (i - 1) ? 'bg-white w-6' : 'bg-white/40 hover:bg-white/70 w-1.5'"></button>
       </div>
     </div>
 
-    <!-- Real-Time Search Bar -->
-    <div class="relative w-full">
+    <!-- Real-Time Search Bar with Typesense + Redis Smart Autocomplete Dropdown -->
+    <div class="relative z-30 w-full">
       <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
         <span class="material-symbols-outlined text-[20px]">search</span>
       </span>
-      <input
-        id="catalog-search-input"
-        ref="searchInputRef"
-        v-model="searchQuery"
-        type="text"
+      <input id="catalog-search-input" ref="searchInputRef" :value="searchQuery"
+        @input="onSearchInput(($event.target as HTMLInputElement).value)" @focus="onSearchFocus" @blur="onSearchBlur"
+        @keydown.esc="isSearchDropdownOpen = false" @keydown.enter="handleSearchSubmit" type="text"
         :placeholder="t('Cari ikan laut, fillet, cumi, pancing ulur...', 'Search seafood, fillet, squid, handline catch...')"
-        class="w-full pl-10 pr-10 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#103860] focus:border-transparent transition-all shadow-xs"
-      />
-      <!-- Clear Search Button -->
-      <button
-        v-if="searchQuery"
-        type="button"
-        @click="searchQuery = ''"
-        class="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
-        aria-label="Bersihkan pencarian"
-      >
-        <span class="material-symbols-outlined text-[18px]">close</span>
-      </button>
+        class="w-full pl-10 pr-10 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#103860] focus:border-transparent transition-all shadow-xs" />
+      <!-- Spinner or Clear Button -->
+      <span class="absolute inset-y-0 right-0 flex items-center pr-3">
+        <span v-if="isSearching" class="material-symbols-outlined text-[18px] text-[#103860] animate-spin">
+          progress_activity
+        </span>
+        <button v-else-if="searchQuery" type="button" @click="clearSearch"
+          class="transition-colors cursor-pointer text-slate-400 hover:text-slate-600" aria-label="Bersihkan pencarian">
+          <span class="material-symbols-outlined text-[18px]">close</span>
+        </button>
+      </span>
+
+      <!-- Smart Autocomplete & Product Preview Dropdown (Redis + Typesense) -->
+      <Transition enter-active-class="transition duration-150 ease-out" enter-from-class="-translate-y-1 opacity-0"
+        enter-to-class="translate-y-0 opacity-100" leave-active-class="transition duration-100 ease-in"
+        leave-from-class="translate-y-0 opacity-100" leave-to-class="-translate-y-1 opacity-0">
+        <div v-if="isSearchDropdownOpen"
+          class="absolute left-0 right-0 top-full mt-1.5 bg-white rounded-xl border border-slate-200/90 shadow-xl z-50 overflow-hidden divide-y divide-slate-100 text-left">
+          <!-- Section A: Suggestions / Trending Pills -->
+          <div class="p-3">
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                <span class="material-symbols-outlined text-[15px]"
+                  :class="searchSuggestData.is_trending ? 'text-emerald-700' : 'text-[#103860]'">
+                  {{ searchSuggestData.is_trending ? 'trending_up' : 'search' }}
+                </span>
+                <span>{{ searchSuggestData.is_trending ? 'Pencarian Populer Muncar' : 'Saran Pencarian Terkait'
+                }}</span>
+              </div>
+              <span v-if="isLoadingSuggestions"
+                class="material-symbols-outlined text-[14px] text-slate-400 animate-spin">
+                progress_activity
+              </span>
+            </div>
+
+            <!-- Pills for trending or List for autocomplete -->
+            <div v-if="searchSuggestData.is_trending" class="flex flex-wrap gap-1.5">
+              <button v-for="kw in searchSuggestData.suggestions" :key="kw" type="button"
+                @mousedown.prevent="selectSuggestion(kw)"
+                class="px-2.5 py-1 bg-slate-50 hover:bg-slate-100 hover:text-[#103860] text-slate-700 rounded-lg text-xs font-medium border border-slate-200/80 transition cursor-pointer flex items-center gap-1">
+                <span class="material-symbols-outlined text-[13px] text-slate-400">history</span>
+                <span>{{ kw }}</span>
+              </button>
+            </div>
+
+            <div v-else-if="searchSuggestData.suggestions && searchSuggestData.suggestions.length > 0"
+              class="space-y-0.5">
+              <button v-for="kw in searchSuggestData.suggestions" :key="kw" type="button"
+                @mousedown.prevent="selectSuggestion(kw)"
+                class="w-full text-left px-2.5 py-1.5 hover:bg-slate-50 rounded-lg text-xs font-semibold text-slate-800 hover:text-[#103860] transition flex items-center justify-between cursor-pointer group">
+                <div class="flex items-center gap-2">
+                  <span
+                    class="material-symbols-outlined text-[15px] text-slate-400 group-hover:text-[#103860]">search</span>
+                  <span>{{ kw }}</span>
+                </div>
+                <span
+                  class="material-symbols-outlined text-[14px] text-slate-300 group-hover:text-[#103860]">north_west</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Section B: Direct Product Cards Preview -->
+          <div v-if="searchSuggestData.products && searchSuggestData.products.length > 0" class="p-3 bg-slate-50/50">
+            <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1">
+              <span class="material-symbols-outlined text-[15px] text-emerald-700">inventory_2</span>
+              <span>{{ searchSuggestData.is_trending ? 'Tangkapan Pilihan Hari Ini' : 'Produk Terkait Langsung'
+              }}</span>
+            </div>
+
+            <div class="space-y-1.5">
+              <div v-for="p in searchSuggestData.products" :key="p.id" @mousedown.prevent="navigateToProduct(p.slug)"
+                class="flex items-center justify-between gap-2.5 p-2 rounded-lg bg-white border border-slate-200/70 hover:border-[#103860]/40 hover:shadow-2xs transition cursor-pointer group">
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <img
+                    :src="p.images?.hero || p.images?.primary || 'https://cdn.ammarabufadhel.my.id/products/asset-1544551763-c149b4dd.webp'"
+                    :alt="p.name"
+                    class="object-cover w-10 h-10 border rounded-md border-slate-200 shrink-0 bg-slate-100" />
+                  <div class="min-w-0">
+                    <h4 class="text-xs font-bold text-slate-800 group-hover:text-[#103860] truncate transition-colors">
+                      {{ p.name }}
+                    </h4>
+                    <div class="text-[10px] text-slate-500 flex items-center gap-1.5 mt-0.5">
+                      <span class="px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 font-medium">{{ p.category
+                      }}</span>
+                      <span>•</span>
+                      <span class="font-semibold text-emerald-700">Stok {{ p.stockKg }} kg</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="text-right shrink-0">
+                  <div class="text-xs font-bold font-mono text-[#103860]">
+                    Rp{{ p.pricePerKg?.toLocaleString('id-ID') }}
+                  </div>
+                  <span class="text-[10px] text-slate-400">/ {{ p.unit || 'kg' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Transition>
     </div>
 
     <!-- Category Horizontal Chip Tabs -->
-    <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1 -mx-4 px-4 sm:mx-0 sm:px-0">
-      <button
-        v-for="cat in CATEGORIES"
-        :key="cat.id"
-        type="button"
-        @click="selectedCategory = cat.id"
-        class="px-4 py-2 rounded-xl text-xs flex-shrink-0 transition-all cursor-pointer"
-        :class="selectedCategory === cat.id 
-          ? 'bg-[#002242] text-white font-bold shadow-xs' 
-          : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium'"
-      >
+    <div class="flex gap-2 px-4 pb-1 -mx-4 overflow-x-auto no-scrollbar sm:mx-0 sm:px-0">
+      <button v-for="cat in CATEGORIES" :key="cat.id" type="button" @click="selectedCategory = cat.id"
+        class="flex-shrink-0 px-4 py-2 text-xs transition-all cursor-pointer rounded-xl" :class="selectedCategory === cat.id
+          ? 'bg-[#002242] text-white font-bold shadow-xs'
+          : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium'">
         {{ cat.label }}
       </button>
     </div>
+
+    <!-- Section: Produk Terlaris (Flat & Clean) -->
+    <section v-if="!searchQuery && selectedCategory === 'semua' && topSellingProducts.length > 0"
+      class="pt-1 space-y-3">
+      <div class="flex items-center justify-between">
+        <div>
+          <h3 class="text-sm font-bold text-[#002242] flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-[16px] text-amber-600">local_fire_department</span>
+            <span>{{ t('Produk Terlaris', 'Best Sellers') }}</span>
+          </h3>
+        </div>
+        <NuxtLink to="/katalog"
+          class="text-[#006c4a] hover:text-[#005137] text-xs font-bold flex items-center gap-0.5 transition-colors">
+          <span>{{ t('Lihat Semua', 'View All') }}</span>
+          <span class="material-symbols-outlined text-[14px]">chevron_right</span>
+        </NuxtLink>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 md:grid-cols-4 sm:gap-4">
+        <CatalogProductCard v-for="(product, idx) in topSellingProducts" :key="'top-' + product.id" :product="product"
+          :rank-badge="`#${idx + 1} Terlaris`" />
+      </div>
+    </section>
 
     <!-- Subheader: Rekomendasi Pilihan & Link ke Katalog -->
     <div class="flex items-center justify-between pt-1">
       <div>
         <h3 class="text-sm font-bold text-[#002242]">{{ t('Rekomendasi Pilihan', 'Featured Recommendations') }}</h3>
       </div>
-      <NuxtLink 
-        to="/katalog" 
-        class="text-[#006c4a] hover:text-[#005137] text-xs font-bold flex items-center gap-0.5 transition-colors"
-      >
+      <NuxtLink to="/katalog"
+        class="text-[#006c4a] hover:text-[#005137] text-xs font-bold flex items-center gap-0.5 transition-colors">
         <span>{{ t('Lihat Semua', 'View All') }}</span>
         <span class="material-symbols-outlined text-[14px]">chevron_right</span>
       </NuxtLink>
@@ -469,60 +881,25 @@ onUnmounted(() => {
 
     <!-- State Handling (Loading, Error, Empty, Success Grid) -->
     <!-- State: Error Retry -->
-    <CommonErrorRetry
-      v-if="hasError"
-      title="Terjadi Kendala Koneksi Data"
-      message="Gagal memuat katalog hasil laut dari cold hub Muncar. Silakan coba lagi."
-      retry-text="Coba Lagi"
-      @retry="retryLoad"
-    />
+    <CommonErrorRetry v-if="hasError" title="Terjadi Kendala Koneksi Data"
+      message="Gagal memuat katalog hasil laut dari cold hub Muncar. Silakan coba lagi." retry-text="Coba Lagi"
+      @retry="retryLoad" />
 
     <!-- State: Animated Skeleton Loading -->
-    <CommonSkeletonLoader
-      v-else-if="isLoading"
-      type="card"
-      :count="4"
-    />
+    <CommonSkeletonLoader v-else-if="isLoading" type="card" :count="4" />
 
     <!-- State: Empty State with Reset Action -->
-    <CommonEmptyState
-      v-else-if="filteredProducts.length === 0"
-      title="Hasil Laut Tidak Ditemukan"
+    <CommonEmptyState v-else-if="filteredProducts.length === 0" title="Hasil Laut Tidak Ditemukan"
       description="Tidak ada produk yang cocok dengan pencarian atau filter yang dipilih. Coba kata kunci lain atau tampilkan seluruh katalog."
-      action-text="Tampilkan Semua Produk"
-      action-icon="refresh"
-      :action-to="''"
-      @action="resetFilter"
-    />
+      action-text="Tampilkan Semua Produk" action-icon="refresh" :action-to="''" @action="resetFilter" />
 
     <!-- State: Responsive Product Grid (2 col mobile, 3 col md, 4 col lg/xl) -->
-    <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
-      <CatalogProductCard
-        v-for="product in filteredProducts"
-        :key="product.id"
-        :product="product"
-      />
+    <div v-else class="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 sm:gap-4 md:gap-5">
+      <CatalogProductCard v-for="product in filteredProducts" :key="product.id" :product="product" />
     </div>
 
-    <!-- Produk Terlaris Strip -->
-    <section class="bg-white border border-slate-200/80 rounded-xl p-3 md:p-4">
-      <div class="mb-3">
-        <h3 class="text-sm font-bold text-[#002242] flex items-center gap-1.5">
-          <span class="material-symbols-outlined text-[16px] text-amber-600">local_fire_department</span>
-          {{ t('Produk Terlaris', 'Best Sellers') }}
-        </h3>
-      </div>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-        <CatalogProductCard
-          v-for="product in topSellingProducts"
-          :key="'top-' + product.id"
-          :product="product"
-        />
-      </div>
-    </section>
-
     <!-- Cold chain delivery guarantee banner -->
-    <div class="bg-white border border-slate-200/80 rounded-xl p-3 flex items-center gap-3 shadow-xs">
+    <div class="flex items-center gap-3 p-3 bg-white border shadow-xs border-slate-200/80 rounded-xl">
       <div class="w-8 h-8 rounded-lg bg-emerald-50 text-[#006c4a] flex items-center justify-center flex-shrink-0">
         <span class="material-symbols-outlined text-[18px]">ac_unit</span>
       </div>
@@ -538,10 +915,12 @@ onUnmounted(() => {
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
 @media (prefers-reduced-motion: reduce) {
   .carousel-track {
     transition: none !important;

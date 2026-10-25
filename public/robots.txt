@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+Allow: /katalog
+Allow: /produk/
+
+# Disallow transactional and customer-private workflows
+Disallow: /auth
+Disallow: /keranjang
+Disallow: /checkout
+Disallow: /pembayaran/
+Disallow: /pesanan/
+Disallow: /akun
+
+Sitemap: https://lautberkahabadi.com/sitemap.xml

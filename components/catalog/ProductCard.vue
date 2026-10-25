@@ -1,20 +1,24 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useCartStore, type CutType } from '~/stores/cart'
+import { useAuthStore } from '~/stores/auth'
 import { useWishlistStore } from '~/stores/wishlist'
 import type { Product } from '~/data/products'
 import { useLocale } from '~/composables/useLocale'
 
 interface Props {
   product: Product
+  rankBadge?: string
 }
 
 const props = defineProps<Props>()
 
 const router = useRouter()
+const route = useRoute()
 const cartStore = useCartStore()
 const wishlistStore = useWishlistStore()
+const authStore = useAuthStore()
 const { t } = useLocale()
 const isAdding = ref(false)
 const justAdded = ref(false)
@@ -29,15 +33,22 @@ const goToDetail = () => {
   router.push('/produk/' + props.product.slug)
 }
 
-const toggleWishlist = (event: Event) => {
+const toggleWishlist = async (event: Event) => {
   event.preventDefault()
   event.stopPropagation()
-  wishlistStore.toggle(props.product.id)
+  if (!authStore.isAuthenticated) {
+    router.push(`/auth?redirect=${encodeURIComponent(route.fullPath)}`)
+    return
+  }
+  await wishlistStore.toggle(props.product.id)
 }
 
 const handleImageError = (event: Event) => {
-  const target = event.target as HTMLImageElement
-  target.src = 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=600&q=80'
+  const target = (event?.target || event?.currentTarget) as HTMLImageElement | null
+  const fallback = 'https://cdn.ammarabufadhel.my.id/products/asset-1544551763-ced7aa4f.webp'
+  if (target && target.src !== fallback) {
+    target.src = fallback
+  }
 }
 
 const handleQuickAdd = () => {
@@ -77,15 +88,29 @@ const handleQuickAdd = () => {
   >
     <div>
       <div class="block relative w-full aspect-[4/3] bg-slate-100 overflow-hidden">
-        <img
-          :src="product.images?.hero || 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=600&q=80'"
+        <NuxtImg
+          :src="product.images?.hero || 'https://cdn.ammarabufadhel.my.id/products/asset-1544551763-ced7aa4f.webp'"
           :alt="product.name"
           class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           loading="lazy"
+          width="400"
+          height="300"
+          format="webp"
           @error="handleImageError"
         />
 
-        <span class="absolute top-2 left-2 bg-[#002242] text-white text-[10px] font-semibold px-2 py-0.5 rounded shadow-xs">
+        <!-- Badge: Rank Badge (jika ada) atau Quality Badge default -->
+        <span 
+          v-if="rankBadge"
+          class="absolute top-2 left-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-xs flex items-center gap-1"
+        >
+          <span class="material-symbols-outlined text-[12px]">local_fire_department</span>
+          <span>{{ rankBadge }}</span>
+        </span>
+        <span 
+          v-else
+          class="absolute top-2 left-2 bg-[#002242] text-white text-[10px] font-semibold px-2 py-0.5 rounded shadow-xs"
+        >
           {{ product.qualityBadges?.[0] || 'Tangkapan Hari Ini' }}
         </span>
 
@@ -100,10 +125,6 @@ const handleQuickAdd = () => {
             {{ isFavorited ? 'favorite' : 'favorite' }}
           </span>
         </button>
-
-        <span class="absolute bottom-2 right-2 bg-white/90 backdrop-blur-xs text-slate-800 text-[10px] font-medium px-1.5 py-0.5 rounded border border-slate-200">
-          {{ product.exportGrade || 'Grade A' }}
-        </span>
       </div>
 
       <div class="p-2.5 pb-1">
@@ -125,12 +146,6 @@ const handleQuickAdd = () => {
               : t(`Stok: ${product.stockKg} kg`, `Stock: ${product.stockKg} kg`) 
             }}
           </span>
-        </div>
-
-        <!-- Ide Olahan Dapur -->
-        <div v-if="product.culinaryIdeas?.length" class="mt-2 flex items-center gap-1 overflow-hidden text-[10px] text-slate-600 bg-slate-50 border border-slate-100 rounded px-1.5 py-0.5">
-          <span class="material-symbols-outlined text-[13px] text-amber-600 shrink-0">skillet</span>
-          <span class="truncate font-medium text-slate-700">{{ t('Cocok:', 'Ideas:') }} {{ product.culinaryIdeas.slice(0, 2).join(', ') }}</span>
         </div>
       </div>
     </div>

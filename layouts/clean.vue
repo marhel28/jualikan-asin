@@ -32,7 +32,16 @@ const pageSubtitle = computed(() => {
 })
 
 const goBack = () => {
+  if (route.path.startsWith('/auth')) {
+    router.push('/')
+    return
+  }
   if (typeof window !== 'undefined' && window.history.length > 1) {
+    const fromPath = String((router.options.history.state as any)?.back || '')
+    if (fromPath && (fromPath.includes('/akun') || fromPath.includes('/auth'))) {
+      router.push('/')
+      return
+    }
     router.back()
   } else {
     // Intelligent fallback
@@ -50,12 +59,23 @@ const goBack = () => {
       <!-- Minimalist Sticky Header -->
       <header class="bg-white/95 backdrop-blur-md sticky top-0 z-50 flex justify-between items-center w-full px-4 py-3 border-b border-slate-200">
         <div class="flex items-center gap-3">
-          <!-- Back Button -->
+          <!-- Back Button: Direct to Home when on Auth page to prevent redirect bounce loops -->
+          <NuxtLink 
+            v-if="route.path.startsWith('/auth')"
+            to="/"
+            class="p-1.5 -ml-1.5 rounded-full hover:bg-slate-100 transition-colors text-[#103860] flex items-center justify-center cursor-pointer"
+            aria-label="Kembali ke Beranda"
+            title="Kembali ke Beranda"
+          >
+            <span class="material-symbols-outlined text-[24px]">arrow_back</span>
+          </NuxtLink>
           <button 
+            v-else
             type="button" 
             @click="goBack"
-            class="p-1.5 -ml-1.5 rounded-full hover:bg-slate-100 transition-colors text-[#103860]"
+            class="p-1.5 -ml-1.5 rounded-full hover:bg-slate-100 transition-colors text-[#103860] flex items-center justify-center cursor-pointer"
             aria-label="Kembali"
+            title="Kembali"
           >
             <span class="material-symbols-outlined text-[24px]">arrow_back</span>
           </button>

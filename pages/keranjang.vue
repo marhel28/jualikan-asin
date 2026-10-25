@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore, type PackagingType } from '~/stores/cart'
+import { useAuthStore } from '~/stores/auth'
 
 definePageMeta({
   layout: 'default'
@@ -19,6 +20,19 @@ useHead({
 
 const router = useRouter()
 const cartStore = useCartStore()
+const authStore = useAuthStore()
+
+onMounted(() => {
+  cartStore.initCart()
+})
+
+const handleProceedToCheckout = () => {
+  if (!authStore.isAuthenticated) {
+    router.push('/auth?redirect=/checkout')
+  } else {
+    router.push('/checkout')
+  }
+}
 
 const goBack = () => {
   if (typeof window !== 'undefined' && window.history.length > 1) {
@@ -37,18 +51,19 @@ const goToProduct = (slugOrId?: string) => {
 const isLoading = ref(false)
 const errorMessage = ref<string | null>(null)
 
-// Standard local chilled courier fee
-const STANDARD_SHIPPING_FEE = 12000
-
-// Dynamic effective shipping fee based on free shipping threshold
-const shippingFee = computed(() => {
-  if (cartStore.isFreeShipping) return 0
-  return STANDARD_SHIPPING_FEE
+// Dynamic local chilled courier fee from backend policy
+const standardShippingFee = computed(() => {
+  return cartStore.shippingPolicy?.standardFee || cartStore.shippingPolicy?.localFee || 12000
 })
 
-// Total estimated bill calculation
+// Dynamic effective shipping fee based on backend admin settings
+const shippingFee = computed(() => {
+  return cartStore.shippingFee
+})
+
+// Total estimated bill calculation from cartStore
 const totalEstimatedBill = computed(() => {
-  return cartStore.productsSubtotal + cartStore.packagingFee + shippingFee.value
+  return cartStore.totalEstimatedBill
 })
 
 // Packaging selector helper with resilient store method handling
@@ -85,13 +100,18 @@ const handleRetry = async () => {
 
 // Image error fallback
 const handleImageError = (event: Event) => {
-  const target = event.target as HTMLImageElement
-  target.src = 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=600&q=80'
+  const target = (event?.target || event?.currentTarget) as HTMLImageElement | null
+  const fallback = 'https://cdn.ammarabufadhel.my.id/products/asset-1544551763-ced7aa4f.webp'
+  if (target && target.src !== fallback) {
+    target.src = fallback
+  }
 }
 
-onMounted(() => {
+onMounted(async () => {
+  cartStore.initCart()
   // Reset any lingering transient errors
   errorMessage.value = null
+  await cartStore.fetchDeliveryConfig()
 })
 </script>
 
@@ -153,10 +173,16 @@ onMounted(() => {
         <!-- 1. Free Shipping Progress Bar Card -->
         <section class="bg-white border border-slate-200/90 rounded-xl p-4 shadow-xs space-y-2">
           <div class="flex items-center justify-between text-xs">
-            <span class="font-bold text-[#103860] flex items-center gap-1.5">
+            <div class="font-bold text-[#103860] flex items-center gap-1.5 flex-wrap">
               <span class="material-symbols-outlined text-[18px] text-[#059669]">local_shipping</span>
               <span>Bebas Ongkir Armada Dingin LBA</span>
-            </span>
+              <span 
+                v-if="cartStore.shippingPolicy?.freeShippingBanyuwangi" 
+                class="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200"
+              >
+                Seluruh Banyuwangi
+              </span>
+            </div>
             <span class="font-extrabold text-[#059669]">{{ cartStore.freeShippingProgress }}%</span>
           </div>
 
@@ -203,11 +229,14 @@ onMounted(() => {
               <div
                 class="relative w-16 h-16 min-w-16 min-h-16 rounded-xl bg-slate-100 shrink-0 overflow-hidden border border-slate-200/60 block group-hover:opacity-90 transition-opacity"
               >
-                <img
+                <NuxtImg
                   :src="item.imageUrl"
                   :alt="item.name"
                   @error="handleImageError"
                   class="w-full h-full object-cover block"
+                  width="64"
+                  height="64"
+                  format="webp"
                   loading="lazy"
                 />
                 <span class="absolute bottom-0 inset-x-0 bg-[#103860]/85 text-white text-[9px] font-bold text-center py-0.5">
@@ -397,19 +426,19 @@ onMounted(() => {
             <div class="flex justify-between text-slate-600">
               <span>Estimasi Ongkir Armada Dingin LBA</span>
               <div class="flex items-center gap-1.5">
-                <span v-if="cartStore.isFreeShipping" class="line-through text-slate-400 text-[11px]">
-                  Rp {{ STANDARD_SHIPPING_FEE.toLocaleString('id-ID') }}
+                <span v-if="cartStore.isFreeShipping && standardShippingFee > 0" class="line-through text-slate-400 text-[11px]">
+                  Rp {{ standardShippingFee.toLocaleString('id-ID') }}
                 </span>
                 <span class="font-bold" :class="cartStore.isFreeShipping ? 'text-[#059669]' : 'text-slate-800'">
-                  Rp {{ shippingFee.toLocaleString('id-ID') }}
+                  {{ shippingFee === 0 ? 'Gratis' : 'Rp ' + shippingFee.toLocaleString('id-ID') }}
                 </span>
               </div>
             </div>
 
             <!-- Free Shipping Discount Row -->
-            <div v-if="cartStore.isFreeShipping" class="flex justify-between text-[#059669] font-semibold bg-emerald-50 px-2.5 py-1 rounded-lg">
+            <div v-if="cartStore.isFreeShipping && standardShippingFee > 0" class="flex justify-between text-[#059669] font-semibold bg-emerald-50 px-2.5 py-1 rounded-lg">
               <span>Diskon Bebas Ongkir Lokal</span>
-              <span>-Rp {{ STANDARD_SHIPPING_FEE.toLocaleString('id-ID') }}</span>
+              <span>-Rp {{ standardShippingFee.toLocaleString('id-ID') }}</span>
             </div>
 
             <!-- Total Estimasi -->
@@ -425,13 +454,14 @@ onMounted(() => {
           </div>
 
           <!-- Desktop & Mobile Inline Checkout Button -->
-          <NuxtLink
-            to="/checkout"
+          <button
+            type="button"
+            @click="handleProceedToCheckout"
             class="flex w-full mt-3 py-3 px-4 rounded-xl bg-[#103860] hover:bg-[#13446E] text-white text-xs font-bold transition-all shadow-md text-center items-center justify-center gap-2 cursor-pointer"
           >
             <span>Lanjut ke Pengiriman</span>
             <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
-          </NuxtLink>
+          </button>
         </section>
       </div>
 
@@ -445,13 +475,14 @@ onMounted(() => {
             </span>
           </div>
 
-          <NuxtLink
-            to="/checkout"
+          <button
+            type="button"
+            @click="handleProceedToCheckout"
             class="flex-1 py-3 px-4 rounded-xl bg-[#103860] hover:bg-[#13446E] text-white text-xs font-bold transition-all shadow-md active:scale-98 text-center flex items-center justify-center gap-2 cursor-pointer"
           >
             <span>Lanjut ke Pengiriman</span>
             <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
-          </NuxtLink>
+          </button>
         </div>
       </footer>
     </div>

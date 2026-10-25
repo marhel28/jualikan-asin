@@ -68,11 +68,14 @@ useHead({
             <!-- foto hero -->
             <div class="relative bg-slate-100 min-h-[260px] lg:min-h-0">
               <!-- ponytail: ganti src ke foto asli Muncar di /public/tentang/hero.jpg saat tersedia -->
-              <img
-                src="https://images.unsplash.com/photo-1505118380757-91f5f5632de0?w=900&q=80&auto=format&fit=crop"
+              <NuxtImg
+                src="https://cdn.ammarabufadhel.my.id/banners/banner-laut-selatbali-09d4359b.webp"
                 alt="Kapal nelayan berjejer di dermaga Muncar pagi hari"
                 class="absolute inset-0 w-full h-full object-cover"
                 loading="eager"
+                width="900"
+                height="600"
+                format="webp"
               />
               <div class="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent lg:hidden" />
               <!-- floating badge desktop -->
@@ -145,7 +148,7 @@ useHead({
             <!-- ponytail: ganti src ke /public/tentang/01.jpg dst saat foto asli tersedia -->
             <figure class="bg-white border border-slate-200 rounded-xl overflow-hidden flex flex-col">
               <div class="aspect-[4/3] overflow-hidden bg-slate-100">
-                <img src="https://images.unsplash.com/photo-1544552866-d3ed42536cfd?w=800&q=80&auto=format&fit=crop" alt="Bongkar hasil tangkapan pagi di dermaga Muncar" class="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-500" loading="lazy" />
+                <NuxtImg src="https://cdn.ammarabufadhel.my.id/products/asset-1544552866-03b7d7e3.webp" alt="Bongkar hasil tangkapan pagi di dermaga Muncar" class="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-500" loading="lazy" width="600" height="450" format="webp" />
               </div>
               <figcaption class="p-3 flex flex-col gap-1">
                 <span class="text-xs font-bold text-slate-900">Bongkar pagi, 05.30 WIB</span>
@@ -155,7 +158,7 @@ useHead({
 
             <figure class="bg-white border border-slate-200 rounded-xl overflow-hidden flex flex-col">
               <div class="aspect-[4/3] overflow-hidden bg-slate-100">
-                <img src="https://images.unsplash.com/photo-1534768651016-33c15cd2cc10?w=800&q=80&auto=format&fit=crop" alt="Sortir dan pembersihan higienis di meja stainless" class="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-500" loading="lazy" />
+                <NuxtImg src="https://images.unsplash.com/photo-1534768651016-33c15cd2cc10?w=800&q=80&auto=format&fit=crop" alt="Sortir dan pembersihan higienis di meja stainless" class="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-500" loading="lazy" width="600" height="450" format="webp" />
               </div>
               <figcaption class="p-3 flex flex-col gap-1">
                 <span class="text-xs font-bold text-slate-900">Sortir & bersihkan</span>
@@ -165,7 +168,7 @@ useHead({
 
             <figure class="bg-white border border-slate-200 rounded-xl overflow-hidden flex flex-col">
               <div class="aspect-[4/3] overflow-hidden bg-slate-100">
-                <img src="https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=800&q=80&auto=format&fit=crop" alt="Timbangan digital transparan sebelum pengemasan" class="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-500" loading="lazy" />
+                <NuxtImg src="https://cdn.ammarabufadhel.my.id/banners/banner-dermaga-muncar-2a28a9c6.webp" alt="Timbangan digital transparan sebelum pengemasan" class="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-500" loading="lazy" width="600" height="450" format="webp" />
               </div>
               <figcaption class="p-3 flex flex-col gap-1">
                 <span class="text-xs font-bold text-slate-900">Timbang jujur</span>
@@ -175,7 +178,7 @@ useHead({
 
             <figure class="bg-white border border-slate-200 rounded-xl overflow-hidden flex flex-col">
               <div class="aspect-[4/3] overflow-hidden bg-slate-100">
-                <img src="https://images.unsplash.com/photo-1608198093002-ad4e005484ec?w=800&q=80&auto=format&fit=crop" alt="Pengemasan vakum dan ice gel siap kirim" class="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-500" loading="lazy" />
+                <NuxtImg src="https://cdn.ammarabufadhel.my.id/banners/banner-pasar-ikan-118875e7.webp" alt="Pengemasan vakum dan ice gel siap kirim" class="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-500" loading="lazy" width="600" height="450" format="webp" />
               </div>
               <figcaption class="p-3 flex flex-col gap-1">
                 <span class="text-xs font-bold text-slate-900">Vakum + ice gel</span>
@@ -185,7 +188,7 @@ useHead({
 
             <figure class="bg-white border border-slate-200 rounded-xl overflow-hidden flex flex-col col-span-2 lg:col-span-2">
               <div class="aspect-[16/9] lg:aspect-[2.2/1] overflow-hidden bg-slate-100 relative">
-                <img src="https://images.unsplash.com/photo-1505118380757-91f5f5632de0?w=1000&q=80&auto=format&fit=crop" alt="Perahu nelayan Muncar di Selat Bali" class="w-full h-full object-cover" loading="lazy" />
+                <NuxtImg src="https://cdn.ammarabufadhel.my.id/banners/banner-laut-selatbali-4be58f45.webp" alt="Perahu nelayan Muncar di Selat Bali" class="w-full h-full object-cover" loading="lazy" width="800" height="400" format="webp" />
                 <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/55 to-transparent p-3 md:p-4">
                   <span class="text-xs md:text-sm font-semibold text-white">Selat Bali & Samudra Hindia: sumber ikan tangkapan harian kami.</span>
                 </div>

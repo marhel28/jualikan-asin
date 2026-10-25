@@ -1,8 +1,13 @@
 <script setup lang="ts">
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '~/stores/cart'
-import { useCheckoutStore, type CourierType, type DeliverySlot } from '~/stores/checkout'
+import { useCheckoutStore, type DeliverySlot } from '~/stores/checkout'
 import { useOrderStore } from '~/stores/order'
+import { useAuthStore } from '~/stores/auth'
+import AddressSelectModal from '~/components/address/AddressSelectModal.vue'
+import AddressFormModal from '~/components/address/AddressFormModal.vue'
+import type { UserAddress } from '~/stores/auth'
 
 definePageMeta({
   layout: 'default'
@@ -16,6 +21,89 @@ const router = useRouter()
 const cartStore = useCartStore()
 const checkoutStore = useCheckoutStore()
 const orderStore = useOrderStore()
+const authStore = useAuthStore()
+
+const isSelectAddressOpen = ref(false)
+const isFormAddressOpen = ref(false)
+const editingAddress = ref<UserAddress | null>(null)
+
+const handleSelectAddress = (addr: UserAddress) => {
+  checkoutStore.setAddress({
+    id: addr.id,
+    recipientName: addr.recipientName,
+    recipientPhone: addr.recipientPhone,
+    label: addr.label,
+    street: addr.street,
+    benchmark: addr.benchmark || '',
+    isDefault: addr.isDefault,
+    isGpsVerified: addr.isGpsVerified ?? true,
+    provinsiKode: addr.provinsiKode,
+    kabupatenKode: addr.kabupatenKode,
+    kecamatanKode: addr.kecamatanKode,
+    desaKode: addr.desaKode,
+    provinsiNama: addr.provinsiNama,
+    kabupatenNama: addr.kabupatenNama,
+    kecamatanNama: addr.kecamatanNama,
+    desaNama: addr.desaNama,
+    coordinates: { lat: -8.4328, lng: 114.3361 }
+  })
+}
+
+const handleOpenAddAddress = () => {
+  editingAddress.value = null
+  isFormAddressOpen.value = true
+}
+
+const handleOpenEditAddress = (addr: UserAddress) => {
+  editingAddress.value = addr
+  isFormAddressOpen.value = true
+}
+
+const handleAddressSaved = (addr: UserAddress) => {
+  handleSelectAddress(addr)
+}
+
+onMounted(async () => {
+  if (typeof window !== 'undefined') {
+    cartStore.initCart()
+    if (!authStore.isAuthenticated) {
+      const token = localStorage.getItem('lba_auth_token')
+      if (token) {
+        await authStore.initAuth()
+      }
+    }
+    if (!authStore.isAuthenticated) {
+      router.replace('/auth?redirect=/checkout')
+      return
+    }
+    if (cartStore.items.length === 0) {
+      router.replace('/keranjang')
+      return
+    }
+
+    // Load user addresses from backend
+    const addresses = await authStore.fetchAddresses()
+    const def = addresses.find(a => a.isDefault) || addresses[0]
+    if (def) {
+      handleSelectAddress(def)
+    } else if (authStore.user?.defaultAddress) {
+      const da = authStore.user.defaultAddress
+      checkoutStore.setAddress({
+        id: da.id,
+        recipientName: da.recipientName || authStore.user.fullName,
+        recipientPhone: da.recipientPhone || authStore.user.phoneWhatsApp,
+        label: da.label || 'Rumah',
+        street: da.street,
+        benchmark: da.benchmark || 'Banyuwangi',
+        isGpsVerified: da.isGpsVerified ?? true,
+        coordinates: { lat: -8.4328, lng: 114.3361 }
+      })
+    }
+  }
+
+  // Load dynamic arrival slots and delivery policy from backend
+  await checkoutStore.fetchDeliveryConfig()
+})
 
 const goBack = () => {
   if (typeof window !== 'undefined' && window.history.length > 1) {
@@ -25,8 +113,12 @@ const goBack = () => {
   }
 }
 
-const handleProceedToPayment = () => {
-  const newOrderId = orderStore.createOrder()
+const handleProceedToPayment = async () => {
+  if (!checkoutStore.isDeliveryAllowed) {
+    alert('Mohon maaf, saat ini pengiriman rantai dingin Laut Berkah Abadi hanya melayani area Kabupaten Banyuwangi. Silakan pilih atau tambahkan alamat di wilayah Banyuwangi.')
+    return
+  }
+  const newOrderId = await orderStore.createOrder()
   router.push(`/pembayaran/${newOrderId}`)
 }
 </script>
@@ -34,18 +126,18 @@ const handleProceedToPayment = () => {
 <template>
   <div class="flex flex-col gap-4 py-1">
     <!-- Mobile-only local header with Back navigation (hidden on md+) -->
-    <header class="md:hidden -mx-4 -mt-4 mb-1 bg-white border-b border-slate-200 px-4 py-3 flex items-center gap-3">
+    <header class="flex items-center gap-3 px-4 py-3 mb-1 -mx-4 -mt-4 bg-white border-b md:hidden border-slate-200">
       <button type="button" @click="goBack" class="p-1.5 -ml-1.5 rounded-full hover:bg-slate-100 text-[#103860] cursor-pointer" aria-label="Kembali ke Keranjang">
         <span class="material-symbols-outlined text-[24px]">arrow_back</span>
       </button>
       <div class="flex flex-col">
         <h1 class="text-base font-bold text-[#103860] leading-tight">Checkout Pengiriman</h1>
-        <p class="text-xs text-slate-500 font-medium">Pusat Distribusi Dingin Muncar</p>
+        <p class="text-xs font-medium text-slate-500">Pusat Distribusi Dingin Muncar</p>
       </div>
     </header>
 
     <!-- Desktop Breadcrumb & Back action -->
-    <nav class="hidden md:flex items-center justify-between text-xs text-slate-500 mb-1">
+    <nav class="items-center justify-between hidden mb-1 text-xs md:flex text-slate-500">
       <div class="flex items-center gap-2">
         <NuxtLink to="/" class="hover:text-[#103860] transition-colors">Beranda</NuxtLink>
         <span class="material-symbols-outlined text-[14px]">chevron_right</span>
@@ -67,103 +159,153 @@ const handleProceedToPayment = () => {
     <div class="grid grid-cols-1 md:grid-cols-[1.4fr_1fr] gap-4 md:gap-6 items-start pb-24 md:pb-8">
     <!-- Left Column: Address, Courier, and Delivery Slot Selection -->
     <div class="flex flex-col gap-4">
-      <!-- Recipient Address Card -->
-      <div class="bg-white border border-slate-200/80 rounded-xl p-4 shadow-xs flex flex-col gap-2">
+      <!-- Recipient Address Card with Tokopedia-Style 'Pilih Alamat Lain' Button -->
+      <div class="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col gap-3">
+        <!-- Top Row: Title, Label Pill, Default Badge, and GPS Badge -->
+        <div class="flex items-center justify-between gap-2 flex-wrap pb-2 border-b border-slate-100">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="text-xs font-bold text-[#103860] flex items-center gap-1.5 uppercase tracking-wide">
+              <span class="material-symbols-outlined text-[18px]">location_on</span>
+              Alamat Pengiriman
+            </span>
+            <span v-if="checkoutStore.address.label" class="px-2 py-0.5 rounded-md bg-slate-100 text-[10px] font-bold text-slate-700">
+              {{ checkoutStore.address.label }}
+            </span>
+            <span
+              v-if="checkoutStore.address.isDefault"
+              class="px-2 py-0.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-800 text-[10px] font-bold inline-flex items-center gap-0.5"
+            >
+              <span class="material-symbols-outlined text-[11px] text-[#059669]">check</span>
+              <span>Utama</span>
+            </span>
+          </div>
+
+          <!-- Out of Service Area Badge -->
+          <span
+            v-if="!checkoutStore.isDeliveryAllowed"
+            class="text-[11px] font-bold flex items-center gap-1 px-2 py-0.5 rounded-md bg-red-100 text-red-800 border border-red-200"
+          >
+            <span class="material-symbols-outlined text-[14px] text-red-600">fmd_bad</span>
+            <span>Di Luar Jangkauan</span>
+          </span>
+
+          <!-- GPS Chip -->
+          <span 
+            class="text-[11px] font-semibold flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 text-[#059669]"
+          >
+            <span class="material-symbols-outlined text-[14px]">verified</span>
+            <span>GPS Terverifikasi</span>
+          </span>
+        </div>
+
+        <!-- Recipient & Phone -->
+        <div class="text-xs text-slate-900 font-bold flex items-center gap-2">
+          <span>{{ checkoutStore.address.recipientName }}</span>
+          <span class="text-slate-400 font-normal">|</span>
+          <span class="font-mono text-slate-700 font-normal">{{ checkoutStore.address.recipientPhone }}</span>
+        </div>
+
+        <!-- Full Street & Administrative Region -->
+        <div class="text-xs text-slate-600 leading-relaxed space-y-1">
+          <p class="font-medium text-slate-800">{{ checkoutStore.address.street }}</p>
+          <p v-if="checkoutStore.address.desaNama || checkoutStore.address.kecamatanNama || checkoutStore.address.kabupatenNama" class="text-[11px] text-slate-500">
+            {{ [checkoutStore.address.desaNama, checkoutStore.address.kecamatanNama ? 'Kec. ' + checkoutStore.address.kecamatanNama : null, checkoutStore.address.kabupatenNama, checkoutStore.address.provinsiNama].filter(Boolean).join(', ') }}
+          </p>
+          <p v-if="checkoutStore.address.benchmark" class="text-[11px] text-slate-400 italic">
+            Patokan: {{ checkoutStore.address.benchmark }}
+          </p>
+        </div>
+
+        <!-- Action Buttons (Tokopedia-Style) -->
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-2.5 border-t border-slate-100">
+          <div class="inline-flex items-center gap-1 text-[11px] text-slate-500 bg-slate-50 border border-slate-200/70 px-2.5 py-1 rounded-lg">
+            <span class="material-symbols-outlined text-[14px] text-[#103860]">pin_drop</span>
+            <span class="font-mono text-slate-700">
+              {{ checkoutStore.address.coordinates?.lat?.toFixed(4) }}, {{ checkoutStore.address.coordinates?.lng?.toFixed(4) }}
+            </span>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              @click="handleOpenEditAddress(checkoutStore.address as any)"
+              class="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 border border-slate-200 hover:bg-slate-50 rounded-xl transition cursor-pointer"
+            >
+              Ubah
+            </button>
+            <button
+              type="button"
+              @click="isSelectAddressOpen = true"
+              class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-[#103860]/40 hover:border-[#103860] bg-blue-50/70 hover:bg-blue-100/80 text-[#103860] text-xs font-bold transition-all cursor-pointer shadow-2xs"
+            >
+              <span class="material-symbols-outlined text-[16px]">swap_horiz</span>
+              <span>Pilih Alamat Lain</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Warning Box: Delivery Restricted to Banyuwangi Only -->
+      <div
+        v-if="!checkoutStore.isDeliveryAllowed"
+        class="p-4 bg-red-50/95 border border-red-200 rounded-xl text-xs text-red-950 flex items-start gap-3 shadow-xs"
+      >
+        <span class="material-symbols-outlined text-[22px] text-red-600 shrink-0 mt-0.5">fmd_bad</span>
+        <div class="space-y-1">
+          <span class="font-bold text-xs text-red-950 block">Pengiriman Belum Tersedia ke Wilayah Ini</span>
+          <p class="text-[11px] leading-relaxed text-red-800">
+            Saat ini pengiriman rantai dingin Laut Berkah Abadi hanya melayani alamat di seluruh wilayah <b>Kabupaten Banyuwangi</b> untuk menjamin kualitas kesegaran 0-2°C. Alamat terpilih berada di luar jangkauan pengiriman.
+          </p>
+          <div class="pt-1">
+            <button
+              type="button"
+              @click="isSelectAddressOpen = true"
+              class="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-red-300 hover:bg-red-100/60 text-red-900 font-bold text-[11px] rounded-lg transition cursor-pointer shadow-2xs"
+            >
+              <span class="material-symbols-outlined text-[14px]">swap_horiz</span>
+              <span>Ganti Alamat ke Area Banyuwangi</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dynamic Delivery Arrival Slot Selector -->
+      <div class="flex flex-col gap-3 p-4 bg-white border shadow-xs border-slate-200/80 rounded-xl">
         <div class="flex items-center justify-between">
           <span class="text-xs font-bold text-[#103860] flex items-center gap-1.5">
-            <span class="material-symbols-outlined text-[18px]">location_on</span>
-            Alamat Tujuan Pengiriman
+            <span class="material-symbols-outlined text-[18px]">schedule</span>
+            Pilihan Slot Kedatangan Kurir
           </span>
-          <span class="text-[11px] font-semibold text-[#059669] flex items-center gap-1">
-            <span class="material-symbols-outlined text-[14px]">verified</span>
-            GPS Terverifikasi
+          <span v-if="checkoutStore.isLoadingSlots" class="text-[11px] text-slate-400 flex items-center gap-1">
+            <span class="material-symbols-outlined text-[14px] animate-spin">sync</span>
+            Memuat slot...
           </span>
         </div>
-
-        <div class="text-xs text-slate-800 font-semibold mt-1">
-          {{ checkoutStore.address.recipientName }} ({{ checkoutStore.address.recipientPhone }})
-        </div>
-        <p class="text-xs text-slate-600 leading-relaxed">
-          {{ checkoutStore.address.street }}
-        </p>
-        <p class="text-[11px] text-slate-500 italic">
-          {{ checkoutStore.address.benchmark }}
-        </p>
-      </div>
-
-      <!-- Courier Selector Card -->
-      <div class="bg-white border border-slate-200/80 rounded-xl p-4 shadow-xs flex flex-col gap-3">
-        <span class="text-xs font-bold text-[#103860] flex items-center gap-1.5">
-          <span class="material-symbols-outlined text-[18px]">local_shipping</span>
-          Pilihan Layanan Armada Dingin
-        </span>
 
         <div class="grid grid-cols-1 gap-2">
           <label 
-            v-for="courier in [
-              { id: 'lba_cold_courier', name: 'Armada Kurir Dingin LBA', fee: cartStore.isFreeShipping ? 0 : 12000, desc: 'Motor Box Insulasi Chilled 0-4 C' },
-              { id: 'paxel_cold', name: 'Paxel Cold Express', fee: 25000, desc: 'Luar Kota / Next Day Chilled' },
-              { id: 'self_pickup', name: 'Ambil Mandiri Cold Storage Muncar', fee: 0, desc: 'Bebas Biaya (Langsung dari Gudang Utama)' }
-            ]"
-            :key="courier.id"
-            class="flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all"
-            :class="checkoutStore.selectedCourier === courier.id ? 'border-[#103860] bg-blue-50/40 shadow-xs' : 'border-slate-200'"
-          >
-            <input 
-              type="radio" 
-              name="courier" 
-              :value="courier.id" 
-              :checked="checkoutStore.selectedCourier === courier.id"
-              @change="checkoutStore.setCourier(courier.id as CourierType)"
-              class="mt-1 text-[#103860]"
-            />
-            <div class="flex-1">
-              <div class="flex justify-between items-center text-xs">
-                <span class="font-bold text-[#0F172A]">{{ courier.name }}</span>
-                <span class="font-extrabold text-[#103860]">
-                  {{ courier.fee === 0 ? 'Gratis' : `Rp ${courier.fee.toLocaleString('id-ID')}` }}
-                </span>
-              </div>
-              <p class="text-[11px] text-slate-500 mt-0.5">{{ courier.desc }}</p>
-            </div>
-          </label>
-        </div>
-      </div>
-
-      <!-- Subuh Delivery Slot Selector -->
-      <div class="bg-white border border-slate-200/80 rounded-xl p-4 shadow-xs flex flex-col gap-3">
-        <span class="text-xs font-bold text-[#103860] flex items-center gap-1.5">
-          <span class="material-symbols-outlined text-[18px]">schedule</span>
-          Pilihan Slot Kedatangan Kurir
-        </span>
-
-        <div class="grid grid-cols-1 gap-2">
-          <label 
-            v-for="slot in [
-              { id: 'subuh', title: 'Slot Pagi Subuh (06:00 - 08:30 WIB)', badge: 'Terbaik', desc: 'Pilihan terbaik untuk langsung dimasak sarapan dan makan siang' },
-              { id: 'siang', title: 'Slot Siang (10:30 - 13:00 WIB)', badge: null, desc: 'Pengiriman reguler tengah hari' },
-              { id: 'sore', title: 'Slot Sore (16:00 - 18:30 WIB)', badge: null, desc: 'Cocok untuk persiapan santap malam keluarga' }
-            ]"
+            v-for="slot in checkoutStore.activeSlots"
             :key="slot.id"
-            class="flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all"
-            :class="checkoutStore.selectedDeliverySlot === slot.id ? 'border-[#103860] bg-blue-50/40 shadow-xs' : 'border-slate-200'"
+            class="flex items-start gap-3 p-3 transition-all border cursor-pointer rounded-xl"
+            :class="checkoutStore.selectedDeliverySlot === slot.id ? 'border-[#103860] bg-blue-50/40 shadow-xs' : 'border-slate-200 hover:border-slate-300'"
           >
             <input 
               type="radio" 
               name="slot" 
               :value="slot.id" 
               :checked="checkoutStore.selectedDeliverySlot === slot.id"
-              @change="checkoutStore.setDeliverySlot(slot.id as DeliverySlot)"
+              @change="checkoutStore.setDeliverySlot(slot.id)"
               class="mt-1 text-[#103860]"
             />
             <div class="flex-1">
               <div class="flex items-center gap-2 text-xs">
                 <span class="font-bold text-[#0F172A]">{{ slot.title }}</span>
-                <span v-if="slot.badge" class="text-[#059669] text-[11px] font-semibold">
-                  (Rekomendasi)
+                <span class="text-[11px] font-semibold text-slate-600">({{ slot.timeRange }})</span>
+                <span v-if="slot.badge || slot.isRecommended" class="text-[#059669] text-[10px] font-bold bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">
+                  Rekomendasi
                 </span>
               </div>
-              <p class="text-[11px] text-slate-500 mt-0.5">{{ slot.desc }}</p>
+              <p class="text-[11px] text-slate-500 mt-0.5">{{ slot.description }}</p>
             </div>
           </label>
         </div>
@@ -200,8 +342,8 @@ const handleProceedToPayment = () => {
     <!-- Right Column: Guarantee Notice + Bill Breakdown + CTA -->
     <div class="flex flex-col gap-4 md:sticky md:top-20">
       <!-- Mini Cart Items Summary (Clean Desktop & Mobile Preview) -->
-      <div class="bg-white border border-slate-200/80 rounded-xl p-4 shadow-xs flex flex-col gap-3">
-        <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+      <div class="flex flex-col gap-3 p-4 bg-white border shadow-xs border-slate-200/80 rounded-xl">
+        <div class="flex items-center justify-between pb-2 border-b border-slate-100">
           <span class="text-xs font-bold text-[#103860] uppercase tracking-wider flex items-center gap-1.5">
             <span class="material-symbols-outlined text-[16px]">set_meal</span>
             Ringkasan Ikan Segar ({{ cartStore.items.length }})
@@ -211,20 +353,24 @@ const handleProceedToPayment = () => {
           </NuxtLink>
         </div>
 
-        <div class="divide-y divide-slate-100 max-h-56 overflow-y-auto pr-1">
+        <div class="pr-1 overflow-y-auto divide-y divide-slate-100 max-h-56">
           <div 
             v-for="item in cartStore.items" 
             :key="item.id" 
-            class="py-2 flex items-center justify-between gap-3 text-xs"
+            class="flex items-center justify-between gap-3 py-2 text-xs"
           >
             <div class="flex items-center gap-2.5 min-w-0">
-              <img 
+              <NuxtImg 
                 :src="item.imageUrl" 
                 :alt="item.name" 
-                class="w-10 h-10 rounded-lg object-cover bg-slate-100 shrink-0 border border-slate-100"
+                class="object-cover w-10 h-10 border rounded-lg bg-slate-100 shrink-0 border-slate-100"
+                width="40"
+                height="40"
+                format="webp"
+                loading="lazy"
               />
               <div class="flex flex-col min-w-0">
-                <span class="font-bold text-slate-800 truncate">{{ item.name }}</span>
+                <span class="font-bold truncate text-slate-800">{{ item.name }}</span>
                 <span class="text-[11px] text-slate-500">
                   {{ item.quantityKg }} kg • {{ item.cutLabel }}
                 </span>
@@ -244,16 +390,16 @@ const handleProceedToPayment = () => {
         </span>
         <div class="flex justify-between text-xs text-slate-600">
           <span>Subtotal Produk</span>
-          <span class="font-semibold text-slate-800 font-mono">Rp {{ cartStore.productsSubtotal.toLocaleString('id-ID') }}</span>
+          <span class="font-mono font-semibold text-slate-800">Rp {{ cartStore.productsSubtotal.toLocaleString('id-ID') }}</span>
         </div>
         <div class="flex justify-between text-xs text-slate-600">
           <span>Proteksi Rantai Dingin</span>
-          <span class="font-semibold text-slate-800 font-mono">Rp {{ cartStore.packagingFee.toLocaleString('id-ID') }}</span>
+          <span class="font-mono font-semibold text-slate-800">Rp {{ cartStore.packagingFee.toLocaleString('id-ID') }}</span>
         </div>
         <div class="flex justify-between text-xs text-slate-600">
-          <span>Ongkos Kirim Kurir Dingin</span>
-          <span class="font-semibold text-slate-800 font-mono">
-            {{ checkoutStore.shippingFee === 0 ? 'Gratis' : `Rp ${checkoutStore.shippingFee.toLocaleString('id-ID')}` }}
+          <span>Ongkos Kirim Dingin LBA</span>
+          <span class="font-semibold text-[#059669] font-mono">
+            {{ checkoutStore.shippingFee === 0 ? 'Gratis (Area Banyuwangi)' : `Rp ${checkoutStore.shippingFee.toLocaleString('id-ID')}` }}
           </span>
         </div>
         <div class="pt-2 border-t border-slate-100 flex justify-between items-baseline text-sm font-bold text-[#103860]">
@@ -304,13 +450,15 @@ const handleProceedToPayment = () => {
       <button 
         type="button"
         @click="handleProceedToPayment"
-        class="w-full py-3.5 rounded-xl bg-[#103860] text-white text-xs font-bold hover:bg-[#13446E] transition-all shadow-md active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+        :disabled="!checkoutStore.isDeliveryAllowed"
+        class="w-full py-3.5 rounded-xl text-xs font-bold transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+        :class="!checkoutStore.isDeliveryAllowed ? 'bg-slate-300 text-slate-500 hover:bg-slate-300 shadow-none' : 'bg-[#103860] hover:bg-[#13446E] text-white active:scale-95'"
       >
         <span class="material-symbols-outlined text-[18px]">
-          {{ orderStore.selectedPaymentMethod === 'qris_dynamic' ? 'qr_code_2' : 'lock' }}
+          {{ !checkoutStore.isDeliveryAllowed ? 'block' : (orderStore.selectedPaymentMethod === 'qris_dynamic' ? 'qr_code_2' : 'lock') }}
         </span>
         <span>
-          {{ orderStore.selectedPaymentMethod === 'qris_dynamic' ? 'Lanjut ke QRIS Dinamis' : 'Lanjut ke Virtual Account' }}
+          {{ !checkoutStore.isDeliveryAllowed ? 'Alamat di Luar Wilayah Pengantaran (Khusus Banyuwangi)' : (orderStore.selectedPaymentMethod === 'qris_dynamic' ? 'Lanjut ke QRIS Dinamis' : 'Lanjut ke Virtual Account') }}
         </span>
       </button>
 
@@ -326,6 +474,24 @@ const handleProceedToPayment = () => {
       </div>
     </div>
   </div>
+
+  <!-- Tokopedia-Style Address Selection Modal (Search & Radio Select) -->
+  <AddressSelectModal
+    :is-open="isSelectAddressOpen"
+    :selected-id="checkoutStore.address.id"
+    @close="isSelectAddressOpen = false"
+    @select="handleSelectAddress"
+    @add-new="handleOpenAddAddress"
+    @edit="handleOpenEditAddress"
+  />
+
+  <!-- Address Add / Edit Form Modal with Leaflet GPS Pin Map -->
+  <AddressFormModal
+    :is-open="isFormAddressOpen"
+    :initial-data="editingAddress"
+    @close="isFormAddressOpen = false"
+    @saved="handleAddressSaved"
+  />
   </div>
 </template>
 
