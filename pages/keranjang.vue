@@ -99,13 +99,7 @@ const handleRetry = async () => {
 }
 
 // Image error fallback
-const handleImageError = (event: Event) => {
-  const target = (event?.target || event?.currentTarget) as HTMLImageElement | null
-  const fallback = 'https://cdn.ammarabufadhel.my.id/products/asset-1544551763-ced7aa4f.webp'
-  if (target && target.src !== fallback) {
-    target.src = fallback
-  }
-}
+const handleImageError = (_event: Event) => {}
 
 onMounted(async () => {
   cartStore.initCart()

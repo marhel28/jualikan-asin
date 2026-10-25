@@ -17,6 +17,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 type GalleryView = 'hero' | 'texture' | 'scaleSlip'
 const activeView = ref<GalleryView>('hero')
+const isMainLoaded = ref(false)
 
 const activeImage = computed(() => {
   if (activeView.value === 'texture') return props.images.texture
@@ -31,7 +32,10 @@ const viewNumber = computed(() => {
 })
 
 const handleViewChange = (view: GalleryView) => {
-  activeView.value = view
+  if (activeView.value !== view) {
+    isMainLoaded.value = false
+    activeView.value = view
+  }
 }
 </script>
 
@@ -39,24 +43,35 @@ const handleViewChange = (view: GalleryView) => {
   <div class="flex flex-col gap-2.5 w-full">
     <!-- Main Hero Image Box with Origin & Perspective Overlays -->
     <div class="relative w-full h-72 rounded-xl overflow-hidden bg-slate-100 border border-slate-200/90 shadow-xs group">
+      <!-- Skeleton loader while image is decoding/loading -->
+      <div 
+        v-if="!isMainLoaded" 
+        class="absolute inset-0 bg-slate-200 animate-pulse flex items-center justify-center z-0"
+      >
+        <span class="material-symbols-outlined text-4xl text-slate-300">set_meal</span>
+      </div>
+
       <NuxtImg 
+        v-if="activeImage"
         :src="activeImage" 
         :alt="`${productName} (Tampilan ${viewNumber} dari 3)`" 
-        class="w-full h-full object-cover transition-all duration-300"
+        class="w-full h-full object-cover transition-opacity duration-300 relative z-10"
+        :class="isMainLoaded ? 'opacity-100' : 'opacity-0'"
         loading="eager"
         width="800"
         height="600"
         format="webp"
+        @load="isMainLoaded = true"
       />
 
       <!-- Perspective Counter Pill (Top-Right) -->
-      <div class="absolute top-3 right-3 bg-[#002242]/85 backdrop-blur-md text-white text-[11px] font-medium px-3 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
+      <div class="absolute top-3 right-3 z-20 bg-[#002242]/85 backdrop-blur-md text-white text-[11px] font-medium px-3 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
         <span class="material-symbols-outlined text-[14px]">photo_camera</span>
         <span>{{ viewNumber }} / 3 Foto Riil Cold Chain</span>
       </div>
 
       <!-- Dock Origin Pill (Bottom-Left) -->
-      <div class="absolute bottom-3 left-3 bg-[#002242]/90 backdrop-blur-md text-white px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-md max-w-[85%]">
+      <div class="absolute bottom-3 left-3 z-20 bg-[#002242]/90 backdrop-blur-md text-white px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-md max-w-[85%]">
         <span class="material-symbols-outlined text-[#85f8c4] text-[16px]">anchor</span>
         <span class="text-xs font-medium tracking-wide truncate">Pendaratan {{ landingPort }}</span>
       </div>
@@ -68,11 +83,12 @@ const handleViewChange = (view: GalleryView) => {
       <button 
         type="button" 
         @click="handleViewChange('hero')"
-        class="relative h-18 sm:h-20 rounded-xl overflow-hidden border-2 transition-all focus:outline-none bg-white cursor-pointer"
+        class="relative h-18 sm:h-20 rounded-xl overflow-hidden border-2 transition-all focus:outline-none bg-slate-100 cursor-pointer"
         :class="activeView === 'hero' ? 'border-[#103860] ring-2 ring-[#103860]/20 shadow-xs' : 'border-slate-200 opacity-75 hover:opacity-100 hover:border-slate-300'"
         aria-label="Tampilkan Foto Ikan Utuh Segar"
       >
         <NuxtImg 
+          v-if="images.hero"
           :src="images.hero" 
           alt="Foto Utuh Segar" 
           class="w-full h-full object-cover"
@@ -90,11 +106,12 @@ const handleViewChange = (view: GalleryView) => {
       <button 
         type="button" 
         @click="handleViewChange('texture')"
-        class="relative h-18 sm:h-20 rounded-xl overflow-hidden border-2 transition-all focus:outline-none bg-white cursor-pointer"
+        class="relative h-18 sm:h-20 rounded-xl overflow-hidden border-2 transition-all focus:outline-none bg-slate-100 cursor-pointer"
         :class="activeView === 'texture' ? 'border-[#103860] ring-2 ring-[#103860]/20 shadow-xs' : 'border-slate-200 opacity-75 hover:opacity-100 hover:border-slate-300'"
         aria-label="Tampilkan Foto Tekstur Daging Ikan"
       >
         <NuxtImg 
+          v-if="images.texture"
           :src="images.texture" 
           alt="Foto Tekstur Daging" 
           class="w-full h-full object-cover"
@@ -112,11 +129,12 @@ const handleViewChange = (view: GalleryView) => {
       <button 
         type="button" 
         @click="handleViewChange('scaleSlip')"
-        class="relative h-18 sm:h-20 rounded-xl overflow-hidden border-2 transition-all focus:outline-none bg-white cursor-pointer"
+        class="relative h-18 sm:h-20 rounded-xl overflow-hidden border-2 transition-all focus:outline-none bg-slate-100 cursor-pointer"
         :class="activeView === 'scaleSlip' ? 'border-[#103860] ring-2 ring-[#103860]/20 shadow-xs' : 'border-slate-200 opacity-75 hover:opacity-100 hover:border-slate-300'"
         aria-label="Tampilkan Foto Timbangan Riil Cold Hub"
       >
         <NuxtImg 
+          v-if="images.scaleSlip"
           :src="images.scaleSlip" 
           alt="Foto Timbangan Riil" 
           class="w-full h-full object-cover"
@@ -124,9 +142,6 @@ const handleViewChange = (view: GalleryView) => {
           height="150"
           format="webp"
           loading="lazy"
-        /> 
-          alt="Foto Timbangan Riil" 
-          class="w-full h-full object-cover"
         />
         <div class="absolute bottom-0 inset-x-0 bg-[#002242]/85 backdrop-blur-xs text-white text-[10px] font-semibold text-center py-0.5 truncate px-1">
           Timbangan Riil

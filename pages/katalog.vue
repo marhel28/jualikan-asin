@@ -5,6 +5,7 @@ import { PRODUCTS, type Product } from '~/data/products'
 import { useCartStore } from '~/stores/cart'
 import { useWishlistStore } from '~/stores/wishlist'
 import { useAuthStore } from '~/stores/auth'
+import CatalogProductCard from '~/components/catalog/ProductCard.vue'
 
 definePageMeta({
   hideMainHeader: false
@@ -184,7 +185,7 @@ const fetchProducts = async () => {
     if (backendProducts && Array.isArray(backendProducts) && backendProducts.length > 0) {
       productsList.value = backendProducts.map(bp => {
         const local = PRODUCTS.find(p => p.id === bp.id || p.slug === bp.slug)
-        const bpHero = bp.images?.hero || bp.image_url || local?.images?.hero || 'https://cdn.ammarabufadhel.my.id/products/asset-1544551763-ced7aa4f.webp'
+        const bpHero = bp.images?.hero || bp.image_url || local?.images?.hero || ''
         return {
           id: bp.id,
           name: bp.name,
@@ -430,13 +431,6 @@ const handleRetry = () => {
   isLoading.value = false
 }
 
-const handleImageError = (event: Event) => {
-  const target = (event?.target || event?.currentTarget) as HTMLImageElement | null
-  const fallback = 'https://cdn.ammarabufadhel.my.id/products/asset-1544551763-ced7aa4f.webp'
-  if (target && target.src !== fallback) {
-    target.src = fallback
-  }
-}
 
 // SEO & Schema.org JSON-LD
 useHead(() => {
@@ -659,9 +653,13 @@ useHead(() => {
                         class="flex items-center justify-between gap-2.5 p-2 rounded-lg bg-white border border-slate-200/70 hover:border-[#103860]/40 hover:shadow-2xs transition cursor-pointer group">
                         <div class="flex items-center gap-2.5 min-w-0">
                           <img
-                            :src="p.images?.hero || p.images?.primary || 'https://cdn.ammarabufadhel.my.id/products/asset-1544551763-c149b4dd.webp'"
+                            v-if="p.images?.hero || p.images?.primary"
+                            :src="p.images?.hero || p.images?.primary"
                             :alt="p.name"
                             class="object-cover w-10 h-10 border rounded-md border-slate-200 shrink-0 bg-slate-100" />
+                          <div v-else class="w-10 h-10 border rounded-md border-slate-200 shrink-0 bg-slate-100 flex items-center justify-center text-slate-300">
+                            <span class="material-symbols-outlined text-[18px]">set_meal</span>
+                          </div>
                           <div class="min-w-0">
                             <h4
                               class="text-xs font-bold text-slate-800 group-hover:text-[#103860] truncate transition-colors">
@@ -787,71 +785,11 @@ useHead(() => {
         <!-- Two-Column Product Grid with Progressive Scroll Load (Infinite Scroll) -->
         <section v-else class="flex-1 px-3 py-2">
           <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 md:gap-4">
-            <article v-for="p in displayedProducts" :key="p.id" @click="router.push(`/produk/${p.slug}`)"
-              class="bg-white border border-slate-200/90 rounded-xl overflow-hidden flex flex-col justify-between hover:border-[#002242]/40 transition duration-150 shadow-2xs cursor-pointer group">
-              <div>
-                <div class="block relative w-full aspect-[4/3] bg-slate-100 overflow-hidden">
-                  <NuxtImg :src="p.images.hero" :alt="p.name" @error="handleImageError"
-                    class="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
-                    width="400" height="300" format="webp" loading="lazy" />
-
-                  <span
-                    class="absolute top-2 left-2 bg-[#002242] text-white text-[10px] font-semibold px-2 py-0.5 rounded shadow-xs">
-                    {{ p.qualityBadges[0] || 'Tangkapan Hari Ini' }}
-                  </span>
-
-                  <button
-                    type="button"
-                    @click.stop="handleToggleWishlist(p.id, $event)"
-                    :aria-label="wishlistStore.has(p.id) ? 'Hapus dari favorit' : 'Tambah ke favorit'"
-                    class="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/90 backdrop-blur-xs flex items-center justify-center transition-colors shadow-xs hover:bg-white cursor-pointer z-10"
-                    :class="wishlistStore.has(p.id) ? 'text-rose-600' : 'text-slate-400 hover:text-slate-700'"
-                  >
-                    <span class="material-symbols-outlined text-[17px]" :class="{ 'fill-1': wishlistStore.has(p.id) }">
-                      favorite
-                    </span>
-                  </button>
-                </div>
-
-                <div class="p-2.5 pb-1">
-                  <h2
-                    class="text-xs font-bold text-[#002242] line-clamp-2 leading-snug group-hover:text-[#103860] no-underline transition-colors">
-                    {{ p.name }}
-                  </h2>
-                  <div v-if="p.soldCount" class="flex items-center gap-1 mt-1 text-[11px] text-slate-500">
-                    <span class="material-symbols-outlined text-[13px] text-emerald-700">sell</span>
-                    <span class="font-medium text-slate-700">{{ p.soldCount }} terjual</span>
-                  </div>
-                  <div class="flex items-center gap-1.5 mt-1">
-                    <span class="inline-block w-1.5 h-1.5 rounded-full"
-                      :class="p.stockKg <= 0 ? 'bg-rose-500' : p.stockKg <= 10 ? 'bg-amber-500' : 'bg-[#006c4a]'"></span>
-                    <span class="text-[11px] font-medium"
-                      :class="p.stockKg <= 0 ? 'text-rose-600 font-semibold' : p.stockKg <= 10 ? 'text-amber-700' : 'text-[#006c4a]'">
-                      {{ p.stockKg <= 0 ? 'Stok Habis' : p.unit === 'pack' ? `Sisa ${p.stockKg} pack` : `Stok:
-                        ${p.stockKg} kg` }} </span>
-                  </div>
-                </div>
-              </div>
-
-              <div class="p-2.5 pt-0 mt-2">
-                <div class="mb-2">
-                  <div class="text-xs font-bold text-[#002242] leading-tight">
-                    Rp {{ p.pricePerKg.toLocaleString('id-ID') }}
-                    <span class="text-[11px] font-normal text-slate-500">/ {{ p.unit }}</span>
-                  </div>
-                </div>
-
-                <button type="button"
-                  @click.stop="p.stockKg > 0 ? handleAddToCart(p) : router.push(`/produk/${p.slug}`)"
-                  :disabled="p.stockKg <= 0"
-                  class="w-full flex items-center justify-center gap-1.5 transition py-1.5 px-2 rounded-lg text-xs font-bold cursor-pointer"
-                  :class="p.stockKg <= 0 ? 'bg-slate-100 text-slate-400 cursor-not-allowed opacity-75' : 'bg-slate-100 hover:bg-[#103860] text-[#103860] hover:text-white active:scale-95 shadow-2xs'">
-                  <span class="material-symbols-outlined text-[16px]">{{ p.stockKg <= 0 ? 'block' : 'add_shopping_cart'
-                      }}</span>
-                      <span>{{ p.stockKg <= 0 ? 'Stok Kosong' : '+ Keranjang' }}</span>
-                </button>
-              </div>
-            </article>
+            <CatalogProductCard
+              v-for="p in displayedProducts"
+              :key="p.id"
+              :product="p"
+            />
           </div>
 
           <!-- Progressive Scroll Load Sentinel & Status -->

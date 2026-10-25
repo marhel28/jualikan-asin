@@ -22,10 +22,27 @@ const apiBase = (runtimeConfig.public?.apiBase as string) || 'https://api-muncar
 
 const slug = computed(() => String(route.params.slug || ''))
 
+// State: Product starts strictly EMPTY (null) with loading true to prevent mock pre-fill flashing
 const liveProduct = ref<Product | null>(null)
+const isLoading = ref<boolean>(true)
+const hasError = ref<boolean>(false)
 
-onMounted(async () => {
-  cartStore.initCart()
+// Hero image loading & error state
+const isHeroImageLoaded = ref<boolean>(false)
+const isHeroImageError = ref<boolean>(false)
+
+const loadProductData = async () => {
+  if (!slug.value) {
+    liveProduct.value = null
+    isLoading.value = false
+    return
+  }
+
+  isLoading.value = true
+  hasError.value = false
+  isHeroImageLoaded.value = false
+  isHeroImageError.value = false
+
   try {
     const api = useApi()
     const bp = await api.get<any>(`/products/${slug.value}`)
@@ -55,7 +72,7 @@ onMounted(async () => {
         pricePerKg: Number(bp.pricePerKg ?? bp.price_per_kg) || local?.pricePerKg || 0,
         originalPricePerKg: local?.originalPricePerKg,
         rating: Number(bp.rating) || local?.rating || 4.9,
-        reviewCount: bp.reviewCount || bp.review_count || local?.reviewCount || 100,
+        reviewCount: bp.reviewCount || bp.review_count || local?.reviewCount || 28,
         freshnessScore: bp.freshnessScore || bp.freshness_score || local?.freshnessScore || 98,
         specWeight: bp.specWeight || bp.spec_weight || local?.specWeight || '100g - 270g per kemasan vakum',
         specDimensions: bp.specDimensions || bp.spec_dimensions || local?.specDimensions || 'P 25-35 cm, L 8-12 cm',
@@ -65,8 +82,8 @@ onMounted(async () => {
         landingTime: bp.landingTime || bp.landing_time || local?.landingTime || '05:30 WIB Subuh',
         storageTemp: bp.storageTemp || bp.storage_temp || local?.storageTemp || 'Chilled 1.5 C',
         exportGrade: bp.exportGrade || bp.export_grade || local?.exportGrade || undefined,
-        images: bpImages || local?.images || { hero: 'https://cdn.ammarabufadhel.my.id/qc/ikan-kerapu-macan-muncar-scaleSlip-292250c2.webp', texture: '', scaleSlip: '' },
-        stockKg: Number(bp.stockKg ?? bp.stock_kg) || local?.stockKg || 50,
+        images: bpImages || local?.images || { hero: '', texture: '', scaleSlip: '' },
+        stockKg: Number(bp.stockKg ?? bp.stock_kg) ?? local?.stockKg ?? 0,
         minOrderKg: Number(bp.minOrderKg ?? bp.min_order_kg) || local?.minOrderKg || 1,
         description: bp.description || local?.description || '',
         qualityBadges: bp.qualityBadges || bp.quality_badges || local?.qualityBadges || ['Tangkapan Segar Subuh', 'Pancing Ulur', 'Bebas Formalin'],
@@ -82,34 +99,48 @@ onMounted(async () => {
         soldCount: Number(bp.soldCount ?? bp.sold_count ?? local?.soldCount ?? 0),
         wishlistCount: Number(bp.wishlistCount ?? bp.wishlist_count ?? local?.wishlistCount ?? 0)
       } as Product
+    } else {
+      // Fallback search strictly by matching slug or id in local data
+      const localFound = PRODUCTS.find(p => p.slug === slug.value || p.id === slug.value)
+      liveProduct.value = localFound || null
     }
-  } catch {}
+  } catch (err) {
+    const localFound = PRODUCTS.find(p => p.slug === slug.value || p.id === slug.value)
+    if (localFound) {
+      liveProduct.value = localFound
+    } else {
+      liveProduct.value = null
+    }
+  } finally {
+    isLoading.value = false
+    fetchRecommendations()
+  }
+}
+
+onMounted(() => {
+  cartStore.initCart()
+  wishlistStore.initFromStorage()
+  loadProductData()
 })
 
-// Find product by slug or alias
+watch(() => route.params.slug, () => {
+  activeImageIndex.value = 0
+  quantity.value = 1
+  loadProductData()
+})
+
+// Current product (strictly null when loading or not found)
 const product = computed((): Product | null => {
-  if (liveProduct.value) return liveProduct.value
-  const found = PRODUCTS.find(p => p.slug === slug.value)
-  if (found) return found
-  if (slug.value.includes('tenggiri')) {
-    return PRODUCTS.find(p => p.id === 'tenggiri-papan') || PRODUCTS[0]
-  }
-  if (!slug.value || slug.value.includes('baronang')) {
-    return PRODUCTS.find(p => p.id === 'baronang-tulis') || PRODUCTS[0]
-  }
-  return PRODUCTS[0]
+  return liveProduct.value
 })
 
 // Display title matching benchmark format
 const displayName = computed(() => {
-  if (!product.value) return 'Fillet Ikan Tenggiri'
-  if (slug.value.includes('fillet') || product.value.id === 'tenggiri-papan') {
-    return 'Fillet Ikan Tenggiri - Laut Berkah Abadi'
-  }
+  if (!product.value) return ''
   return `${product.value.name} - Laut Berkah Abadi`
 })
 
-// Tokopedia Style 2-Tier Customizable Variants
+// 2-Tier Customizable Variants
 const customVariants = computed(() => {
   return product.value?.customVariants || null
 })
@@ -118,7 +149,7 @@ const tier1Config = computed(() => {
   if (customVariants.value?.tier1 && customVariants.value.tier1.options && customVariants.value.tier1.options.length > 0) {
     return customVariants.value.tier1
   }
-  const baseKgPrice = product.value?.pricePerKg || 85000
+  const baseKgPrice = product.value?.pricePerKg || 0
   const defaultGrams = [100, 150, 200, 250]
   return {
     name: 'Pilihan Berat',
@@ -153,7 +184,7 @@ const selectedTier1 = computed(() => {
   return tier1Options.value.find(o => o.id === selectedTier1Id.value) || tier1Options.value[0] || null
 })
 
-// Tier 2: Custom Variant (Default Disabled/Empty!)
+// Tier 2: Custom Variant (Default Disabled/Empty)
 const tier2Config = computed(() => {
   return customVariants.value?.tier2 || null
 })
@@ -207,7 +238,7 @@ const maxVariantPrice = computed(() => {
 
 const selectedGrams = computed(() => {
   if (!selectedTier1.value) return 150
-  return tier1Unit.value === 'kg' 
+  return tier1Unit.value === 'kg'
     ? Math.round(Number(selectedTier1.value.weightValue || selectedTier1.value.label) * 1000)
     : Math.round(Number(selectedTier1.value.label) || 150)
 })
@@ -224,8 +255,6 @@ const toastText = ref<string>('')
 const toastIcon = ref<string>('check_circle')
 const toastIconClass = ref<string>('text-emerald-400')
 let toastTimer: ReturnType<typeof setTimeout> | null = null
-const isLoading = ref<boolean>(false)
-const hasError = ref<boolean>(false)
 
 // Effective display price
 const currentTotalPrice = computed(() => {
@@ -268,44 +297,42 @@ const toggleLike = async () => {
   }
 }
 
-// Photo gallery list
+// Photo gallery list (clean, no injection of irrelevant fish photos)
 const galleryImages = computed(() => {
   if (!product.value) return []
   const imgs: string[] = []
   if (product.value.images?.hero) imgs.push(product.value.images.hero)
   if (product.value.images?.texture) imgs.push(product.value.images.texture)
   if (product.value.images?.scaleSlip) imgs.push(product.value.images.scaleSlip)
-  if (imgs.length === 0 && product.value.imageUrl) imgs.push(product.value.imageUrl)
-
-  if (imgs.length === 1) {
-    imgs.push(
-      'https://cdn.ammarabufadhel.my.id/products/asset-1534482421-2f6abd98.webp',
-      'https://cdn.ammarabufadhel.my.id/products/ikan-kerapu-macan-muncar-texture-668bae1c.webp'
-    )
+  if (imgs.length === 0 && (product.value as any).imageUrl) {
+    imgs.push((product.value as any).imageUrl)
   }
-  return imgs.length > 0 ? imgs : ['https://cdn.ammarabufadhel.my.id/qc/ikan-kerapu-macan-muncar-scaleSlip-292250c2.webp']
+  return imgs
 })
 
 const currentHeroImage = computed(() => {
-  return galleryImages.value[activeImageIndex.value] || galleryImages.value[0]
+  return galleryImages.value[activeImageIndex.value] || galleryImages.value[0] || ''
 })
 
 const maxStock = computed(() => {
   return product.value?.stockKg || 15
 })
 
-const handleImageError = (event: Event) => {
-  const target = (event?.target || event?.currentTarget) as HTMLImageElement | null
-  const fallback = 'https://cdn.ammarabufadhel.my.id/qc/ikan-kerapu-macan-muncar-scaleSlip-292250c2.webp'
-  if (target && target.src !== fallback) {
-    target.src = fallback
+const switchGalleryImage = (idx: number) => {
+  if (activeImageIndex.value !== idx) {
+    activeImageIndex.value = idx
+    isHeroImageLoaded.value = false
+    isHeroImageError.value = false
   }
 }
 
-// Gram variant selector
-const selectWeight = (option: GramOption) => {
-  if (!option.inStock) return
-  selectedGrams.value = option.grams
+const handleHeroImageLoad = () => {
+  isHeroImageLoaded.value = true
+}
+
+const handleHeroImageError = () => {
+  isHeroImageError.value = true
+  isHeroImageLoaded.value = true
 }
 
 // Quantity Stepper
@@ -329,9 +356,9 @@ const shareProduct = () => {
   if (typeof navigator !== 'undefined' && navigator.share) {
     navigator.share({
       title: displayName.value,
-      text: 'Pesan ikan segar berkualitas di Laut Berkah Abadi',
+      text: 'Pesan ikan segar berkualitas di Laut Berkah Abadi Banyuwangi',
       url: window.location.href
-    }).catch(() => {})
+    }).catch(() => { })
   } else if (typeof navigator !== 'undefined' && navigator.clipboard) {
     navigator.clipboard.writeText(window.location.href)
     triggerToast('Tautan berhasil disalin', 'link', 'text-blue-300')
@@ -383,8 +410,7 @@ const handleBuyNow = () => {
 }
 
 const handleRetry = () => {
-  hasError.value = false
-  isLoading.value = false
+  loadProductData()
 }
 
 // Rekomendasi produk serupa/terkait via Typesense (dengan fallback lokal)
@@ -430,38 +456,25 @@ const fetchRecommendations = async () => {
 }
 
 const recommendedProducts = computed(() => {
-  if (liveRecommendations.value.length > 0) {
-    return liveRecommendations.value
-  }
-  if (!product.value) return []
-  const current = product.value
-  return PRODUCTS
-    .filter(p => p.id !== current.id)
-    .slice(0, 4)
-})
-
-watch(() => slug.value, () => {
-  fetchRecommendations()
+  return liveRecommendations.value
 })
 
 const goToProduct = (recSlug: string) => {
-  if (typeof window !== 'undefined') {
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
+  if (recSlug === slug.value) return
   router.push(`/produk/${recSlug}`)
 }
 
 const handleQuickAdd = (recProduct: Product, event: Event) => {
   event.stopPropagation()
-  const defaultCut = recProduct.availableCuts[0]?.type || 'utuh_bersih'
+  const defaultCut = recProduct.availableCuts?.[0]?.type || 'utuh_bersih'
   cartStore.addItem(
     {
       id: recProduct.id,
       name: recProduct.name,
       slug: recProduct.slug,
-      imageUrl: recProduct.images.hero,
+      imageUrl: recProduct.images?.hero || '',
       pricePerKg: recProduct.pricePerKg,
-      unit: recProduct.unit
+      unit: recProduct.unit || 'kg'
     },
     defaultCut,
     false,
@@ -470,40 +483,52 @@ const handleQuickAdd = (recProduct: Product, event: Event) => {
   triggerToast(`${recProduct.name} masuk keranjang`, 'shopping_cart', 'text-emerald-400')
 }
 
-// Initialize on mount
-onMounted(() => {
-  wishlistStore.initFromStorage()
-  fetchRecommendations()
-})
-
 onUnmounted(() => {
   if (toastTimer) clearTimeout(toastTimer)
 })
 
-// SEO & Rich Structured Data (Google Shopping / Rich Snippets)
+// Comprehensive SEO, Geo-SEO & Rich Structured Data (JSON-LD Schema.org)
 useHead(() => {
   const currentProd = product.value
   if (!currentProd) {
-    return { title: 'Produk | Laut Berkah Abadi' }
+    return {
+      title: isLoading.value ? 'Memuat Produk... | Laut Berkah Abadi' : 'Produk Tidak Ditemukan | Laut Berkah Abadi Banyuwangi',
+      meta: [
+        { name: 'robots', content: 'noindex, follow' }
+      ]
+    }
   }
 
   const pageTitle = `${displayName.value} | Laut Berkah Abadi Banyuwangi`
   const canonicalUrl = `${siteUrl}/produk/${currentProd.slug}`
   const heroImg = galleryImages.value[0] || `${siteUrl}/brand/logo.webp`
   const inStock = (currentProd.stockKg || 0) > 0
+  const descText = currentProd.description || `Ikan ${currentProd.name} segar hasil tangkapan nelayan harian Pelabuhan Muncar Banyuwangi (WPP-NRI 573). Mutu terjaga dengan penanganan rantai dingin 0-2 derajat celcius.`
 
   return {
     title: pageTitle,
     meta: [
-      { name: 'description', content: currentProd.description },
+      { name: 'description', content: descText },
+      // Geo-Location Meta Tags: Pelabuhan Muncar Banyuwangi
+      { name: 'geo.position', content: '-8.4328;114.3361' },
+      { name: 'geo.placename', content: 'Pelabuhan Muncar, Kabupaten Banyuwangi, Jawa Timur, Indonesia' },
+      { name: 'geo.region', content: 'ID-JI' },
+      { name: 'ICBM', content: '-8.4328, 114.3361' },
+      // Open Graph Tags
+      { property: 'og:site_name', content: 'Laut Berkah Abadi' },
       { property: 'og:title', content: pageTitle },
-      { property: 'og:description', content: currentProd.description },
+      { property: 'og:description', content: descText },
       { property: 'og:image', content: heroImg },
+      { property: 'og:image:alt', content: currentProd.name },
       { property: 'og:url', content: canonicalUrl },
       { property: 'og:type', content: 'product' },
+      { property: 'product:price:amount', content: String(currentProd.pricePerKg) },
+      { property: 'product:price:currency', content: 'IDR' },
+      { property: 'product:availability', content: inStock ? 'in stock' : 'out of stock' },
+      // Twitter Card
       { name: 'twitter:card', content: 'summary_large_image' },
       { name: 'twitter:title', content: pageTitle },
-      { name: 'twitter:description', content: currentProd.description },
+      { name: 'twitter:description', content: descText },
       { name: 'twitter:image', content: heroImg }
     ],
     link: [
@@ -540,11 +565,17 @@ useHead(() => {
             },
             {
               '@type': 'Product',
-              name: currentProd.name,
-              image: galleryImages.value,
-              description: currentProd.description,
+              '@id': `${canonicalUrl}#product`,
+              name: `${currentProd.name} Segar Pelabuhan Muncar`,
+              image: galleryImages.value.length > 0 ? galleryImages.value : [heroImg],
+              description: descText,
               sku: currentProd.id,
               mpn: currentProd.id,
+              category: currentProd.category || 'Hasil Laut Segar',
+              countryOfOrigin: {
+                '@type': 'Country',
+                name: 'ID'
+              },
               brand: {
                 '@type': 'Brand',
                 name: 'Laut Berkah Abadi'
@@ -558,8 +589,23 @@ useHead(() => {
                 itemCondition: 'https://schema.org/NewCondition',
                 availability: inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
                 seller: {
-                  '@type': 'Organization',
-                  name: 'Laut Berkah Abadi Banyuwangi'
+                  '@type': 'FishStore',
+                  name: 'Laut Berkah Abadi Banyuwangi',
+                  url: siteUrl,
+                  telephone: '+6281234567890',
+                  address: {
+                    '@type': 'PostalAddress',
+                    streetAddress: 'Kawasan Pelabuhan Perikanan Pantai Muncar',
+                    addressLocality: 'Muncar, Kabupaten Banyuwangi',
+                    addressRegion: 'Jawa Timur',
+                    postalCode: '68472',
+                    addressCountry: 'ID'
+                  },
+                  geo: {
+                    '@type': 'GeoCoordinates',
+                    latitude: -8.4328,
+                    longitude: 114.3361
+                  }
                 },
                 hasMerchantReturnPolicy: {
                   '@type': 'MerchantReturnPolicy',
@@ -605,8 +651,8 @@ useHead(() => {
               },
               aggregateRating: {
                 '@type': 'AggregateRating',
-                ratingValue: '4.9',
-                reviewCount: '28',
+                ratingValue: String(currentProd.rating || 4.9),
+                reviewCount: String(currentProd.reviewCount || 28),
                 bestRating: '5',
                 worstRating: '1'
               }
@@ -621,62 +667,49 @@ useHead(() => {
 
 <template>
   <div class="bg-[#F8FAFC] text-slate-900 font-sans antialiased min-h-screen flex flex-col items-center">
-    <!-- Desktop breadcrumb (hidden mobile, aligns to max-w-6xl) -->
-    <nav class="hidden md:flex w-full max-w-5xl lg:max-w-6xl px-6 pt-3 pb-1 items-center gap-2 text-xs text-slate-500">
+    <!-- Desktop breadcrumb -->
+    <nav class="items-center hidden w-full max-w-5xl gap-2 px-6 pt-3 pb-1 text-xs md:flex lg:max-w-6xl text-slate-500">
       <NuxtLink to="/" class="hover:text-[#103860] transition-colors">Beranda</NuxtLink>
       <span class="text-slate-300">/</span>
       <NuxtLink to="/katalog" class="hover:text-[#103860] transition-colors">Katalog</NuxtLink>
       <span class="text-slate-300">/</span>
-      <span class="text-slate-900 font-medium truncate">{{ displayName }}</span>
+      <span class="font-medium truncate text-slate-900">{{ displayName || (isLoading ? 'Memuat...' : 'Produk') }}</span>
     </nav>
 
-    <!-- Viewport Shell: expanded on desktop md+ -->
-    <div class="w-full max-w-md md:max-w-5xl lg:max-w-6xl bg-white min-h-screen flex flex-col border-x border-slate-200/80 shadow-none relative pb-28 md:pb-12 md:my-6 md:rounded-xl md:border">
-      
-      <!-- 1. Top Navigation & App Bar: mobile only (desktop uses global navbar from default.vue) -->
-      <header class="md:hidden sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 h-14 flex items-center justify-between w-full">
+    <!-- Viewport Shell -->
+    <div
+      class="relative flex flex-col w-full max-w-md min-h-screen bg-white shadow-none md:max-w-5xl lg:max-w-6xl border-x border-slate-200/80 pb-28 md:pb-12 md:my-6 md:rounded-xl md:border">
+
+      <!-- Top Navigation & App Bar (Mobile) -->
+      <header
+        class="sticky top-0 z-40 flex items-center justify-between w-full px-4 border-b md:hidden bg-white/95 backdrop-blur-md border-slate-200 h-14">
         <div class="flex items-center gap-3">
-          <button 
-            type="button"
-            aria-label="Kembali" 
-            @click="goBack"
-            class="w-9 h-9 rounded-full flex items-center justify-center hover:bg-slate-100 transition-colors text-[#002242] active:scale-95 cursor-pointer"
-          >
+          <button type="button" aria-label="Kembali" @click="goBack"
+            class="w-9 h-9 rounded-full flex items-center justify-center hover:bg-slate-100 transition-colors text-[#002242] active:scale-95 cursor-pointer">
             <span class="material-symbols-outlined text-[22px]">arrow_back</span>
           </button>
           <h1 class="text-base font-semibold text-[#002242]">Detail Produk</h1>
         </div>
 
         <div class="flex items-center gap-1">
-          <!-- Love / Like Button -->
-          <button 
-            type="button"
-            :aria-label="isLiked ? 'Hapus dari Disukai' : 'Sukai Produk'" 
-            @click="toggleLike"
-            class="w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90 cursor-pointer"
+          <!-- Like Button -->
+          <button type="button" :disabled="!product" :aria-label="isLiked ? 'Hapus dari Disukai' : 'Sukai Produk'" @click="toggleLike"
+            class="flex items-center justify-center transition-all rounded-full cursor-pointer w-9 h-9 active:scale-90 disabled:opacity-40"
             :class="isLiked ? 'text-rose-600 bg-rose-50' : 'text-slate-600 hover:bg-slate-100 hover:text-rose-500'"
-            :title="isLiked ? 'Disukai' : 'Suka'"
-          >
-            <span 
-              class="material-symbols-outlined text-[22px] transition-transform duration-200"
+            :title="isLiked ? 'Disukai' : 'Suka'">
+            <span class="material-symbols-outlined text-[22px] transition-transform duration-200"
               :class="isLiked ? 'scale-110 text-rose-600' : ''"
-              :style="isLiked ? { fontVariationSettings: `'FILL' 1` } : { fontVariationSettings: `'FILL' 0` }"
-            >
+              :style="isLiked ? { fontVariationSettings: `'FILL' 1` } : { fontVariationSettings: `'FILL' 0` }">
               favorite
             </span>
           </button>
 
           <!-- Cart Icon Link -->
-          <NuxtLink 
-            to="/keranjang" 
-            aria-label="Keranjang Belanja" 
-            class="w-9 h-9 rounded-full relative flex items-center justify-center hover:bg-slate-100 transition-colors text-[#002242] active:scale-95 cursor-pointer"
-          >
+          <NuxtLink to="/keranjang" aria-label="Keranjang Belanja"
+            class="w-9 h-9 rounded-full relative flex items-center justify-center hover:bg-slate-100 transition-colors text-[#002242] active:scale-95 cursor-pointer">
             <span class="material-symbols-outlined text-[22px]">shopping_cart</span>
-            <span 
-              v-if="cartStore.totalItemsCount > 0"
-              class="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-[#006c4a] text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none ring-2 ring-white shadow-xs"
-            >
+            <span v-if="cartStore.totalItemsCount > 0"
+              class="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-[#006c4a] text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none ring-2 ring-white shadow-xs">
               {{ cartStore.totalItemsCount }}
             </span>
           </NuxtLink>
@@ -684,50 +717,123 @@ useHead(() => {
       </header>
 
       <!-- Toast Feedback -->
-      <div 
-        v-if="showToast" 
-        class="fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-[#002242] text-white text-xs py-2 px-4 rounded-full shadow-lg flex items-center gap-2 animate-bounce"
-      >
+      <div v-if="showToast"
+        class="fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-[#002242] text-white text-xs py-2 px-4 rounded-full shadow-lg flex items-center gap-2 animate-bounce">
         <span class="material-symbols-outlined text-[16px]" :class="toastIconClass">{{ toastIcon }}</span>
         <span>{{ toastText }}</span>
       </div>
 
-      <!-- State: Error State with Retry -->
+      <!-- State 1: Error State with Retry -->
       <div v-if="hasError" class="p-6">
-        <CommonErrorRetry 
-          title="Gagal Memuat Produk"
-          message="Silakan coba lagi beberapa saat lagi."
-          @retry="handleRetry" 
-        />
+        <CommonErrorRetry title="Gagal Memuat Produk" message="Silakan coba lagi beberapa saat lagi."
+          @retry="handleRetry" />
       </div>
 
-      <!-- State: Loading Skeleton -->
-      <div v-else-if="isLoading" class="p-4 flex flex-col gap-4 animate-pulse">
-        <div class="w-full aspect-[4/3] rounded-xl bg-slate-200"></div>
-        <div class="h-6 w-3/4 rounded bg-slate-200"></div>
-        <div class="h-4 w-1/2 rounded bg-slate-100"></div>
+      <!-- State 2: Full Fidelity Skeleton Loader (No Mock Prefill) -->
+      <div v-else-if="isLoading" class="flex flex-col flex-1 w-full animate-pulse">
+        <div class="grid items-start grid-cols-1 gap-4 p-4 md:grid-cols-2 md:gap-8 md:p-6">
+          <!-- Left Skeleton Column: Photo Showcase -->
+          <div class="w-full">
+            <div class="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-slate-200 flex items-center justify-center">
+              <span class="material-symbols-outlined text-5xl text-slate-300">set_meal</span>
+            </div>
+            <!-- Thumbnails Skeleton -->
+            <div class="flex gap-2 mt-3">
+              <div class="w-14 h-14 rounded-xl bg-slate-200"></div>
+              <div class="w-14 h-14 rounded-xl bg-slate-200"></div>
+              <div class="w-14 h-14 rounded-xl bg-slate-200"></div>
+            </div>
+          </div>
+
+          <!-- Right Skeleton Column: Config & Details -->
+          <div class="flex flex-col space-y-3">
+            <div class="w-28 h-3.5 bg-slate-200 rounded"></div>
+            <div class="w-3/4 h-7 bg-slate-200 rounded-lg"></div>
+            <div class="w-1/3 h-4 bg-slate-200 rounded"></div>
+
+            <!-- Social proof row -->
+            <div class="flex items-center gap-2 pt-1">
+              <div class="w-20 h-4 bg-slate-200 rounded"></div>
+              <div class="w-24 h-4 bg-slate-200 rounded"></div>
+              <div class="w-24 h-4 bg-slate-200 rounded"></div>
+            </div>
+
+            <!-- Price box skeleton -->
+            <div class="p-4 mt-2 bg-slate-100 rounded-xl space-y-2 border border-slate-200/60">
+              <div class="w-36 h-8 bg-slate-200 rounded-lg"></div>
+              <div class="w-48 h-3 bg-slate-200 rounded"></div>
+            </div>
+
+            <!-- Weight chips skeleton -->
+            <div class="pt-2 space-y-2">
+              <div class="w-28 h-4 bg-slate-200 rounded"></div>
+              <div class="flex gap-2">
+                <div class="w-16 h-10 bg-slate-200 rounded-lg"></div>
+                <div class="w-16 h-10 bg-slate-200 rounded-lg"></div>
+                <div class="w-16 h-10 bg-slate-200 rounded-lg"></div>
+                <div class="w-16 h-10 bg-slate-200 rounded-lg"></div>
+              </div>
+            </div>
+
+            <!-- Stepper skeleton -->
+            <div class="pt-2 space-y-2">
+              <div class="w-32 h-4 bg-slate-200 rounded"></div>
+              <div class="w-32 h-10 bg-slate-200 rounded-lg"></div>
+            </div>
+
+            <!-- Buttons skeleton (desktop) -->
+            <div class="hidden md:flex gap-3 pt-4">
+              <div class="flex-1 h-11 bg-slate-200 rounded-xl"></div>
+              <div class="flex-1 h-11 bg-slate-200 rounded-xl"></div>
+              <div class="flex-[1.2] h-11 bg-slate-300 rounded-xl"></div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <!-- State: Main Product Detail View matching seafoodsegarmalang.id -->
-      <main v-else-if="product" class="flex-1 flex flex-col">
-        <!-- 2-Column Responsive Layout on Desktop (Left Gallery, Right Configuration) -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 p-4 md:p-6 items-start">
+      <!-- State 3: Real Product Loaded -->
+      <main v-else-if="product" class="flex flex-col flex-1">
+        <!-- 2-Column Responsive Layout on Desktop -->
+        <div class="grid items-start grid-cols-1 gap-4 p-4 md:grid-cols-2 md:gap-8 md:p-6">
           <!-- Left Column: Product Image Showcase -->
           <div class="w-full">
-            <div class="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-slate-50 border border-slate-200/80">
+            <div class="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-slate-100 border border-slate-200/80">
+              <!-- Skeleton Loader for Hero Image -->
+              <div 
+                v-if="!isHeroImageLoaded"
+                class="absolute inset-0 bg-slate-200 animate-pulse flex items-center justify-center z-0"
+              >
+                <span class="material-symbols-outlined text-4xl text-slate-300">set_meal</span>
+              </div>
+
+              <!-- Fallback on error or empty -->
+              <div 
+                v-if="isHeroImageError || !currentHeroImage"
+                class="w-full h-full bg-slate-100 flex flex-col items-center justify-center text-slate-400 p-6"
+              >
+                <span class="material-symbols-outlined text-4xl text-slate-300 mb-2">set_meal</span>
+                <span class="text-xs text-slate-400 font-medium">Dokumentasi Tangkapan Muncar</span>
+              </div>
+
               <NuxtImg 
-                id="main-product-img"
+                v-else
+                id="main-product-img" 
                 :src="currentHeroImage" 
-                :alt="displayName" 
-                class="w-full h-full object-cover"
-                width="800"
-                height="600"
-                format="webp"
+                :alt="displayName"
+                class="object-cover w-full h-full transition-opacity duration-300 relative z-10"
+                :class="isHeroImageLoaded ? 'opacity-100' : 'opacity-0'"
+                width="800" 
+                height="600" 
+                format="webp" 
                 loading="eager"
-                @error="handleImageError"
+                @load="handleHeroImageLoad"
+                @error="handleHeroImageError" 
               />
-              <!-- Photo gallery pill matching 1/3 Foto Riil -->
-              <div class="absolute bottom-3 left-3 bg-slate-900/75 backdrop-blur-xs text-white text-[11px] font-medium px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-sm select-none">
+
+              <!-- Photo gallery counter pill -->
+              <div
+                v-if="galleryImages.length > 0"
+                class="absolute bottom-3 left-3 z-20 bg-slate-900/75 backdrop-blur-xs text-white text-[11px] font-medium px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-sm select-none">
                 <span class="material-symbols-outlined text-[13px] text-emerald-400">photo_camera</span>
                 <span>{{ activeImageIndex + 1 }}/{{ galleryImages.length }} Foto Riil</span>
               </div>
@@ -735,33 +841,29 @@ useHead(() => {
 
             <!-- Thumbnail Strip (only if multiple photos) -->
             <div v-if="galleryImages.length > 1" class="flex gap-2 mt-3 overflow-x-auto no-scrollbar py-0.5">
-              <button 
-                v-for="(imgSrc, idx) in galleryImages" 
-                :key="idx"
-                type="button"
-                @click="activeImageIndex = idx"
-                class="flex-shrink-0 w-14 h-14 rounded-xl overflow-hidden transition-all focus:outline-none cursor-pointer"
+              <button v-for="(imgSrc, idx) in galleryImages" :key="idx" type="button" @click="switchGalleryImage(idx)"
+                class="flex-shrink-0 overflow-hidden transition-all cursor-pointer w-14 h-14 rounded-xl focus:outline-none bg-slate-100"
                 :class="activeImageIndex === idx ? 'border-2 border-[#002242]' : 'border border-slate-200 opacity-70 hover:opacity-100'"
-                :aria-label="`Pilih Foto ${idx + 1}`"
-              >
-                <NuxtImg :src="imgSrc" :alt="`Foto ${idx + 1}`" class="w-full h-full object-cover" width="56" height="56" format="webp" loading="lazy" @error="handleImageError" />
+                :aria-label="`Pilih Foto ${idx + 1}`">
+                <NuxtImg :src="imgSrc" :alt="`Foto ${idx + 1}`" class="object-cover w-full h-full" width="56"
+                  height="56" format="webp" loading="lazy" />
               </button>
             </div>
           </div>
 
           <!-- Right Column: Product Config & Actions -->
           <div class="flex flex-col">
-            <!-- 3. Category Supertitle, Title, Scientific Name & Price -->
+            <!-- Category Supertitle, Title & Social Proof -->
             <div class="pb-2">
               <div>
                 <span class="text-[11px] uppercase tracking-wider text-slate-400 font-bold">Hasil Laut Segar Muncar</span>
               </div>
 
-              <h1 class="text-xl sm:text-2xl font-bold text-slate-900 leading-snug mt-1">
+              <h1 class="mt-1 text-xl font-bold leading-snug sm:text-2xl text-slate-900">
                 {{ product.name }}
               </h1>
 
-              <div class="text-xs text-slate-500 font-medium mt-1">
+              <div class="mt-1 text-xs font-medium text-slate-500">
                 {{ product.category || 'Hasil Laut Segar' }}
               </div>
 
@@ -772,39 +874,32 @@ useHead(() => {
                   <span>{{ (product?.soldCount ?? 0).toLocaleString('id-ID') }} terjual</span>
                 </span>
                 <span class="text-slate-300">•</span>
-                <button 
-                  type="button" 
-                  @click="toggleLike"
-                  class="flex items-center gap-1 font-medium transition-colors cursor-pointer" 
-                  :class="isLiked ? 'text-rose-600' : 'text-slate-500 hover:text-slate-700'"
-                >
-                  <span class="material-symbols-outlined text-[14px]" :class="{ 'fill-1 text-rose-500': isLiked }">favorite</span>
+                <button type="button" @click="toggleLike"
+                  class="flex items-center gap-1 font-medium transition-colors cursor-pointer"
+                  :class="isLiked ? 'text-rose-600' : 'text-slate-500 hover:text-slate-700'">
+                  <span class="material-symbols-outlined text-[14px]"
+                    :class="{ 'fill-1 text-rose-500': isLiked }">favorite</span>
                   <span>{{ displayWishlistCount }} difavoritkan</span>
                 </button>
                 <span class="text-slate-300">•</span>
-                <span 
-                  class="flex items-center gap-1 font-semibold"
-                  :class="(product?.stockKg ?? 0) <= 0 ? 'text-rose-600' : 'text-emerald-700'"
-                >
+                <span class="flex items-center gap-1 font-semibold"
+                  :class="(product?.stockKg ?? 0) <= 0 ? 'text-rose-600' : 'text-emerald-700'">
                   <span class="material-symbols-outlined text-[14px]">
                     {{ (product?.stockKg ?? 0) <= 0 ? 'cancel' : 'check_circle' }}
                   </span>
                   <span>
-                    {{ (product?.stockKg ?? 0) <= 0 
-                      ? 'Stok Habis' 
-                      : (product?.unit === 'pack' ? `Sisa ${product.stockKg} pack` : `Sisa stok ${product.stockKg} kg`) 
-                    }}
+                    {{ (product?.stockKg ?? 0) <= 0 ? 'Stok Habis' : (product?.unit === 'pack' ? `Sisa ${product.stockKg} pack` : `Sisa stok ${product.stockKg} kg`) }}
                   </span>
                 </span>
               </div>
 
-              <!-- Price Display Dynamic -->
+              <!-- Dynamic Price Display -->
               <div class="mt-3.5" id="price-display">
                 <div class="flex items-baseline gap-2">
                   <span class="text-2xl sm:text-3xl font-extrabold text-[#103860]">
                     Rp{{ currentUnitPrice.toLocaleString('id-ID') }}
                   </span>
-                  <span class="text-xs text-slate-500 font-medium">
+                  <span class="text-xs font-medium text-slate-500">
                     / Pack ({{ selectedTier1?.label }}{{ tier1Unit === 'kg' ? ' kg' : 'g' }})
                   </span>
                 </div>
@@ -813,123 +908,97 @@ useHead(() => {
                 </div>
               </div>
 
-              <div class="border-b border-slate-200/80 my-4"></div>
+              <div class="my-4 border-b border-slate-200/80"></div>
             </div>
 
-            <!-- 4. Tokopedia Style Tier 1: Pilihan Berat (Gram / Kg) -->
+            <!-- Tier 1: Pilihan Berat (Gram / Kg) -->
             <div class="pb-4">
               <div class="text-xs text-slate-700 mb-2.5">
-                {{ tier1Name }} ({{ tier1Unit === 'kg' ? 'kg' : 'Gram' }}): 
+                {{ tier1Name }} ({{ tier1Unit === 'kg' ? 'kg' : 'Gram' }}):
                 <strong class="text-[#103860] font-bold" id="selected-weight-label">
                   [{{ selectedTier1?.label }}{{ tier1Unit === 'kg' ? ' kg' : 'g' }}]
                 </strong>
               </div>
 
-              <!-- Flexible Wrap Chips (Clean & Minimalist, disilang jika habis) -->
               <div class="flex flex-wrap gap-2">
                 <template v-for="opt in tier1Options" :key="opt.id">
-                  <button 
-                    v-if="opt.inStock"
-                    type="button"
-                    @click="selectedTier1Id = opt.id"
+                  <button v-if="opt.inStock" type="button" @click="selectedTier1Id = opt.id"
                     class="h-10 sm:h-11 px-3.5 sm:px-4 rounded-lg sm:rounded-xl transition-all cursor-pointer font-bold flex items-center justify-center border text-xs sm:text-sm font-mono"
-                    :class="selectedTier1Id === opt.id 
-                      ? 'border-[#103860] bg-[#103860] text-white shadow-xs' 
+                    :class="selectedTier1Id === opt.id
+                      ? 'border-[#103860] bg-[#103860] text-white shadow-xs'
                       : 'border-slate-200 bg-white text-slate-800 hover:border-slate-300 hover:bg-slate-50'"
-                    :aria-label="`Pilih ukuran ${opt.label} ${tier1Unit === 'kg' ? 'kg' : 'gram'}`"
-                  >
+                    :aria-label="`Pilih ukuran ${opt.label} ${tier1Unit === 'kg' ? 'kg' : 'gram'}`">
                     {{ opt.label }}{{ tier1Unit === 'kg' ? ' kg' : '' }}
                   </button>
-                  <div 
-                    v-else
+                  <div v-else
                     class="diagonal-cross h-10 sm:h-11 px-3.5 sm:px-4 rounded-lg sm:rounded-xl border border-slate-200 bg-slate-50/70 text-slate-400 select-none cursor-not-allowed text-xs sm:text-sm flex items-center justify-center font-mono font-normal"
-                    :title="`Ukuran ${opt.label}${tier1Unit === 'kg' ? 'kg' : 'g'} sedang habis`"
-                  >
+                    :title="`Ukuran ${opt.label}${tier1Unit === 'kg' ? 'kg' : 'g'} sedang habis`">
                     {{ opt.label }}{{ tier1Unit === 'kg' ? ' kg' : '' }}
                   </div>
                 </template>
               </div>
             </div>
 
-            <!-- 5. Tokopedia Style Tier 2: Varian Tambahan (Pilihan Kulit, Potongan, dll - DEFAULT KOSONG / HIDDEN) -->
+            <!-- Tier 2: Varian Tambahan (Pilihan Kulit, Potongan, dll - Default hidden jika tidak aktif) -->
             <div v-if="tier2Enabled && tier2Options.length > 0" class="pb-4">
-              <div class="text-xs text-slate-700 mb-2">
+              <div class="mb-2 text-xs text-slate-700">
                 {{ tier2Name }}: <span class="text-[#103860] font-bold">[{{ selectedTier2?.label }}]</span>
               </div>
 
               <div class="flex flex-wrap items-center gap-2">
                 <template v-for="cOpt in tier2Options" :key="cOpt.id">
-                  <button
-                    v-if="cOpt.inStock"
-                    type="button"
-                    @click="selectedTier2Id = cOpt.id"
+                  <button v-if="cOpt.inStock" type="button" @click="selectedTier2Id = cOpt.id"
                     class="px-4 py-2 h-10 sm:h-11 rounded-lg sm:rounded-xl border text-xs sm:text-sm font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5"
-                    :class="selectedTier2Id === cOpt.id 
-                      ? 'border-[#103860] bg-[#103860] text-white shadow-xs' 
-                      : 'border-slate-200 bg-white text-slate-800 hover:border-slate-300 hover:bg-slate-50'"
-                  >
+                    :class="selectedTier2Id === cOpt.id
+                      ? 'border-[#103860] bg-[#103860] text-white shadow-xs'
+                      : 'border-slate-200 bg-white text-slate-800 hover:border-slate-300 hover:bg-slate-50'">
                     <span>{{ cOpt.label }}</span>
                     <span v-if="cOpt.priceDelta && cOpt.priceDelta > 0" class="text-[10px] opacity-80 font-mono">
                       (+Rp{{ cOpt.priceDelta.toLocaleString('id-ID') }})
                     </span>
                   </button>
-                  <div
-                    v-else
-                    class="diagonal-cross px-4 py-2 h-10 sm:h-11 rounded-lg sm:rounded-xl border border-slate-200 bg-slate-50/70 text-slate-400 select-none cursor-not-allowed text-xs sm:text-sm flex items-center justify-center font-normal"
-                    :title="`Varian ${cOpt.label} sedang habis`"
-                  >
+                  <div v-else
+                    class="flex items-center justify-center h-10 px-4 py-2 text-xs font-normal border rounded-lg cursor-not-allowed select-none diagonal-cross sm:h-11 sm:rounded-xl border-slate-200 bg-slate-50/70 text-slate-400 sm:text-sm"
+                    :title="`Varian ${cOpt.label} sedang habis`">
                     {{ cOpt.label }}
                   </div>
                 </template>
               </div>
             </div>
 
-            <!-- 6. Jumlah Pesanan (Pack) & Subtotal & Bagikan -->
+            <!-- Jumlah Pesanan (Pack) & Subtotal & Bagikan -->
             <div class="pb-5">
-              <div class="text-xs font-semibold text-slate-800 mb-2">
+              <div class="mb-2 text-xs font-semibold text-slate-800">
                 Jumlah Pesanan (Pack):
               </div>
 
-              <div class="flex items-center justify-between gap-3 flex-wrap">
+              <div class="flex flex-wrap items-center justify-between gap-3">
                 <div class="flex items-center gap-3">
                   <!-- Stepper Component -->
-                  <div class="inline-flex items-center border border-slate-300 rounded-lg bg-white h-10 shadow-2xs">
-                    <button 
-                      type="button"
-                      aria-label="Kurang kuantitas" 
-                      @click="changeQty(-1)"
-                      :disabled="quantity <= 1"
-                      class="w-10 h-10 flex items-center justify-center text-slate-600 hover:bg-slate-50 disabled:opacity-30 rounded-l-lg transition-colors cursor-pointer text-lg font-bold leading-none select-none"
-                    >
+                  <div class="inline-flex items-center h-10 bg-white border rounded-lg border-slate-300 shadow-2xs">
+                    <button type="button" aria-label="Kurang kuantitas" @click="changeQty(-1)" :disabled="quantity <= 1"
+                      class="flex items-center justify-center w-10 h-10 text-lg font-bold leading-none transition-colors rounded-l-lg cursor-pointer select-none text-slate-600 hover:bg-slate-50 disabled:opacity-30">
                       -
                     </button>
-                    <span id="quantity-input" class="w-10 text-center font-bold text-xs text-slate-900">
+                    <span id="quantity-input" class="w-10 text-xs font-bold text-center text-slate-900">
                       {{ quantity }}
                     </span>
-                    <button 
-                      type="button"
-                      aria-label="Tambah kuantitas" 
-                      @click="changeQty(1)"
+                    <button type="button" aria-label="Tambah kuantitas" @click="changeQty(1)"
                       :disabled="quantity >= maxStock"
-                      class="w-10 h-10 flex items-center justify-center text-slate-600 hover:bg-slate-50 disabled:opacity-30 rounded-r-lg transition-colors cursor-pointer text-lg font-bold leading-none select-none"
-                    >
+                      class="flex items-center justify-center w-10 h-10 text-lg font-bold leading-none transition-colors rounded-r-lg cursor-pointer select-none text-slate-600 hover:bg-slate-50 disabled:opacity-30">
                       +
                     </button>
                   </div>
 
-                  <div class="text-xs text-slate-600 font-medium">
-                    Subtotal: <strong class="text-slate-900 font-bold text-sm">Rp{{ currentTotalPrice.toLocaleString('id-ID') }}</strong>
+                  <div class="text-xs font-medium text-slate-600">
+                    Subtotal: <strong class="text-sm font-bold text-slate-900">Rp{{ currentTotalPrice.toLocaleString('id-ID') }}</strong>
                   </div>
                 </div>
 
                 <!-- Share Button -->
-                <button 
-                  type="button"
-                  aria-label="Bagikan Produk" 
-                  @click="shareProduct" 
+                <button type="button" aria-label="Bagikan Produk" @click="shareProduct"
                   class="inline-flex items-center gap-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 px-3 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors cursor-pointer"
-                  title="Bagikan tautan produk ini"
-                >
+                  title="Bagikan tautan produk ini">
                   <span class="material-symbols-outlined text-[16px]">share</span>
                   <span>Bagikan</span>
                 </button>
@@ -937,56 +1006,37 @@ useHead(() => {
             </div>
 
             <!-- Inline CTA Buttons for Desktop md+ -->
-            <div class="hidden md:flex items-center gap-3 pt-2">
-              <a 
-                :href="'https://wa.me/6281234567890?text=' + encodeURIComponent('Halo Laut Berkah Abadi, saya tertarik dengan produk ' + product.name + ' varian ' + selectedGrams + 'g')" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                class="flex-1 h-11 border border-emerald-600 text-emerald-700 hover:bg-emerald-50 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-              >
+            <div class="items-center hidden gap-3 pt-2 md:flex">
+              <a :href="'https://wa.me/6281234567890?text=' + encodeURIComponent('Halo Laut Berkah Abadi, saya tertarik dengan produk ' + product.name + ' varian ' + selectedGrams + 'g')"
+                target="_blank" rel="noopener noreferrer"
+                class="flex-1 h-11 border border-emerald-600 text-emerald-700 hover:bg-emerald-50 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer">
                 <span class="material-symbols-outlined text-[18px]">chat</span>
                 <span>Hubungi WhatsApp</span>
               </a>
 
-              <button 
-                type="button"
-                id="btn-add-cart"
-                @click="handleAddToCart"
-                class="flex-1 h-11 bg-slate-100 hover:bg-slate-200 text-[#103860] font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer"
-              >
+              <button type="button" id="btn-add-cart" @click="handleAddToCart"
+                class="flex-1 h-11 bg-slate-100 hover:bg-slate-200 text-[#103860] font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer">
                 <span class="material-symbols-outlined text-[18px]">add_shopping_cart</span>
                 <span>{{ addedSuccess ? 'Ditambahkan!' : '+ Keranjang' }}</span>
               </button>
 
-              <button 
-                type="button"
-                id="btn-buy-now"
-                @click="handleBuyNow"
-                class="flex-[1.2] h-11 bg-[#103860] hover:bg-[#002242] text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
-              >
+              <button type="button" id="btn-buy-now" @click="handleBuyNow"
+                class="flex-[1.2] h-11 bg-[#103860] hover:bg-[#002242] text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer">
                 <span>Beli Sekarang</span>
               </button>
             </div>
           </div>
         </div>
 
-        <!-- 7. Tabs: Deskripsi & Spesifikasi -->
+        <!-- Tabs: Deskripsi & Spesifikasi -->
         <div class="px-4 py-4 border-t border-slate-100">
-          <div class="flex border-b border-slate-200 text-xs">
-            <button 
-              type="button"
-              @click="activeTab = 'desc'"
-              class="pb-2 px-3 transition-all cursor-pointer"
-              :class="activeTab === 'desc' ? 'font-bold text-[#103860] border-b-2 border-[#103860]' : 'text-slate-500 hover:text-slate-800'"
-            >
+          <div class="flex text-xs border-b border-slate-200">
+            <button type="button" @click="activeTab = 'desc'" class="px-3 pb-2 transition-all cursor-pointer"
+              :class="activeTab === 'desc' ? 'font-bold text-[#103860] border-b-2 border-[#103860]' : 'text-slate-500 hover:text-slate-800'">
               Deskripsi
             </button>
-            <button 
-              type="button"
-              @click="activeTab = 'spec'"
-              class="pb-2 px-3 transition-all cursor-pointer"
-              :class="activeTab === 'spec' ? 'font-bold text-[#103860] border-b-2 border-[#103860]' : 'text-slate-500 hover:text-slate-800'"
-            >
+            <button type="button" @click="activeTab = 'spec'" class="px-3 pb-2 transition-all cursor-pointer"
+              :class="activeTab === 'spec' ? 'font-bold text-[#103860] border-b-2 border-[#103860]' : 'text-slate-500 hover:text-slate-800'">
               Spesifikasi
             </button>
           </div>
@@ -997,7 +1047,7 @@ useHead(() => {
           </div>
 
           <!-- Tab Content 2: Spesifikasi -->
-          <div v-show="activeTab === 'spec'" class="py-3 text-xs space-y-2 text-slate-600" id="tab-spec">
+          <div v-show="activeTab === 'spec'" class="py-3 space-y-2 text-xs text-slate-600" id="tab-spec">
             <div class="flex justify-between py-1 border-b border-slate-100">
               <span class="text-slate-400">Komoditas</span>
               <span class="font-medium text-slate-800">{{ product.name }}</span>
@@ -1017,42 +1067,38 @@ useHead(() => {
           </div>
         </div>
 
-        <!-- 8. Rekomendasi Produk Terkait (Stay & Cross-Sell) -->
+        <!-- Rekomendasi Produk Terkait -->
         <section v-if="recommendedProducts.length > 0" class="px-4 py-5 border-t border-slate-100 bg-slate-50/50">
           <div class="flex items-center justify-between mb-3.5">
             <div>
-              <h2 class="text-sm md:text-base font-bold text-slate-900 tracking-tight">Rekomendasi Pilihan untuk Anda</h2>
+              <h2 class="text-sm font-bold tracking-tight md:text-base text-slate-900">Rekomendasi Pilihan untuk Anda</h2>
               <p class="text-[11px] text-slate-500">Hasil laut segar sejenis dengan standar mutu pendaratan harian</p>
             </div>
-            <NuxtLink to="/katalog" class="text-xs font-semibold text-[#103860] hover:underline flex items-center gap-0.5">
+            <NuxtLink to="/katalog"
+              class="text-xs font-semibold text-[#103860] hover:underline flex items-center gap-0.5">
               <span>Semua</span>
               <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
             </NuxtLink>
           </div>
 
-          <!-- Mobile: Horizontal Smooth Scroll; Desktop: 4-Column Grid -->
           <div class="flex md:grid md:grid-cols-4 gap-3 overflow-x-auto no-scrollbar snap-x pb-2 pt-0.5">
-            <div 
-              v-for="rec in recommendedProducts"
-              :key="rec.id"
-              @click="goToProduct(rec.slug)"
-              class="w-[170px] md:w-auto flex-shrink-0 snap-start bg-white rounded-xl border border-slate-200/90 hover:border-[#103860]/40 transition-all shadow-xs hover:shadow-md cursor-pointer flex flex-col justify-between p-2.5 group"
-            >
+            <div v-for="rec in recommendedProducts" :key="rec.id" @click="goToProduct(rec.slug)"
+              class="w-[170px] md:w-auto flex-shrink-0 snap-start bg-white rounded-xl border border-slate-200/90 hover:border-[#103860]/40 transition-all shadow-xs hover:shadow-md cursor-pointer flex flex-col justify-between p-2.5 group">
               <div>
                 <!-- Image & Badge -->
-                <div class="relative w-full aspect-square rounded-lg overflow-hidden bg-slate-100 mb-2">
-                  <NuxtImg 
-                    :src="rec.images?.hero || rec.images?.primary || 'https://cdn.ammarabufadhel.my.id/qc/ikan-kerapu-macan-muncar-scaleSlip-292250c2.webp'" 
-                    :alt="rec.name" 
-                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    width="200"
-                    height="200"
-                    format="webp"
-                    loading="lazy"
-                    @error="handleImageError"
-                  />
-                  <span class="absolute top-1.5 left-1.5 bg-[#103860]/90 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md">
-                    {{ rec.unit === 'pack' ? `${rec.packWeightGrams || 200}g` : 'Per Kg' }}
+                <div class="relative w-full mb-2 overflow-hidden rounded-lg aspect-square bg-slate-100">
+                  <NuxtImg
+                    v-if="rec.images?.hero || (rec as any).imageUrl"
+                    :src="rec.images?.hero || (rec as any).imageUrl"
+                    :alt="rec.name"
+                    class="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
+                    width="200" height="200" format="webp" loading="lazy" />
+                  <div v-else class="w-full h-full flex items-center justify-center bg-slate-100 text-slate-300">
+                    <span class="material-symbols-outlined text-3xl">set_meal</span>
+                  </div>
+                  <span
+                    class="absolute top-1.5 left-1.5 bg-[#103860]/90 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md">
+                    {{ rec.unit === 'pack' ? `${(rec as any).packWeightGrams || 200}g` : 'Per Kg' }}
                   </span>
                 </div>
 
@@ -1066,7 +1112,7 @@ useHead(() => {
 
                 <!-- Terjual (ringan) -->
                 <div class="flex items-center gap-1 text-[10px] text-slate-500 mb-1">
-                  <span class="text-slate-700 font-medium">{{ rec.soldCount || 0 }} terjual</span>
+                  <span class="font-medium text-slate-700">{{ rec.soldCount || 0 }} terjual</span>
                 </div>
 
                 <div class="text-xs font-extrabold text-[#006c4a]">
@@ -1075,12 +1121,9 @@ useHead(() => {
               </div>
 
               <!-- Quick Add Button -->
-              <button
-                type="button"
-                @click="handleQuickAdd(rec, $event)"
+              <button type="button" @click="handleQuickAdd(rec, $event)"
                 class="mt-2.5 w-full h-8 bg-slate-100 hover:bg-[#103860] text-[#103860] hover:text-white rounded-lg text-[11px] font-bold flex items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer"
-                title="Tambah ke keranjang"
-              >
+                title="Tambah ke keranjang">
                 <span class="material-symbols-outlined text-[15px]">add_shopping_cart</span>
                 <span>+ Keranjang</span>
               </button>
@@ -1089,54 +1132,44 @@ useHead(() => {
         </section>
       </main>
 
-      <!-- State: Empty State -->
-      <div v-else class="p-6">
-        <CommonEmptyState 
-          icon="search_off"
-          title="Produk Tidak Ditemukan"
-          description="Produk yang dicari sedang tidak tersedia."
-          action-text="Kembali ke Katalog"
-          action-to="/katalog"
-          action-icon="arrow_back"
-        />
+      <!-- State 4: Clean Empty State (404) -->
+      <div v-else class="flex flex-col items-center justify-center p-12 text-center my-auto min-h-[50vh]">
+        <div class="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-4">
+          <span class="material-symbols-outlined text-3xl">search_off</span>
+        </div>
+        <h2 class="text-base font-bold text-slate-800 mb-1">Produk Tidak Ditemukan</h2>
+        <p class="text-xs text-slate-500 max-w-xs mb-6">Produk hasil laut yang Anda cari mungkin sedang kosong musim pendaratan atau tautan tidak valid.</p>
+        <NuxtLink to="/katalog" class="px-5 py-2.5 bg-[#103860] hover:bg-[#002242] text-white text-xs font-semibold rounded-xl shadow-xs transition-colors">
+          Jelajahi Katalog Ikan Segar
+        </NuxtLink>
       </div>
 
-      <!-- 9. Polished Clean Bottom Action Bar (Mobile only, hidden md+) -->
-      <footer 
-        v-if="product" 
-        class="md:hidden fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/95 backdrop-blur-md border-t border-slate-200/90 p-3 flex items-center gap-2.5 z-50 shadow-lg"
-      >
+      <!-- Bottom Action Bar (Mobile) -->
+      <footer v-if="product"
+        class="md:hidden fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/95 backdrop-blur-md border-t border-slate-200/90 p-3 flex items-center gap-2.5 z-50 shadow-lg">
         <!-- WhatsApp Concierge Button -->
-        <a 
-          aria-label="Konsultasi WhatsApp" 
-          :href="'https://wa.me/6281234567890?text=' + encodeURIComponent('Halo Laut Berkah Abadi, saya tertarik dengan ' + displayName)" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-xl border border-slate-200 bg-white hover:bg-emerald-50/60 hover:border-emerald-300 transition-colors shadow-2xs active:scale-95 cursor-pointer"
-          title="Chat WhatsApp"
-        >
-          <svg class="w-6 h-6 fill-current text-[#25D366]" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2m.01 1.67c2.2 0 4.26.86 5.82 2.42a8.23 8.23 0 0 1 2.41 5.83c0 4.54-3.7 8.24-8.24 8.24-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.19 8.19 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24m4.52 11.66c-.19-.09-1.1-.54-1.27-.6-.17-.06-.3-.09-.43.09-.13.19-.49.6-.6.73-.11.13-.23.15-.42.06-.19-.09-.81-.3-1.54-.95-.57-.51-.95-1.14-1.06-1.33-.11-.19-.01-.3.08-.39.09-.08.19-.23.29-.34.1-.11.13-.19.19-.32.06-.13.03-.24-.01-.34-.05-.09-.43-1.04-.6-1.42-.16-.37-.32-.32-.44-.33-.11-.01-.24-.01-.37-.01-.13 0-.34.05-.52.24-.18.19-.69.67-.69 1.64s.71 1.91.81 2.04c.1.13 1.4 2.14 3.39 3 .47.21.84.33 1.13.42.48.15.91.13 1.25.08.38-.06 1.1-.45 1.26-.89.15-.43.15-.81.11-.89-.05-.08-.18-.13-.37-.22" />
+        <a aria-label="Konsultasi WhatsApp"
+          :href="'https://wa.me/6281234567890?text=' + encodeURIComponent('Halo Laut Berkah Abadi, saya tertarik dengan ' + displayName)"
+          target="_blank" rel="noopener noreferrer"
+          class="flex items-center justify-center flex-shrink-0 transition-colors bg-white border cursor-pointer w-11 h-11 rounded-xl border-slate-200 hover:bg-emerald-50/60 hover:border-emerald-300 shadow-2xs active:scale-95"
+          title="Chat WhatsApp">
+          <svg class="w-6 h-6 fill-current text-[#25D366]" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true">
+            <path
+              d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2m.01 1.67c2.2 0 4.26.86 5.82 2.42a8.23 8.23 0 0 1 2.41 5.83c0 4.54-3.7 8.24-8.24 8.24-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.19 8.19 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24m4.52 11.66c-.19-.09-1.1-.54-1.27-.6-.17-.06-.3-.09-.43.09-.13.19-.49.6-.6.73-.11.13-.23.15-.42.06-.19-.09-.81-.3-1.54-.95-.57-.51-.95-1.14-1.06-1.33-.11-.19-.01-.3.08-.39.09-.08.19-.23.29-.34.1-.11.13-.19.19-.32.06-.13.03-.24-.01-.34-.05-.09-.43-1.04-.6-1.42-.16-.37-.32-.32-.44-.33-.11-.01-.24-.01-.37-.01-.13 0-.34.05-.52.24-.18.19-.69.67-.69 1.64s.71 1.91.81 2.04c.1.13 1.4 2.14 3.39 3 .47.21.84.33 1.13.42.48.15.91.13 1.25.08.38-.06 1.1-.45 1.26-.89.15-.43.15-.81.11-.89-.05-.08-.18-.13-.37-.22" />
           </svg>
         </a>
 
         <!-- + Keranjang Button -->
-        <button 
-          type="button"
-          @click="handleAddToCart"
-          class="flex-1 h-11 bg-slate-100 hover:bg-slate-200 text-[#103860] font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] cursor-pointer"
-        >
+        <button type="button" @click="handleAddToCart"
+          class="flex-1 h-11 bg-slate-100 hover:bg-slate-200 text-[#103860] font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] cursor-pointer">
           <span class="material-symbols-outlined text-[18px]">add_shopping_cart</span>
           <span>+ Keranjang (Rp{{ currentTotalPrice.toLocaleString('id-ID') }})</span>
         </button>
 
         <!-- Beli Sekarang Button -->
-        <button 
-          id="buy-now-btn"
-          type="button"
-          @click="handleBuyNow"
-          class="flex-[1.2] h-11 bg-[#103860] hover:bg-[#002242] text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] shadow-xs cursor-pointer"
-        >
+        <button id="buy-now-btn" type="button" @click="handleBuyNow"
+          class="flex-[1.2] h-11 bg-[#103860] hover:bg-[#002242] text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] shadow-xs cursor-pointer">
           <span>Beli Sekarang</span>
         </button>
       </footer>
@@ -1145,18 +1178,20 @@ useHead(() => {
 </template>
 
 <style scoped>
-.no-scrollbar::-webkit-scrollbar { 
-  display: none; 
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
-.no-scrollbar { 
-  -ms-overflow-style: none; 
-  scrollbar-width: none; 
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 .diagonal-cross {
   position: relative;
   overflow: hidden;
 }
+
 .diagonal-cross::before {
   content: '';
   position: absolute;

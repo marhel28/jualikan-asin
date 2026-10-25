@@ -22,6 +22,8 @@ const authStore = useAuthStore()
 const { t } = useLocale()
 const isAdding = ref(false)
 const justAdded = ref(false)
+const isImageLoaded = ref(false)
+const isImageError = ref(false)
 
 const isFavorited = computed(() => wishlistStore.has(props.product.id))
 
@@ -43,12 +45,13 @@ const toggleWishlist = async (event: Event) => {
   await wishlistStore.toggle(props.product.id)
 }
 
-const handleImageError = (event: Event) => {
-  const target = (event?.target || event?.currentTarget) as HTMLImageElement | null
-  const fallback = 'https://cdn.ammarabufadhel.my.id/products/asset-1544551763-ced7aa4f.webp'
-  if (target && target.src !== fallback) {
-    target.src = fallback
-  }
+const handleImageLoad = () => {
+  isImageLoaded.value = true
+}
+
+const handleImageError = () => {
+  isImageError.value = true
+  isImageLoaded.value = true
 }
 
 const handleQuickAdd = () => {
@@ -88,28 +91,48 @@ const handleQuickAdd = () => {
   >
     <div>
       <div class="block relative w-full aspect-[4/3] bg-slate-100 overflow-hidden">
+        <!-- Skeleton pulse loader while image is loading -->
+        <div 
+          v-if="!isImageLoaded" 
+          class="absolute inset-0 bg-slate-200 animate-pulse flex items-center justify-center z-0"
+        >
+          <span class="material-symbols-outlined text-3xl text-slate-300">set_meal</span>
+        </div>
+
+        <!-- Fallback if error occurs or no image provided -->
+        <div 
+          v-if="isImageError || !product.images?.hero" 
+          class="w-full h-full bg-slate-100 flex flex-col items-center justify-center text-slate-400 p-4"
+        >
+          <span class="material-symbols-outlined text-3xl text-slate-300 mb-1">set_meal</span>
+          <span class="text-[10px] text-slate-400 font-medium">Hasil Laut Muncar</span>
+        </div>
+
         <NuxtImg
-          :src="product.images?.hero || 'https://cdn.ammarabufadhel.my.id/products/asset-1544551763-ced7aa4f.webp'"
+          v-else
+          :src="product.images.hero"
           :alt="product.name"
-          class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          class="w-full h-full object-cover group-hover:scale-105 transition-all duration-300 relative z-10"
+          :class="isImageLoaded ? 'opacity-100' : 'opacity-0'"
           loading="lazy"
           width="400"
           height="300"
           format="webp"
+          @load="handleImageLoad"
           @error="handleImageError"
         />
 
         <!-- Badge: Rank Badge (jika ada) atau Quality Badge default -->
         <span 
           v-if="rankBadge"
-          class="absolute top-2 left-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-xs flex items-center gap-1"
+          class="absolute top-2 left-2 z-20 bg-gradient-to-r from-amber-500 to-amber-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-xs flex items-center gap-1"
         >
           <span class="material-symbols-outlined text-[12px]">local_fire_department</span>
           <span>{{ rankBadge }}</span>
         </span>
         <span 
           v-else
-          class="absolute top-2 left-2 bg-[#002242] text-white text-[10px] font-semibold px-2 py-0.5 rounded shadow-xs"
+          class="absolute top-2 left-2 z-20 bg-[#002242] text-white text-[10px] font-semibold px-2 py-0.5 rounded shadow-xs"
         >
           {{ product.qualityBadges?.[0] || 'Tangkapan Hari Ini' }}
         </span>
@@ -118,7 +141,7 @@ const handleQuickAdd = () => {
           type="button"
           @click.stop="toggleWishlist"
           :aria-label="isFavorited ? 'Hapus dari favorit' : 'Tambah ke favorit'"
-          class="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/90 backdrop-blur-xs flex items-center justify-center transition-colors shadow-xs hover:bg-white cursor-pointer"
+          class="absolute top-2 right-2 z-20 w-7 h-7 rounded-full bg-white/90 backdrop-blur-xs flex items-center justify-center transition-colors shadow-xs hover:bg-white cursor-pointer"
           :class="isFavorited ? 'text-rose-600' : 'text-slate-400 hover:text-slate-700'"
         >
           <span class="material-symbols-outlined text-[17px]" :class="{ 'fill-1': isFavorited }">

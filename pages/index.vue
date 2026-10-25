@@ -494,7 +494,7 @@ onMounted(async () => {
     if (backendProducts && Array.isArray(backendProducts) && backendProducts.length > 0) {
       products.value = backendProducts.map(bp => {
         const local = PRODUCTS.find(p => p.id === bp.id || p.slug === bp.slug)
-        const heroImg = bp.images?.hero || bp.image_url || local?.images?.hero || 'https://cdn.ammarabufadhel.my.id/products/asset-1544551763-ced7aa4f.webp'
+        const heroImg = bp.images?.hero || bp.image_url || local?.images?.hero || ''
         return {
           id: bp.id,
           name: bp.name,
@@ -662,7 +662,7 @@ onUnmounted(() => {
                       ? 'bg-amber-400/15 border border-amber-300/30 text-amber-200'
                       : 'bg-emerald-500/15 border border-emerald-400/30 text-[#85f8c4]'))">
                 <span v-if="banner.badgeIcon" class="material-symbols-outlined text-[14px]">{{ banner.badgeIcon
-                }}</span>
+                  }}</span>
                 <span v-else class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                 <span>{{ banner.badgeText }}</span>
               </span>
@@ -759,7 +759,7 @@ onUnmounted(() => {
                   {{ searchSuggestData.is_trending ? 'trending_up' : 'search' }}
                 </span>
                 <span>{{ searchSuggestData.is_trending ? 'Pencarian Populer Muncar' : 'Saran Pencarian Terkait'
-                }}</span>
+                  }}</span>
               </div>
               <span v-if="isLoadingSuggestions"
                 class="material-symbols-outlined text-[14px] text-slate-400 animate-spin">
@@ -798,7 +798,7 @@ onUnmounted(() => {
             <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1">
               <span class="material-symbols-outlined text-[15px] text-emerald-700">inventory_2</span>
               <span>{{ searchSuggestData.is_trending ? 'Tangkapan Pilihan Hari Ini' : 'Produk Terkait Langsung'
-              }}</span>
+                }}</span>
             </div>
 
             <div class="space-y-1.5">
@@ -806,16 +806,20 @@ onUnmounted(() => {
                 class="flex items-center justify-between gap-2.5 p-2 rounded-lg bg-white border border-slate-200/70 hover:border-[#103860]/40 hover:shadow-2xs transition cursor-pointer group">
                 <div class="flex items-center gap-2.5 min-w-0">
                   <img
-                    :src="p.images?.hero || p.images?.primary || 'https://cdn.ammarabufadhel.my.id/products/asset-1544551763-c149b4dd.webp'"
+                    v-if="p.images?.hero || p.images?.primary"
+                    :src="p.images?.hero || p.images?.primary"
                     :alt="p.name"
                     class="object-cover w-10 h-10 border rounded-md border-slate-200 shrink-0 bg-slate-100" />
+                  <div v-else class="w-10 h-10 border rounded-md border-slate-200 shrink-0 bg-slate-100 flex items-center justify-center text-slate-300">
+                    <span class="material-symbols-outlined text-[18px]">set_meal</span>
+                  </div>
                   <div class="min-w-0">
                     <h4 class="text-xs font-bold text-slate-800 group-hover:text-[#103860] truncate transition-colors">
                       {{ p.name }}
                     </h4>
                     <div class="text-[10px] text-slate-500 flex items-center gap-1.5 mt-0.5">
                       <span class="px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 font-medium">{{ p.category
-                      }}</span>
+                        }}</span>
                       <span>•</span>
                       <span class="font-semibold text-emerald-700">Stok {{ p.stockKg }} kg</span>
                     </div>
