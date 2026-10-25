@@ -1021,22 +1021,27 @@ useHead(() => {
             </div>
 
             <!-- Inline CTA Buttons for Desktop md+ -->
-            <div class="items-center hidden gap-3 pt-2 md:flex">
-              <a :href="'https://wa.me/6281234567890?text=' + encodeURIComponent('Halo Laut Berkah Abadi, saya tertarik dengan produk ' + product.name + ' varian ' + selectedGrams + 'g')"
-                target="_blank" rel="noopener noreferrer"
-                class="flex-1 h-11 border border-emerald-600 text-emerald-700 hover:bg-emerald-50 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer">
-                <span class="material-symbols-outlined text-[18px]">chat</span>
-                <span>Hubungi WhatsApp</span>
-              </a>
+            <div class="hidden flex-col gap-2.5 pt-2 md:flex">
+              <!-- Baris Atas: 2 Tombol Berdampingan (50% : 50%) -->
+              <div class="grid grid-cols-2 gap-2.5">
+                <a :href="'https://wa.me/6281234567890?text=' + encodeURIComponent('Halo Laut Berkah Abadi, saya tertarik dengan produk ' + product.name + ' varian ' + selectedGrams + 'g')"
+                  target="_blank" rel="noopener noreferrer"
+                  class="h-11 border border-emerald-600 text-emerald-700 hover:bg-emerald-50 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-2xs">
+                  <span class="material-symbols-outlined text-[18px]">chat</span>
+                  <span>Hubungi WhatsApp</span>
+                </a>
 
-              <button type="button" id="btn-add-cart" @click="handleAddToCart"
-                class="flex-1 h-11 bg-slate-100 hover:bg-slate-200 text-[#103860] font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer">
-                <span class="material-symbols-outlined text-[18px]">add_shopping_cart</span>
-                <span>{{ addedSuccess ? 'Ditambahkan!' : '+ Keranjang' }}</span>
-              </button>
+                <button type="button" id="btn-add-cart" @click="handleAddToCart"
+                  class="h-11 bg-slate-100 hover:bg-slate-200 text-[#103860] font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs">
+                  <span class="material-symbols-outlined text-[18px]">add_shopping_cart</span>
+                  <span>{{ addedSuccess ? 'Ditambahkan!' : '+ Keranjang' }}</span>
+                </button>
+              </div>
 
+              <!-- Baris Bawah: Tombol Beli Melebar Penuh (w-full) -->
               <button type="button" id="btn-buy-now" @click="handleBuyNow"
-                class="flex-[1.2] h-11 bg-[#103860] hover:bg-[#002242] text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer">
+                class="w-full h-11 bg-[#103860] hover:bg-[#002242] text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer active:scale-[0.99]">
+                <span class="material-symbols-outlined text-[18px]">shopping_bag</span>
                 <span>Beli Sekarang</span>
               </button>
             </div>
