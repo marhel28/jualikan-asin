@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
+import { computed, ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { PRODUCTS, type Product } from '~/data/products'
 import { useCartStore } from '~/stores/cart'
 import { useWishlistStore } from '~/stores/wishlist'
 import { useAuthStore } from '~/stores/auth'
+import { useLocale } from '~/composables/useLocale'
 
 definePageMeta({
   hideMainHeader: true,
@@ -16,6 +17,7 @@ const router = useRouter()
 const cartStore = useCartStore()
 const wishlistStore = useWishlistStore()
 const authStore = useAuthStore()
+const { t } = useLocale()
 const runtimeConfig = useRuntimeConfig()
 const siteUrl = (runtimeConfig.public?.siteUrl as string) || 'https://lautberkahabadi.com'
 const apiBase = (runtimeConfig.public?.apiBase as string) || 'https://api-muncar.ammarabufadhel.my.id'
@@ -121,11 +123,21 @@ onMounted(() => {
   cartStore.initCart()
   wishlistStore.initFromStorage()
   loadProductData()
+  checkDescOverflow()
+  if (typeof window !== 'undefined' && 'ResizeObserver' in window) {
+    descResizeObserver = new ResizeObserver(() => {
+      checkDescOverflow()
+    })
+    if (descContentRef.value) {
+      descResizeObserver.observe(descContentRef.value)
+    }
+  }
 })
 
 watch(() => route.params.slug, () => {
   activeImageIndex.value = 0
   quantity.value = 1
+  isDescExpanded.value = false
   loadProductData()
 })
 
@@ -262,6 +274,28 @@ const formattedDescription = computed(() => {
     .split(/\n\n+/)
     .map(para => `<p>${para.replace(/\n/g, '<br>')}</p>`)
     .join('')
+})
+
+// Mekanisme hide / expand deskripsi panjang (benchmark seafoodsegarmalang.id)
+const isDescExpanded = ref<boolean>(false)
+const isDescOverflowing = ref<boolean>(false)
+const descContentRef = ref<HTMLElement | null>(null)
+let descResizeObserver: ResizeObserver | null = null
+
+const checkDescOverflow = () => {
+  nextTick(() => {
+    if (descContentRef.value) {
+      // Ambang batas overflow 140px (~5-6 baris teks)
+      isDescOverflowing.value = descContentRef.value.scrollHeight > 140
+    }
+  })
+}
+
+// Pantau perubahan konten deskripsi dan pergantian tab
+watch([formattedDescription, activeTab], () => {
+  if (activeTab.value === 'desc') {
+    checkDescOverflow()
+  }
 })
 const activeImageIndex = ref<number>(0)
 const addedSuccess = ref<boolean>(false)
@@ -500,6 +534,10 @@ const handleQuickAdd = (recProduct: Product, event: Event) => {
 
 onUnmounted(() => {
   if (toastTimer) clearTimeout(toastTimer)
+  if (descResizeObserver) {
+    descResizeObserver.disconnect()
+    descResizeObserver = null
+  }
 })
 
 // Comprehensive SEO, Geo-SEO & Rich Structured Data (JSON-LD Schema.org)
@@ -1063,11 +1101,42 @@ useHead(() => {
 
           <!-- Tab Content 1: Deskripsi -->
           <div v-show="activeTab === 'desc'" class="py-3 text-xs leading-relaxed text-slate-700" id="tab-desc">
-            <div
-              v-if="formattedDescription"
-              class="prose prose-slate max-w-none text-xs leading-relaxed text-slate-700 space-y-2 [&>p]:mb-2.5 [&>ul]:list-disc [&>ul]:ml-4 [&>ul]:space-y-1 [&>ol]:list-decimal [&>ol]:ml-4 [&>ol]:space-y-1 [&_strong]:font-bold [&_strong]:text-slate-900 [&_em]:italic [&_u]:underline"
-              v-html="formattedDescription"
-            ></div>
+            <template v-if="formattedDescription">
+              <!-- Kontainer Deskripsi dengan Pembatasan Tinggi & Smooth Transition -->
+              <div
+                class="relative transition-[max-height] duration-300 ease-in-out"
+                :class="[!isDescExpanded && isDescOverflowing ? 'max-h-[140px] overflow-hidden' : 'max-h-none']"
+              >
+                <div
+                  ref="descContentRef"
+                  class="prose prose-slate max-w-none text-xs leading-relaxed text-slate-700 space-y-2 [&>p]:mb-2.5 [&>ul]:list-disc [&>ul]:ml-4 [&>ul]:space-y-1 [&>ol]:list-decimal [&>ol]:ml-4 [&>ol]:space-y-1 [&_strong]:font-bold [&_strong]:text-slate-900 [&_em]:italic [&_u]:underline"
+                  v-html="formattedDescription"
+                ></div>
+
+                <!-- Bottom Gradient Fade Overlay saat Tertutup -->
+                <div
+                  v-if="!isDescExpanded && isDescOverflowing"
+                  class="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white via-white/85 to-transparent pointer-events-none"
+                ></div>
+              </div>
+
+              <!-- Tombol Toggle Baca Selengkapnya / Tampilkan Lebih Sedikit -->
+              <button
+                v-if="isDescOverflowing"
+                type="button"
+                id="btn-toggle-desc"
+                @click="isDescExpanded = !isDescExpanded"
+                class="mt-2.5 inline-flex items-center gap-1 text-xs font-bold text-[#103860] hover:text-[#002242] transition-colors cursor-pointer group"
+              >
+                <span>{{ isDescExpanded ? t('Tampilkan Lebih Sedikit', 'Show Less') : t('Lihat Selengkapnya', 'Show More') }}</span>
+                <span
+                  class="material-symbols-outlined text-[16px] transition-transform duration-200"
+                  :class="{ 'rotate-180': isDescExpanded }"
+                >
+                  expand_more
+                </span>
+              </button>
+            </template>
             <p v-else class="text-slate-400 italic">Belum ada deskripsi untuk komoditas ini.</p>
           </div>
 
