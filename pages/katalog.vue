@@ -27,6 +27,7 @@ const handleToggleWishlist = async (productId: string, event: Event) => {
 }
 const runtimeConfig = useRuntimeConfig()
 const siteUrl = (runtimeConfig.public?.siteUrl as string) || 'https://lautberkahabadi.com'
+const apiBase = (runtimeConfig.public?.apiBase as string) || 'https://api-muncar.ammarabufadhel.my.id'
 
 // State Management
 const searchQueryInput = ref('')
@@ -85,8 +86,8 @@ const fetchSearchSuggestions = async (term: string) => {
   isLoadingSuggestions.value = true
   try {
     const url = cleanTerm
-      ? `http://localhost:8000/products/search/suggest?q=${encodeURIComponent(cleanTerm)}&limit=5`
-      : 'http://localhost:8000/products/search/suggest'
+      ? `${apiBase}/products/search/suggest?q=${encodeURIComponent(cleanTerm)}&limit=5`
+      : `${apiBase}/products/search/suggest`
     const res = await $fetch<any>(url, { timeout: 2500 })
     if (res) {
       searchSuggestData.value = {
@@ -140,7 +141,7 @@ const performTypesenseSearch = async (term: string) => {
     return
   }
   try {
-    const res = await $fetch<any>(`http://localhost:8000/products/search/instant?q=${encodeURIComponent(term.trim())}`)
+    const res = await $fetch<any>(`${apiBase}/products/search/instant?q=${encodeURIComponent(term.trim())}`)
     if (res?.hits && Array.isArray(res.hits)) {
       typesenseMatchedSlugs.value = res.hits.map((h: any) => h.document.slug)
     }

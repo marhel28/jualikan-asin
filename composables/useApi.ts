@@ -17,7 +17,7 @@ export class ApiError extends Error {
 
 export const useApi = () => {
   const config = useRuntimeConfig()
-  const apiBase = (config.public?.apiBase as string) || 'http://127.0.0.1:8000'
+  const apiBase = (config.public?.apiBase as string) || 'https://api-muncar.ammarabufadhel.my.id'
 
   const getToken = (): string | null => {
     if (import.meta.client && typeof window !== 'undefined') {

@@ -18,6 +18,7 @@ const wishlistStore = useWishlistStore()
 const authStore = useAuthStore()
 const runtimeConfig = useRuntimeConfig()
 const siteUrl = (runtimeConfig.public?.siteUrl as string) || 'https://lautberkahabadi.com'
+const apiBase = (runtimeConfig.public?.apiBase as string) || 'https://api-muncar.ammarabufadhel.my.id'
 
 const slug = computed(() => String(route.params.slug || ''))
 
@@ -396,7 +397,7 @@ const fetchRecommendations = async () => {
 
   isLoadingRecommendations.value = true
   try {
-    const data = await $fetch<Product[]>(`http://localhost:8000/products/${currentSlug}/recommendations?limit=4`, {
+    const data = await $fetch<Product[]>(`${apiBase}/products/${currentSlug}/recommendations?limit=4`, {
       timeout: 3000
     })
     if (data && Array.isArray(data) && data.length > 0) {
