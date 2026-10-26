@@ -362,10 +362,10 @@ const CATEGORIES = computed<CategoryOption[]>(() => [
   { id: 'udang_cumi', label: t('Udang & Cumi', 'Shrimp & Squid') }
 ])
 
-const products = ref<Product[]>(PRODUCTS)
+const products = ref<Product[]>([])
 const searchQuery = ref('')
 const selectedCategory = ref('semua')
-const isLoading = ref(false)
+const isLoading = ref(true)
 const hasError = ref(false)
 const searchInputRef = ref<HTMLInputElement | null>(null)
 
@@ -528,8 +528,14 @@ onMounted(async () => {
           supportsSoupBones: bp.supportsSoupBones ?? local?.supportsSoupBones ?? false
         } as Product
       })
+    } else {
+      products.value = PRODUCTS
     }
-  } catch { }
+  } catch (err) {
+    products.value = PRODUCTS
+  } finally {
+    isLoading.value = false
+  }
 })
 
 // Category matching logic

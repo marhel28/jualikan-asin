@@ -97,9 +97,9 @@ export const PRODUCTS: Product[] = [
       'Bebas Formalin'
     ],
     images: {
-      hero: 'https://cdn.ammarabufadhel.my.id/qc/ikan-kerapu-macan-muncar-scaleSlip-292250c2.webp',
-      texture: 'https://cdn.ammarabufadhel.my.id/products/ikan-kerapu-macan-muncar-texture-668bae1c.webp',
-      scaleSlip: 'https://cdn.ammarabufadhel.my.id/products/ikan-tongkol-lisong-segar-hero-a990fbbd.webp'
+      hero: '',
+      texture: '',
+      scaleSlip: ''
     },
     availableCuts: [
       {
@@ -149,9 +149,9 @@ export const PRODUCTS: Product[] = [
       'Bebas Formalin'
     ],
     images: {
-      hero: 'https://cdn.ammarabufadhel.my.id/products/ikan-kerapu-macan-muncar-hero-b15ce231.webp',
-      texture: 'https://cdn.ammarabufadhel.my.id/products/ikan-kerapu-macan-muncar-texture-668bae1c.webp',
-      scaleSlip: 'https://cdn.ammarabufadhel.my.id/qc/ikan-kerapu-macan-muncar-scaleSlip-292250c2.webp'
+      hero: '',
+      texture: '',
+      scaleSlip: ''
     },
     availableCuts: [
       {
@@ -194,9 +194,9 @@ export const PRODUCTS: Product[] = [
       'Bebas Pengawet'
     ],
     images: {
-      hero: 'https://cdn.ammarabufadhel.my.id/products/kakap-merah-karang-banyuwangi-primary-3f19ab8d.webp',
-      texture: 'https://cdn.ammarabufadhel.my.id/products/ikan-kerapu-macan-muncar-texture-668bae1c.webp',
-      scaleSlip: 'https://cdn.ammarabufadhel.my.id/qc/ikan-kerapu-macan-muncar-scaleSlip-292250c2.webp'
+      hero: '',
+      texture: '',
+      scaleSlip: ''
     },
     availableCuts: [
       {
@@ -239,9 +239,9 @@ export const PRODUCTS: Product[] = [
       'Bebas Formalin'
     ],
     images: {
-      hero: 'https://cdn.ammarabufadhel.my.id/products/ikan-lemuru-segar-muncar-hero-5397da81.webp',
-      texture: 'https://cdn.ammarabufadhel.my.id/products/ikan-kerapu-macan-muncar-texture-668bae1c.webp',
-      scaleSlip: 'https://cdn.ammarabufadhel.my.id/qc/ikan-kerapu-macan-muncar-scaleSlip-292250c2.webp'
+      hero: '',
+      texture: '',
+      scaleSlip: ''
     },
     availableCuts: [
       {
@@ -277,9 +277,9 @@ export const PRODUCTS: Product[] = [
       'Bebas Formalin'
     ],
     images: {
-      hero: 'https://cdn.ammarabufadhel.my.id/products/ikan-kerapu-macan-muncar-texture-668bae1c.webp',
-      texture: 'https://cdn.ammarabufadhel.my.id/products/ikan-kerapu-macan-muncar-texture-668bae1c.webp',
-      scaleSlip: 'https://cdn.ammarabufadhel.my.id/qc/ikan-kerapu-macan-muncar-scaleSlip-292250c2.webp'
+      hero: '',
+      texture: '',
+      scaleSlip: ''
     },
     availableCuts: [
       {
@@ -329,9 +329,9 @@ export const PRODUCTS: Product[] = [
       'Bebas Pengawet'
     ],
     images: {
-      hero: 'https://cdn.ammarabufadhel.my.id/products/asset-1565680018434-ebfd96f5.webp',
-      texture: 'https://cdn.ammarabufadhel.my.id/products/ikan-kerapu-macan-muncar-texture-668bae1c.webp',
-      scaleSlip: 'https://cdn.ammarabufadhel.my.id/qc/ikan-kerapu-macan-muncar-scaleSlip-292250c2.webp'
+      hero: '',
+      texture: '',
+      scaleSlip: ''
     },
     availableCuts: [
       {
@@ -367,9 +367,9 @@ export const PRODUCTS: Product[] = [
       'Bebas Formalin'
     ],
     images: {
-      hero: 'https://cdn.ammarabufadhel.my.id/products/kakap-merah-karang-banyuwangi-primary-3f19ab8d.webp',
-      texture: 'https://cdn.ammarabufadhel.my.id/products/ikan-kerapu-macan-muncar-texture-668bae1c.webp',
-      scaleSlip: 'https://cdn.ammarabufadhel.my.id/qc/ikan-kerapu-macan-muncar-scaleSlip-292250c2.webp'
+      hero: '',
+      texture: '',
+      scaleSlip: ''
     },
     availableCuts: [
       {
@@ -406,9 +406,9 @@ export const PRODUCTS: Product[] = [
       'Bebas Formalin'
     ],
     images: {
-      hero: 'https://cdn.ammarabufadhel.my.id/products/ikan-tongkol-lisong-segar-hero-a990fbbd.webp',
-      texture: 'https://cdn.ammarabufadhel.my.id/products/ikan-kerapu-macan-muncar-texture-668bae1c.webp',
-      scaleSlip: 'https://cdn.ammarabufadhel.my.id/qc/ikan-kerapu-macan-muncar-scaleSlip-292250c2.webp'
+      hero: '',
+      texture: '',
+      scaleSlip: ''
     },
     availableCuts: [
       {
@@ -445,9 +445,9 @@ export const PRODUCTS: Product[] = [
       'Timbangan Akurat Terverifikasi'
     ],
     images: {
-      hero: 'https://cdn.ammarabufadhel.my.id/products/asset-fa6c90fc.webp',
-      texture: 'https://lh3.googleusercontent.com/aida/AEtjO1WwLof93E6LGMtVedhj4a7Vd-cMrwGO3RMidHHayttfFDqavnduO2WDbx58uVEdpWSqdvTB1BZ8nz0k5zXe3JYMme67fbx6MRGWjXhM2_-dCC9qP5JzKCFJBUyPJSeH7-10F-4f0dI8Rs__3QibhJDCb3b-exs7-1e5N8RXr6Dtj2iRCqn0bCPBiadbaZ8jHBeCgV8VhulK1X51BO92z7mLkUO8_qz88WiHXK8Xq6-esPXYQ8z06tv7Yahp',
-      scaleSlip: 'https://lh3.googleusercontent.com/aida/AEtjO1XpAA_7I4IAuh4Jt92vzCoaGrm4FCNeimbDXBRk2uazVkwTJPTFZrikkQ9xgNRL0EDTiVv5_G5cXEY-FtaeRNU2typXuyvO73QKLx5jUCtxO8d881h03FlrqMUnPPbFKvKbBVgEwqpDep88jkxxwZX1-J9ShbQbjX5SwJjKD92Btz_Ew5QBfeRfQAVgD79QrPVRq2uacf_pm25NsQ297WqcioU72HP2PaDS0B83hHPAJya7uzSdiz5dEY0'
+      hero: '',
+      texture: '',
+      scaleSlip: ''
     },
     availableCuts: [
       {

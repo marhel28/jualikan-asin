@@ -853,15 +853,15 @@ useHead(() => {
             <div class="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-slate-100 border border-slate-200/80">
               <!-- Skeleton Loader for Hero Image -->
               <div 
-                v-if="!isHeroImageLoaded"
+                v-if="!isHeroImageLoaded || !currentHeroImage"
                 class="absolute inset-0 bg-slate-200 animate-pulse flex items-center justify-center z-0"
               >
                 <span class="material-symbols-outlined text-4xl text-slate-300">set_meal</span>
               </div>
 
-              <!-- Fallback on error or empty -->
+              <!-- Fallback on error -->
               <div 
-                v-if="isHeroImageError || !currentHeroImage"
+                v-if="isHeroImageError"
                 class="w-full h-full bg-slate-100 flex flex-col items-center justify-center text-slate-400 p-6"
               >
                 <span class="material-symbols-outlined text-4xl text-slate-300 mb-2">set_meal</span>
@@ -869,7 +869,7 @@ useHead(() => {
               </div>
 
               <NuxtImg 
-                v-else
+                v-else-if="currentHeroImage"
                 id="main-product-img" 
                 :src="currentHeroImage" 
                 :alt="displayName"

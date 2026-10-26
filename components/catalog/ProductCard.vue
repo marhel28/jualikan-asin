@@ -91,17 +91,17 @@ const handleQuickAdd = () => {
   >
     <div>
       <div class="block relative w-full aspect-[4/3] bg-slate-100 overflow-hidden">
-        <!-- Skeleton pulse loader while image is loading -->
+        <!-- Skeleton pulse loader while image is loading or if no image provided yet -->
         <div 
-          v-if="!isImageLoaded" 
+          v-if="!isImageLoaded || !product.images?.hero" 
           class="absolute inset-0 bg-slate-200 animate-pulse flex items-center justify-center z-0"
         >
           <span class="material-symbols-outlined text-3xl text-slate-300">set_meal</span>
         </div>
 
-        <!-- Fallback if error occurs or no image provided -->
+        <!-- Fallback only if network error occurred while loading image -->
         <div 
-          v-if="isImageError || !product.images?.hero" 
+          v-if="isImageError" 
           class="w-full h-full bg-slate-100 flex flex-col items-center justify-center text-slate-400 p-4"
         >
           <span class="material-symbols-outlined text-3xl text-slate-300 mb-1">set_meal</span>
@@ -109,7 +109,7 @@ const handleQuickAdd = () => {
         </div>
 
         <NuxtImg
-          v-else
+          v-else-if="product.images?.hero"
           :src="product.images.hero"
           :alt="product.name"
           class="w-full h-full object-cover group-hover:scale-105 transition-all duration-300 relative z-10"

@@ -56,7 +56,7 @@ const hasError = ref(false)
 const addedToast = ref(false)
 const toastProductName = ref('')
 
-const productsList = ref<Product[]>([...PRODUCTS])
+const productsList = ref<Product[]>([])
 
 // Typesense Instant Search & Synonyms Integration
 const typesenseMatchedSlugs = ref<string[]>([])
@@ -216,7 +216,9 @@ const fetchProducts = async () => {
       })
     }
   } catch (err) {
-    // Graceful fallback to static products
+    if (!productsList.value || productsList.value.length === 0) {
+      productsList.value = PRODUCTS
+    }
   } finally {
     isLoading.value = false
     nextTick(() => {
