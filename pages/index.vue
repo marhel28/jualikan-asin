@@ -596,8 +596,14 @@ const retryLoad = () => {
   }, 400)
 }
 
+let autoSlideTimeout: any = null
+
 onMounted(() => {
-  startAutoSlide()
+  // Start carousel auto-slide after initial render settles (protects Core Web Vitals LCP)
+  autoSlideTimeout = setTimeout(() => {
+    startAutoSlide()
+  }, 6500)
+
   if (route.query.state === 'loading') {
     isLoading.value = true
   } else if (route.query.state === 'error') {
@@ -610,6 +616,10 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  if (autoSlideTimeout) {
+    clearTimeout(autoSlideTimeout)
+    autoSlideTimeout = null
+  }
   stopAutoSlide()
 })
 </script>
@@ -721,7 +731,7 @@ onUnmounted(() => {
       <!-- Slide Indicators (Dots / Pills) -->
       <div class="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center z-20 pointer-events-auto">
         <button v-for="i in totalSlides" :key="i - 1" type="button" :aria-label="`Pindah ke slide ${i}`"
-          @click="goToSlide(i - 1)" class="p-2 cursor-pointer flex items-center justify-center">
+          @click="goToSlide(i - 1)" class="w-7 h-7 cursor-pointer flex items-center justify-center">
           <span class="carousel-dot h-1.5 rounded-full transition-all duration-300 block"
             :class="currentSlide === (i - 1) ? 'bg-white w-6' : 'bg-white/40 hover:bg-white/70 w-1.5'"></span>
         </button>
