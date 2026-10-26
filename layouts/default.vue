@@ -9,7 +9,52 @@ const route = useRoute()
 const router = useRouter()
 const cartStore = useCartStore()
 const authStore = useAuthStore()
-const { t } = useLocale()
+const { t, isEn } = useLocale()
+const runtimeConfig = useRuntimeConfig()
+const apiBase = (runtimeConfig.public?.apiBase as string) || 'https://api-muncar.ammarabufadhel.my.id'
+
+interface AnnouncementConfig {
+  isActive: boolean
+  text_id: string
+  text_en: string
+  icon: string
+  bgColor: string
+  textColor: string
+  isPulse: boolean
+}
+
+const defaultAnnouncement: AnnouncementConfig = {
+  isActive: true,
+  text_id: 'Pengiriman Khusus Rantai Dingin Area Banyuwangi, Jember, Malang, Surabaya, dan Bali',
+  text_en: 'Special Cold-Chain Delivery for Banyuwangi, Jember, Malang, Surabaya, and Bali',
+  icon: 'ac_unit',
+  bgColor: '#103860',
+  textColor: '#FFFFFF',
+  isPulse: true
+}
+
+// Ultra-fast sub-millisecond cached announcement configuration
+const { data: announcementData } = await useAsyncData<AnnouncementConfig>(
+  'top-announcement',
+  async () => {
+    try {
+      const res = await $fetch<AnnouncementConfig>(`${apiBase}/settings/announcement`, {
+        timeout: 2500,
+        headers: { Accept: 'application/json' }
+      })
+      return res || defaultAnnouncement
+    } catch {
+      return defaultAnnouncement
+    }
+  },
+  {
+    default: () => defaultAnnouncement,
+    lazy: false,
+    server: true
+  }
+)
+
+const announcement = computed(() => announcementData.value || defaultAnnouncement)
 
 onMounted(async () => {
   if (typeof window !== 'undefined') {
@@ -80,16 +125,22 @@ const handleSearchClick = () => {
 
 <template>
   <div class="min-h-screen bg-[#F8FAFC] text-[#0F172A] font-sans antialiased flex flex-col pb-24 selection:bg-[#103860] selection:text-white">
-    <!-- Top Announcement Bar (Cold Chain Coverage) -->
+    <!-- Top Announcement Bar (Cold Chain Coverage - Dynamic from Admin Settings) -->
     <div 
-      v-if="showMainHeader" 
+      v-if="showMainHeader && (announcement?.isActive !== false)" 
       :class="(isKatalogPage || isKeranjangPage || isProdukPage) ? 'hidden md:flex' : 'flex'"
-      class="bg-[#103860] text-white text-xs px-4 py-2 items-center justify-between text-center overflow-hidden z-30 shadow-xs"
+      :style="{ backgroundColor: announcement?.bgColor || '#103860', color: announcement?.textColor || '#FFFFFF' }"
+      class="text-xs px-4 py-2 items-center justify-between text-center overflow-hidden z-30 shadow-xs transition-colors"
     >
-      <div class="flex items-center gap-2 mx-auto animate-pulse">
-        <span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">ac_unit</span>
+      <div 
+        class="flex items-center gap-2 mx-auto"
+        :class="{ 'animate-pulse': announcement?.isPulse !== false }"
+      >
+        <span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">
+          {{ announcement?.icon || 'ac_unit' }}
+        </span>
         <span class="font-medium tracking-wide">
-          {{ t('Pengiriman Khusus Rantai Dingin Area Banyuwangi, Jember, Malang, Surabaya, dan Bali', 'Special Cold-Chain Delivery for Banyuwangi, Jember, Malang, Surabaya, and Bali') }}
+          {{ isEn ? (announcement?.text_en || announcement?.text_id || defaultAnnouncement.text_en) : (announcement?.text_id || defaultAnnouncement.text_id) }}
         </span>
       </div>
     </div>
