@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { useWishlistStore } from './wishlist'
+import { useOrderStore } from './order'
 
 export interface UserAddress {
   id: string
@@ -615,6 +616,8 @@ export const useAuthStore = defineStore('auth', {
       this.isAuthenticated = false
       this.otpSent = false
       this.otpCountdown = 0
+      if (this.timerInterval) clearInterval(this.timerInterval)
+
       if (typeof window !== 'undefined') {
         localStorage.removeItem('lba_auth_token')
         try {
@@ -623,8 +626,16 @@ export const useAuthStore = defineStore('auth', {
           wishlistStore.items = []
           wishlistStore.persist()
         } catch {}
+
+        try {
+          const orderStore = useOrderStore()
+          orderStore.ordersHistory = []
+          orderStore.currentOrder = null
+        } catch {}
+
+        // Langsung tendang ke Beranda secara bersih
+        navigateTo('/', { replace: true })
       }
-      if (this.timerInterval) clearInterval(this.timerInterval)
     },
 
     async initAuth() {

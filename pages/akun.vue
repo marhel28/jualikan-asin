@@ -232,7 +232,6 @@ const addWishlistToCart = (prod: any) => {
 
 const handleLogout = () => {
   authStore.logout()
-  router.push('/auth')
 }
 </script>
 
