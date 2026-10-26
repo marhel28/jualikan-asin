@@ -199,147 +199,119 @@ onUnmounted(() => {
 
 <template>
   <Teleport to="body">
-    <div
-      v-if="isOpen"
+    <div v-if="isOpen"
       class="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-md overflow-y-auto"
-      @click.self="emit('close')"
-    >
+      @click.self="emit('close')">
       <div
-        class="bg-white rounded-2xl max-w-lg w-full border border-slate-200 shadow-2xl overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[92vh]"
-      >
-      <!-- Modal Header -->
-      <div class="p-3.5 sm:p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/80">
-        <div class="flex items-center space-x-2">
-          <span class="material-symbols-outlined text-[20px] text-[#103860]">edit_location_alt</span>
-          <div>
-            <h2 class="text-xs font-bold leading-tight sm:text-sm text-slate-900">Atur Alamat & Pin Lokasi GPS</h2>
-            <p class="text-[11px] text-slate-500">Tentukan alamat penerima dan geser pin peta tepat di depan rumah/gerbang Anda.</p>
+        class="bg-white rounded-2xl max-w-lg w-full border border-slate-200 shadow-2xl overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[92vh]">
+        <!-- Modal Header -->
+        <div class="p-3.5 sm:p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/80">
+          <div class="flex items-center space-x-2">
+            <span class="material-symbols-outlined text-[20px] text-[#103860]">edit_location_alt</span>
+            <div>
+              <h2 class="text-xs font-bold leading-tight sm:text-sm text-slate-900">Atur Alamat & Pin Lokasi GPS</h2>
+              <p class="text-[11px] text-slate-500">Tentukan alamat penerima dan geser pin peta tepat di depan
+                rumah/gerbang Anda.</p>
+            </div>
           </div>
-        </div>
-        <button
-          type="button"
-          @click="emit('close')"
-          class="inline-flex items-center justify-center transition rounded-lg cursor-pointer h-7 w-7 text-slate-400 hover:text-slate-600 hover:bg-slate-200/60"
-        >
-          <span class="material-symbols-outlined text-[18px]">close</span>
-        </button>
-      </div>
-
-      <!-- Modal Body -->
-      <div class="p-4 space-y-3.5 overflow-y-auto flex-1">
-        <div v-if="errorMessage" class="p-2.5 bg-rose-50 border border-rose-200 rounded-lg text-rose-700 text-xs flex items-center space-x-1.5">
-          <span class="material-symbols-outlined text-[16px]">error</span>
-          <span>{{ errorMessage }}</span>
+          <button type="button" @click="emit('close')"
+            class="inline-flex items-center justify-center transition rounded-lg cursor-pointer h-7 w-7 text-slate-400 hover:text-slate-600 hover:bg-slate-200/60">
+            <span class="material-symbols-outlined text-[18px]">close</span>
+          </button>
         </div>
 
-        <!-- 1. Interactive Leaflet Map Box -->
-        <div class="space-y-1.5">
-          <div class="flex items-center justify-between">
-            <label class="text-[11px] font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1">
-              <span class="material-symbols-outlined text-[15px] text-[#103860]">map</span>
-              Titik Presisi Peta (Geser Pin)
-            </label>
-
-            <!-- Tombol GPS Geolocation -->
-            <button
-              type="button"
-              @click="handleDetectCurrentGps"
-              :disabled="isDetectingGps"
-              class="inline-flex items-center space-x-1 px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-[#103860] border border-blue-200 rounded-md text-[11px] font-semibold transition cursor-pointer disabled:opacity-50"
-            >
-              <span class="material-symbols-outlined text-[14px]" :class="{ 'animate-spin': isDetectingGps }">
-                my_location
-              </span>
-              <span>{{ isDetectingGps ? 'Mencari Sinyal...' : 'Gunakan Lokasi GPS Saya' }}</span>
-            </button>
+        <!-- Modal Body -->
+        <div class="p-4 space-y-3.5 overflow-y-auto flex-1">
+          <div v-if="errorMessage"
+            class="p-2.5 bg-rose-50 border border-rose-200 rounded-lg text-rose-700 text-xs flex items-center space-x-1.5">
+            <span class="material-symbols-outlined text-[16px]">error</span>
+            <span>{{ errorMessage }}</span>
           </div>
 
-          <!-- Map Container -->
-          <ClientOnly>
+          <!-- 1. Interactive Leaflet Map Box -->
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between">
+              <label class="text-[11px] font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1">
+                <span class="material-symbols-outlined text-[15px] text-[#103860]">map</span>
+                Titik Presisi Peta (Geser Pin)
+              </label>
+
+              <!-- Tombol GPS Geolocation -->
+              <button type="button" @click="handleDetectCurrentGps" :disabled="isDetectingGps"
+                class="inline-flex items-center space-x-1 px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-[#103860] border border-blue-200 rounded-md text-[11px] font-semibold transition cursor-pointer disabled:opacity-50">
+                <span class="material-symbols-outlined text-[14px]" :class="{ 'animate-spin': isDetectingGps }">
+                  my_location
+                </span>
+                <span>{{ isDetectingGps ? 'Mencari Sinyal...' : 'Gunakan Lokasi GPS Saya' }}</span>
+              </button>
+            </div>
+
+            <!-- Map Container -->
+            <ClientOnly>
+              <div ref="mapContainer"
+                class="w-full overflow-hidden border shadow-inner h-52 sm:h-60 rounded-xl border-slate-200 bg-slate-100">
+              </div>
+            </ClientOnly>
+
+            <!-- Coordinates Status Bar -->
             <div
-              ref="mapContainer"
-              class="w-full overflow-hidden border shadow-inner h-52 sm:h-60 rounded-xl border-slate-200 bg-slate-100"
-            ></div>
-          </ClientOnly>
-
-          <!-- Coordinates Status Bar -->
-          <div class="flex items-center justify-between px-2.5 py-1.5 bg-slate-50 border border-slate-200/80 rounded-lg text-[11px]">
-            <div class="flex items-center space-x-1 text-[#059669] font-semibold">
-              <span class="material-symbols-outlined text-[14px]">verified</span>
-              <span>GPS Terverifikasi</span>
-            </div>
-            <div class="font-mono text-slate-600 text-[10px]">
-              Lat: {{ currentLat.toFixed(5) }}, Lng: {{ currentLng.toFixed(5) }}
+              class="flex items-center justify-between px-2.5 py-1.5 bg-slate-50 border border-slate-200/80 rounded-lg text-[11px]">
+              <div class="flex items-center space-x-1 text-[#059669] font-semibold">
+                <span class="material-symbols-outlined text-[14px]">verified</span>
+                <span>GPS Terverifikasi</span>
+              </div>
+              <div class="font-mono text-slate-600 text-[10px]">
+                Lat: {{ currentLat.toFixed(5) }}, Lng: {{ currentLng.toFixed(5) }}
+              </div>
             </div>
           </div>
-        </div>
 
-        <!-- 2. Penerima & Kontak Form -->
-        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div>
-            <label class="block text-[11px] font-semibold text-slate-700 mb-1">Nama Penerima</label>
-            <input
-              type="text"
-              v-model="formRecipientName"
-              placeholder="Contoh: Ibu Ratna Dewi"
-              class="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#103860]"
-            />
+          <!-- 2. Penerima & Kontak Form -->
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-700 mb-1">Nama Penerima</label>
+              <input type="text" v-model="formRecipientName" placeholder="Contoh: Ibu Ratna Dewi"
+                class="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#103860]" />
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-700 mb-1">Nomor WhatsApp Aktif</label>
+              <input type="text" v-model="formRecipientPhone" placeholder="0812-3456-7890"
+                class="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#103860]" />
+            </div>
           </div>
 
+          <!-- 3. Detail Alamat Jalan -->
           <div>
-            <label class="block text-[11px] font-semibold text-slate-700 mb-1">Nomor WhatsApp Aktif</label>
-            <input
-              type="text"
-              v-model="formRecipientPhone"
-              placeholder="0812-3456-7890"
-              class="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#103860]"
-            />
+            <label class="block text-[11px] font-semibold text-slate-700 mb-1">Alamat Jalan, RT/RW, No. Rumah</label>
+            <textarea rows="2" v-model="formStreet"
+              placeholder="Contoh: Jl. Basuki Rahmat No. 42, RT 02 / RW 01, Banyuwangi Kota"
+              class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#103860] resize-none"></textarea>
+          </div>
+
+          <!-- 4. Patokan Lokasi (Benchmark) -->
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-700 mb-1">Patokan Lokasi Kurir (Opsional)</label>
+            <input type="text" v-model="formBenchmark"
+              placeholder="Contoh: Seberang Bank BCA, pagar hitam rumah tingkat 2"
+              class="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#103860]" />
           </div>
         </div>
 
-        <!-- 3. Detail Alamat Jalan -->
-        <div>
-          <label class="block text-[11px] font-semibold text-slate-700 mb-1">Alamat Jalan, RT/RW, No. Rumah</label>
-          <textarea
-            rows="2"
-            v-model="formStreet"
-            placeholder="Contoh: Jl. Basuki Rahmat No. 42, RT 02 / RW 01, Banyuwangi Kota"
-            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#103860] resize-none"
-          ></textarea>
+        <!-- Modal Footer -->
+        <div class="p-3.5 sm:p-4 border-t border-slate-100 flex items-center justify-end space-x-2 bg-slate-50/50">
+          <button type="button" @click="emit('close')"
+            class="px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition cursor-pointer">
+            Batal
+          </button>
+          <button type="button" @click="handleSaveAddress"
+            class="px-5 py-2 bg-[#103860] hover:bg-[#13446E] text-white text-xs font-bold rounded-lg shadow-md transition cursor-pointer flex items-center space-x-1.5">
+            <span class="material-symbols-outlined text-[16px]">check</span>
+            <span>Gunakan Alamat Ini</span>
+          </button>
         </div>
-
-        <!-- 4. Patokan Lokasi (Benchmark) -->
-        <div>
-          <label class="block text-[11px] font-semibold text-slate-700 mb-1">Patokan Lokasi Kurir (Opsional)</label>
-          <input
-            type="text"
-            v-model="formBenchmark"
-            placeholder="Contoh: Seberang Bank BCA, pagar hitam rumah tingkat 2"
-            class="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#103860]"
-          />
-        </div>
-      </div>
-
-      <!-- Modal Footer -->
-      <div class="p-3.5 sm:p-4 border-t border-slate-100 flex items-center justify-end space-x-2 bg-slate-50/50">
-        <button
-          type="button"
-          @click="emit('close')"
-          class="px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition cursor-pointer"
-        >
-          Batal
-        </button>
-        <button
-          type="button"
-          @click="handleSaveAddress"
-          class="px-5 py-2 bg-[#103860] hover:bg-[#13446E] text-white text-xs font-bold rounded-lg shadow-md transition cursor-pointer flex items-center space-x-1.5"
-        >
-          <span class="material-symbols-outlined text-[16px]">check</span>
-          <span>Gunakan Alamat Ini</span>
-        </button>
       </div>
     </div>
-  </div>
   </Teleport>
 </template>
 
@@ -350,4 +322,3 @@ onUnmounted(() => {
   border: none !important;
 }
 </style>
-
