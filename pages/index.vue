@@ -637,7 +637,10 @@ onUnmounted(() => {
           <div class="absolute inset-0 z-0 overflow-hidden pointer-events-none">
             <template v-if="banner.type === 'image' && banner.imageUrl">
               <NuxtImg :src="banner.imageUrl" :alt="banner.title" class="object-cover w-full h-full"
-                :loading="idx === 0 ? 'eager' : 'lazy'" width="1200" height="500" format="webp" />
+                :loading="idx <= 1 ? 'eager' : 'lazy'"
+                :fetchpriority="idx <= 1 ? 'high' : 'auto'"
+                sizes="xs:100vw sm:100vw md:600px lg:1200px"
+                width="1200" height="500" format="webp" />
               <div
                 class="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-900/70 to-slate-950/30 sm:to-transparent">
               </div>
@@ -716,10 +719,12 @@ onUnmounted(() => {
       </button>
 
       <!-- Slide Indicators (Dots / Pills) -->
-      <div class="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20 pointer-events-auto">
+      <div class="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center z-20 pointer-events-auto">
         <button v-for="i in totalSlides" :key="i - 1" type="button" :aria-label="`Pindah ke slide ${i}`"
-          @click="goToSlide(i - 1)" class="carousel-dot h-1.5 rounded-full transition-all duration-300 cursor-pointer"
-          :class="currentSlide === (i - 1) ? 'bg-white w-6' : 'bg-white/40 hover:bg-white/70 w-1.5'"></button>
+          @click="goToSlide(i - 1)" class="p-2 cursor-pointer flex items-center justify-center">
+          <span class="carousel-dot h-1.5 rounded-full transition-all duration-300 block"
+            :class="currentSlide === (i - 1) ? 'bg-white w-6' : 'bg-white/40 hover:bg-white/70 w-1.5'"></span>
+        </button>
       </div>
     </div>
 

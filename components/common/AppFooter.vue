@@ -43,7 +43,7 @@ const socialLinks = [
               <span class="material-symbols-outlined text-[18px]">anchor</span>
             </div>
             <div>
-              <h4 class="font-bold text-sm text-[#103860] leading-tight">Laut Berkah Abadi</h4>
+              <p class="font-bold text-sm text-[#103860] leading-tight">Laut Berkah Abadi</p>
               <p class="text-[11px] text-slate-500">Cold Chain Seafood Muncar</p>
             </div>
           </div>
@@ -61,7 +61,7 @@ const socialLinks = [
               <span class="material-symbols-outlined text-[20px] text-[#006c4a] mb-1 md:mb-0">ac_unit</span>
               <div>
                 <span class="font-semibold text-[11px] text-slate-800 block">Cold Chain</span>
-                <span class="text-[10px] text-slate-400">Suhu 0 - 2°C</span>
+                <span class="text-[10px] text-slate-500">Suhu 0 - 2°C</span>
               </div>
             </div>
 
@@ -69,7 +69,7 @@ const socialLinks = [
               <span class="material-symbols-outlined text-[20px] text-[#103860] mb-1 md:mb-0">scale</span>
               <div>
                 <span class="font-semibold text-[11px] text-slate-800 block">Timbangan Riil</span>
-                <span class="text-[10px] text-slate-400">Foto Timbangan</span>
+                <span class="text-[10px] text-slate-500">Foto Timbangan</span>
               </div>
             </div>
 
@@ -77,7 +77,7 @@ const socialLinks = [
               <span class="material-symbols-outlined text-[20px] text-amber-600 mb-1 md:mb-0">verified</span>
               <div>
                 <span class="font-semibold text-[11px] text-slate-800 block">Bebas Formalin</span>
-                <span class="text-[10px] text-slate-400">100% Segar Alami</span>
+                <span class="text-[10px] text-slate-500">100% Segar Alami</span>
               </div>
             </div>
           </div>
@@ -144,7 +144,7 @@ const socialLinks = [
       </div>
 
       <!-- 5. Operational Location & Copyright -->
-      <div class="pt-4 border-t border-slate-200/70 flex flex-col md:flex-row md:items-center md:justify-between gap-1 text-[11px] text-slate-400">
+      <div class="pt-4 border-t border-slate-200/70 flex flex-col md:flex-row md:items-center md:justify-between gap-1 text-[11px] text-slate-500">
         <p>Fasilitas Cold Hub: Pelabuhan Muncar, Banyuwangi, Jawa Timur</p>
         <p>© {{ currentYear }} Laut Berkah Abadi. Seluruh hak cipta dilindungi.</p>
       </div>
