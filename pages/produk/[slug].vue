@@ -426,6 +426,7 @@ const addItemToCart = () => {
   cartStore.addItem(
     {
       id: `${product.value.id}-${selectedTier1.value.id}${selectedTier2.value ? '-' + selectedTier2.value.id : ''}`,
+      productId: product.value.id,
       name: itemDisplayName,
       slug: product.value.slug,
       imageUrl: currentHeroImage.value,

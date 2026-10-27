@@ -212,13 +212,17 @@ export const useOrderStore = defineStore('order', {
           const isDropship = Boolean(checkoutStore.isDropship)
           const isTextFallback = Boolean(checkoutStore.isTextOnlyFallback)
           const backendPayload = {
-            items: cartStore.items.map(it => ({
-              product_id: it.productId,
-              cut_type: it.cutType,
-              gross_weight: it.quantityKg,
-              estimated_net_weight: it.estimatedNetWeightKg,
-              soup_bones_separated: it.separateSoupBones || false,
-            })),
+            items: cartStore.items.map(it => {
+              const rawPid = it.productId || it.id || ''
+              const cleanPid = rawPid.includes('-opt-') ? rawPid.split('-opt-')[0] : rawPid
+              return {
+                product_id: cleanPid,
+                cut_type: it.cutType,
+                gross_weight: it.quantityKg,
+                estimated_net_weight: it.estimatedNetWeightKg,
+                soup_bones_separated: it.separateSoupBones || false,
+              }
+            }),
             delivery_slot: checkoutStore.slotDetails.title,
             packaging_type: cartStore.packagingType,
             shipping_courier: checkoutStore.selectedCourier,

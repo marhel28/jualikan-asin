@@ -231,7 +231,21 @@ export const useCartStore = defineStore('cart', {
       return calcNetWeight(grossKg, cutType)
     },
 
-    addItem(product: { id: string; name: string; slug: string; imageUrl: string; pricePerKg: number; unit?: 'kg' | 'pack'; netGrams?: number }, cutType: CutType, separateSoupBones: boolean, quantityKg: number) {
+    addItem(
+      product: {
+        id: string
+        productId?: string
+        name: string
+        slug: string
+        imageUrl: string
+        pricePerKg: number
+        unit?: 'kg' | 'pack'
+        netGrams?: number
+      },
+      cutType: CutType,
+      separateSoupBones: boolean,
+      quantityKg: number
+    ) {
       const numQty = typeof quantityKg === 'number' ? quantityKg : Number(quantityKg)
       const safeQty = !isNaN(numQty) && numQty > 0 ? numQty : 1
       const isPack = product.unit === 'pack'
@@ -242,9 +256,12 @@ export const useCartStore = defineStore('cart', {
       const netGrams = isPack ? Math.round(packGrams * safeQty) : Math.round(safeQty * yieldRatio * 1000)
       const itemId = `${product.id}-${cutType}-${separateSoupBones ? 'bones' : 'nobones'}`
 
+      const cleanProductId = product.productId || (product.id.includes('-opt-') ? product.id.split('-opt-')[0] : product.id)
+
       const existingIndex = this.items.findIndex(item => item.id === itemId)
       if (existingIndex > -1) {
         this.items[existingIndex].quantityKg = Number((this.items[existingIndex].quantityKg + safeQty).toFixed(3))
+        this.items[existingIndex].productId = cleanProductId
         this.items[existingIndex].itemSubtotal = Math.round(this.items[existingIndex].quantityKg * product.pricePerKg)
         this.items[existingIndex].estimatedNetWeightKg = isPack 
           ? Number(((packGrams * this.items[existingIndex].quantityKg) / 1000).toFixed(2))
@@ -255,7 +272,7 @@ export const useCartStore = defineStore('cart', {
       } else {
         this.items.push({
           id: itemId,
-          productId: product.id,
+          productId: cleanProductId,
           name: product.name,
           slug: product.slug,
           imageUrl: product.imageUrl,
@@ -334,7 +351,14 @@ export const useCartStore = defineStore('cart', {
           if (stored !== null) {
             const parsed = JSON.parse(stored)
             if (Array.isArray(parsed)) {
-              this.items = parsed
+              this.items = parsed.map((it: any) => {
+                const rawPid = it.productId || it.id || ''
+                const cleanPid = rawPid.includes('-opt-') ? rawPid.split('-opt-')[0] : rawPid
+                return {
+                  ...it,
+                  productId: cleanPid
+                }
+              })
             }
           }
           const pack = localStorage.getItem('lba_cart_packaging') as PackagingType

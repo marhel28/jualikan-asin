@@ -273,12 +273,12 @@ const handleLogout = () => {
               <span class="text-slate-300">•</span>
               <span class="inline-flex items-center gap-1">
                 <span class="material-symbols-outlined text-[15px] text-emerald-600">call</span>
-                <span class="font-mono text-slate-700">{{ authStore.user?.phoneWhatsApp || '0812-3456-7890' }}</span>
+                <span class="font-mono text-slate-700">{{ authStore.user?.phoneWhatsApp || '-' }}</span>
               </span>
               <span class="text-slate-300">•</span>
               <span class="inline-flex items-center gap-1">
                 <span class="material-symbols-outlined text-[15px] text-sky-600">mail</span>
-                <span class="text-slate-700 truncate max-w-[200px]">{{ authStore.user?.email || 'ratna.dewi@gmail.com' }}</span>
+                <span class="text-slate-700 truncate max-w-[200px]">{{ authStore.user?.email || 'Belum ditambahkan' }}</span>
               </span>
             </div>
           </div>

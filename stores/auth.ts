@@ -185,17 +185,10 @@ export const useAuthStore = defineStore('auth', {
                 id: res.user.id,
                 fullName: res.user.full_name,
                 phoneWhatsApp: res.user.phone_whatsapp,
-                email: res.user.email || 'pelanggan.lba@gmail.com',
+                email: res.user.email || '',
                 role: res.user.role || 'customer',
                 isVerified: res.user.is_verified ?? true,
-                defaultAddress: res.user.default_address || {
-                  recipientName: res.user.full_name,
-                  recipientPhone: res.user.phone_whatsapp,
-                  label: 'Rumah Utama',
-                  street: 'Jl. Basuki Rahmat No. 42, Banyuwangi Kota',
-                  benchmark: 'Banyuwangi',
-                  isGpsVerified: true,
-                },
+                defaultAddress: res.user.default_address || null,
                 addresses: res.user.addresses || []
               }
               return true
@@ -209,17 +202,17 @@ export const useAuthStore = defineStore('auth', {
         this.isAuthenticated = true
         this.user = {
           id: 'usr_muncar_098',
-          fullName: 'Ibu Ratna Dewi',
+          fullName: 'Pelanggan LBA Muncar',
           phoneWhatsApp: `+62${this.phoneNumber}`,
-          email: 'pelanggan.lba@gmail.com',
+          email: '',
           role: 'customer',
           isVerified: true,
           defaultAddress: {
-            recipientName: 'Ibu Ratna Dewi',
+            recipientName: 'Pelanggan LBA Muncar',
             recipientPhone: `0${this.phoneNumber}`,
             label: 'Rumah / Dapur Pribadi',
             street: 'Jl. Basuki Rahmat No. 42, Banyuwangi Kota',
-            benchmark: 'Patokan seberang Bank BCA',
+            benchmark: 'Banyuwangi',
             isGpsVerified: true
           }
         }
@@ -238,15 +231,15 @@ export const useAuthStore = defineStore('auth', {
         this.isAuthenticated = true
         this.user = {
           id: 'usr_google_123',
-          username: 'ratna_dewi',
-          fullName: 'Ratna Dewi (Google)',
-          phoneWhatsApp: '+6281234567890',
-          email: 'ratna.dewi.google@gmail.com',
+          username: 'pelanggan_lba',
+          fullName: 'Pelanggan LBA',
+          phoneWhatsApp: '+6281399887766',
+          email: 'pelanggan@domain.com',
           role: 'customer',
           isVerified: true,
           defaultAddress: {
-            recipientName: 'Ratna Dewi',
-            recipientPhone: '0812-3456-7890',
+            recipientName: 'Pelanggan LBA',
+            recipientPhone: '0813-9988-7766',
             label: 'Rumah Utama',
             street: 'Jl. Basuki Rahmat No. 42, Banyuwangi Kota',
             benchmark: 'Patokan seberang Bank BCA',
@@ -256,17 +249,22 @@ export const useAuthStore = defineStore('auth', {
       }, 500)
     },
 
-    async registerWithEmailPassword(payload: { username: string; email: string; password: string; phoneWhatsApp?: string }): Promise<boolean> {
+    async registerWithEmailPassword(payload: { username: string; email?: string; password: string; phoneWhatsApp: string }): Promise<boolean> {
       const u = payload.username.trim()
-      const e = payload.email.trim()
+      const e = (payload.email || '').trim()
       const p = payload.password
+      const phoneRaw = (payload.phoneWhatsApp || '').trim().replace(/\D/g, '')
 
-      if (!u || u.length < 3) {
-        this.errorMessage = 'Username minimal 3 karakter.'
+      if (!u || u.length < 2) {
+        this.errorMessage = 'Nama lengkap / Username minimal 2 karakter.'
         return false
       }
-      if (!e || !e.includes('@')) {
-        this.errorMessage = 'Format email tidak valid.'
+      if (!phoneRaw || phoneRaw.length < 8) {
+        this.errorMessage = 'Nomor WhatsApp wajib diisi minimal 8 digit untuk konfirmasi kurir subuh.'
+        return false
+      }
+      if (e && (!e.includes('@') || !e.includes('.'))) {
+        this.errorMessage = 'Format email belum valid (contoh: nama@domain.com).'
         return false
       }
       if (!p || p.length < 6) {
@@ -277,7 +275,6 @@ export const useAuthStore = defineStore('auth', {
       this.isLoading = true
       this.errorMessage = null
 
-      const phoneRaw = payload.phoneWhatsApp ? payload.phoneWhatsApp.replace(/\D/g, '') : '081234567890'
       const phone = phoneRaw.startsWith('62') ? `0${phoneRaw.slice(2)}` : phoneRaw.startsWith('0') ? phoneRaw : `0${phoneRaw}`
 
       if (typeof window !== 'undefined') {
@@ -286,7 +283,7 @@ export const useAuthStore = defineStore('auth', {
           const res = await api.post<any>('/account/register', {
             full_name: u,
             phone_whatsapp: phone,
-            email: e,
+            email: e || undefined,
             password: p,
           })
           if (res && res.token) {
@@ -298,52 +295,31 @@ export const useAuthStore = defineStore('auth', {
               username: u,
               fullName: res.user.full_name,
               phoneWhatsApp: res.user.phone_whatsapp,
-              email: res.user.email || e,
+              email: res.user.email || (e || ''),
               role: res.user.role || 'customer',
               isVerified: res.user.is_verified ?? true,
-              defaultAddress: res.user.default_address || {
-                recipientName: u,
-                recipientPhone: phone,
-                label: 'Alamat Utama',
-                street: 'Jl. Basuki Rahmat No. 42, Banyuwangi Kota',
-                benchmark: 'Banyuwangi',
-                isGpsVerified: false
-              },
+              defaultAddress: res.user.default_address || null,
               addresses: res.user.addresses || []
             }
             this.successMessage = `Pendaftaran berhasil. Selamat datang, ${u}!`
             return true
           }
-        } catch {}
-      }
-
-      this.isAuthenticated = true
-      this.user = {
-        id: `usr_${Date.now()}`,
-        username: u,
-        fullName: u,
-        phoneWhatsApp: payload.phoneWhatsApp ? `+62${payload.phoneWhatsApp.replace(/\D/g, '')}` : '+6281234567890',
-        email: e,
-        role: 'customer',
-        isVerified: true,
-        defaultAddress: {
-          recipientName: u,
-          recipientPhone: payload.phoneWhatsApp || '0812-3456-7890',
-          label: 'Alamat Utama',
-          street: 'Jl. Basuki Rahmat No. 42, Banyuwangi Kota',
-          benchmark: 'Banyuwangi',
-          isGpsVerified: false
+        } catch (err: any) {
+          this.isLoading = false
+          this.errorMessage = err?.detail || err?.data?.detail || err?.message || 'Nomor WhatsApp atau email sudah terdaftar.'
+          return false
         }
       }
+
       this.isLoading = false
-      this.successMessage = `Pendaftaran berhasil. Selamat datang, ${u}!`
-      return true
+      this.errorMessage = 'Gagal menghubungi server pendaftaran.'
+      return false
     },
 
     async loginWithEmailOrUsername(identifier: string, password: string): Promise<boolean> {
       const id = identifier.trim()
       if (!id) {
-        this.errorMessage = 'Masukkan email atau nomor WhatsApp Anda.'
+        this.errorMessage = 'Masukkan nomor WhatsApp atau email Anda.'
         return false
       }
       if (!password || password.length < 6) {
@@ -377,17 +353,10 @@ export const useAuthStore = defineStore('auth', {
               username: uname,
               fullName: res.user.full_name || uname,
               phoneWhatsApp: res.user.phone_whatsapp,
-              email: res.user.email || (id.includes('@') ? id : `${uname}@gmail.com`),
+              email: res.user.email || (id.includes('@') ? id : ''),
               role: res.user.role || 'customer',
               isVerified: res.user.is_verified ?? true,
-              defaultAddress: res.user.default_address || {
-                recipientName: res.user.full_name || uname,
-                recipientPhone: res.user.phone_whatsapp,
-                label: 'Alamat Utama',
-                street: 'Jl. Basuki Rahmat No. 42, Banyuwangi Kota',
-                benchmark: 'Banyuwangi',
-                isGpsVerified: true
-              },
+              defaultAddress: res.user.default_address || null,
               addresses: res.user.addresses || []
             }
             try {
@@ -409,7 +378,7 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async loginWithDeveloperAccount(): Promise<boolean> {
-      return this.loginWithEmailOrUsername('081299998888', 'Customer_Password_123!')
+      return this.loginWithEmailOrUsername('081399887766', 'password123')
     },
 
     async updateEmail(newEmail: string): Promise<boolean> {
@@ -675,8 +644,8 @@ export const useAuthStore = defineStore('auth', {
               this.user = {
                 id: userId,
                 fullName: res.full_name || 'Pelanggan LBA',
-                phoneWhatsApp: res.phone_whatsapp || '+6281234567890',
-                email: res.email || 'pelanggan.lba@gmail.com',
+                phoneWhatsApp: res.phone_whatsapp || '',
+                email: res.email || '',
                 role: res.role || 'customer',
                 isVerified: res.is_verified ?? true,
                 defaultAddress: normalizedDefault ? {
@@ -688,15 +657,7 @@ export const useAuthStore = defineStore('auth', {
                   benchmark: normalizedDefault.benchmark || '',
                   isGpsVerified: normalizedDefault.isGpsVerified ?? true,
                   isDefault: true
-                } : {
-                  recipientName: res.full_name || 'Pelanggan LBA',
-                  recipientPhone: res.phone_whatsapp || '081234567890',
-                  label: 'Alamat Utama',
-                  street: 'Jl. Ikan Paus No. 14, RT 02 / RW 01, Banyuwangi Kota',
-                  benchmark: 'Banyuwangi',
-                  isGpsVerified: true,
-                  isDefault: true
-                },
+                } : null,
                 addresses: normalizedAddresses
               }
               try {

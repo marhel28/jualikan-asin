@@ -68,16 +68,21 @@ const handleRegister = async () => {
   localErrorMessage.value = null
   authStore.errorMessage = null
 
-  if (!regUsername.value.trim() || regUsername.value.trim().length < 3) {
-    localErrorMessage.value = 'Username wajib diisi minimal 3 karakter.'
+  if (!regUsername.value.trim() || regUsername.value.trim().length < 2) {
+    localErrorMessage.value = 'Nama lengkap / Username wajib diisi minimal 2 karakter.'
     return
   }
-  if (!regEmail.value.trim() || !regEmail.value.includes('@')) {
-    localErrorMessage.value = 'Format email belum valid.'
+  const cleanPhone = regPhone.value.trim().replace(/\D/g, '')
+  if (!cleanPhone || cleanPhone.length < 8) {
+    localErrorMessage.value = 'Nomor WhatsApp wajib diisi minimal 8 digit untuk konfirmasi kurir subuh.'
+    return
+  }
+  if (regEmail.value.trim() && (!regEmail.value.includes('@') || !regEmail.value.includes('.'))) {
+    localErrorMessage.value = 'Format email belum valid (contoh: nama@domain.com).'
     return
   }
   if (!regPassword.value || regPassword.value.length < 6) {
-    localErrorMessage.value = 'Password wajib diisi minimal 6 karakter.'
+    localErrorMessage.value = 'Kata sandi wajib diisi minimal 6 karakter.'
     return
   }
 
@@ -85,7 +90,7 @@ const handleRegister = async () => {
   try {
     const ok = await authStore.registerWithEmailPassword({
       username: regUsername.value,
-      email: regEmail.value,
+      email: regEmail.value.trim(),
       password: regPassword.value,
       phoneWhatsApp: regPhone.value
     })
@@ -312,8 +317,8 @@ onBeforeUnmount(() => {
           </h2>
           <p class="text-xs text-slate-500 mt-1">
             {{ activeMode === 'register'
-              ? 'Lengkapi username, email, dan password untuk mulai memesan hasil laut segar Muncar.'
-              : (loginMethod === 'password' ? 'Gunakan username atau email terdaftar dan password Anda.' : 'Masukkan nomor WhatsApp terdaftar untuk menerima kode OTP.')
+              ? 'Daftar mudah dengan WhatsApp dan password. Email opsional (Yahoo, Outlook, Gmail, dll) untuk e-invoice.'
+              : (loginMethod === 'password' ? 'Gunakan nomor WhatsApp atau email terdaftar beserta kata sandi Anda.' : 'Masukkan nomor WhatsApp terdaftar untuk menerima kode OTP.')
             }}
           </p>
         </div>
@@ -345,12 +350,12 @@ onBeforeUnmount(() => {
           <span>{{ authStore.successMessage }}</span>
         </div>
 
-        <!-- MODE 1: DAFTAR AKUN (Username, Email, Password, WhatsApp) -->
+        <!-- MODE 1: DAFTAR AKUN (Nama, WhatsApp, Email Bebas, Password) -->
         <form v-if="activeMode === 'register'" @submit.prevent="handleRegister" class="space-y-4">
-          <!-- Username Input -->
+          <!-- Full Name / Username Input -->
           <div class="space-y-1.5">
             <label for="reg-username" class="block text-xs font-semibold text-slate-700">
-              Username <span class="text-red-500">*</span>
+              Nama Lengkap <span class="text-red-500">*</span>
             </label>
             <div class="relative flex items-center border border-slate-300 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#103860] focus-within:border-transparent bg-white">
               <span class="material-symbols-outlined text-slate-400 text-[18px] ml-3 shrink-0">badge</span>
@@ -358,19 +363,41 @@ onBeforeUnmount(() => {
                 id="reg-username"
                 v-model="regUsername"
                 type="text"
-                placeholder="cth: ratna_dewi"
+                placeholder="cth: Ratna Dewi"
                 class="flex-1 px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none bg-white font-medium"
-                autocomplete="username"
+                autocomplete="name"
                 required
               />
             </div>
-            <p class="text-[11px] text-slate-500">Minimal 3 karakter, digunakan untuk identitas pesanan.</p>
+            <p class="text-[11px] text-slate-500">Nama penerima paket hasil laut dingin.</p>
           </div>
 
-          <!-- Email Input -->
+          <!-- Phone WhatsApp (Required) -->
+          <div class="space-y-1.5">
+            <label for="reg-phone" class="block text-xs font-semibold text-slate-700">
+              Nomor WhatsApp <span class="text-red-500">*</span>
+            </label>
+            <div class="flex items-center border border-slate-300 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#103860] focus-within:border-transparent bg-white">
+              <span class="inline-flex items-center px-3 py-2.5 bg-slate-50 text-[#103860] text-xs font-bold border-r border-slate-200 select-none">
+                +62
+              </span>
+              <input
+                id="reg-phone"
+                v-model="regPhone"
+                type="tel"
+                placeholder="812-3456-7890"
+                class="flex-1 px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none bg-white font-medium"
+                autocomplete="tel"
+                required
+              />
+            </div>
+            <p class="text-[11px] text-slate-500">Wajib untuk koordinasi kurir rantai dingin pengiriman subuh LBA.</p>
+          </div>
+
+          <!-- Email Input (Optional, Any Email Provider) -->
           <div class="space-y-1.5">
             <label for="reg-email" class="block text-xs font-semibold text-slate-700">
-              Email Aktif <span class="text-red-500">*</span>
+              Alamat Email <span class="text-slate-400 font-normal">(opsional, Yahoo / Outlook / Gmail / dll)</span>
             </label>
             <div class="relative flex items-center border border-slate-300 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#103860] focus-within:border-transparent bg-white">
               <span class="material-symbols-outlined text-slate-400 text-[18px] ml-3 shrink-0">mail</span>
@@ -378,18 +405,18 @@ onBeforeUnmount(() => {
                 id="reg-email"
                 v-model="regEmail"
                 type="email"
-                placeholder="nama@email.com"
+                placeholder="cth: ratna@yahoo.com atau ratna@gmail.com"
                 class="flex-1 px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none bg-white font-medium"
                 autocomplete="email"
-                required
               />
             </div>
+            <p class="text-[11px] text-slate-500">Mendukung semua penyedia email untuk penerimaan e-invoice & resi.</p>
           </div>
 
           <!-- Password Input -->
           <div class="space-y-1.5">
             <label for="reg-password" class="block text-xs font-semibold text-slate-700">
-              Password <span class="text-red-500">*</span>
+              Kata Sandi <span class="text-red-500">*</span>
             </label>
             <div class="relative flex items-center border border-slate-300 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#103860] focus-within:border-transparent bg-white">
               <span class="material-symbols-outlined text-slate-400 text-[18px] ml-3 shrink-0">lock</span>
@@ -411,27 +438,6 @@ onBeforeUnmount(() => {
                 <span class="material-symbols-outlined text-[18px]">{{ showRegPassword ? 'visibility_off' : 'visibility' }}</span>
               </button>
             </div>
-          </div>
-
-          <!-- Phone Input (Optional) -->
-          <div class="space-y-1.5">
-            <label for="reg-phone" class="block text-xs font-semibold text-slate-700">
-              Nomor WhatsApp <span class="text-slate-400 font-normal">(opsional)</span>
-            </label>
-            <div class="flex items-center border border-slate-300 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#103860] focus-within:border-transparent bg-white">
-              <span class="inline-flex items-center px-3 py-2.5 bg-slate-50 text-[#103860] text-xs font-bold border-r border-slate-200 select-none">
-                +62
-              </span>
-              <input
-                id="reg-phone"
-                v-model="regPhone"
-                type="tel"
-                placeholder="812-3456-7890"
-                class="flex-1 px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none bg-white font-medium"
-                autocomplete="tel"
-              />
-            </div>
-            <p class="text-[11px] text-slate-500">Mempermudah kurir rantai dingin saat konfirmasi pengantaran.</p>
           </div>
 
           <!-- Submit Button -->
