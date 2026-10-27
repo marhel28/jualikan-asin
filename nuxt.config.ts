@@ -31,6 +31,8 @@ export default defineNuxtConfig({
     public: {
       apiBase: process.env.NUXT_PUBLIC_API_BASE || 'https://api-muncar.ammarabufadhel.my.id',
       siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'https://lautberkahabadi.com',
+      midtransClientKey: process.env.NUXT_PUBLIC_MIDTRANS_CLIENT_KEY || 'Mid-client-vE8vECZNYD2RyXbI',
+      midtransSnapUrl: process.env.NUXT_PUBLIC_MIDTRANS_SNAP_URL || 'https://app.sandbox.midtrans.com/snap/snap.js',
     },
   },
 
@@ -51,6 +53,7 @@ export default defineNuxtConfig({
     '/keranjang': { ssr: false },
     '/checkout': { ssr: false },
     '/pembayaran/**': { ssr: false },
+    '/orders/**': { ssr: false },
     '/pesanan': { ssr: false },
     '/pesanan/**': { ssr: false },
     '/akun': { ssr: false },
@@ -115,6 +118,13 @@ export default defineNuxtConfig({
           type: 'font/woff2',
           href: '/fonts/material-symbols-outlined.woff2',
           crossorigin: '',
+        },
+      ],
+      script: [
+        {
+          src: 'https://app.sandbox.midtrans.com/snap/snap.js',
+          'data-client-key': 'Mid-client-vE8vECZNYD2RyXbI',
+          async: true,
         },
       ],
     },

@@ -27,6 +27,7 @@ const authStore = useAuthStore()
 const isSelectAddressOpen = ref(false)
 const isFormAddressOpen = ref(false)
 const isShippingFormOpen = ref(false)
+const isSubmitting = ref(false)
 const editingAddress = ref<UserAddress | null>(null)
 
 const handleSelectAddress = (addr: UserAddress) => {
@@ -126,8 +127,16 @@ const handleProceedToPayment = async () => {
     alert('Mohon maaf, saat ini pengiriman rantai dingin Laut Berkah Abadi hanya melayani area Kabupaten Banyuwangi. Silakan pilih atau tambahkan alamat di wilayah Banyuwangi.')
     return
   }
-  const newOrderId = await orderStore.createOrder()
-  router.push(`/pembayaran/${newOrderId}`)
+  if (isSubmitting.value) return
+  isSubmitting.value = true
+  try {
+    const newOrderId = await orderStore.createOrder()
+    router.push(`/pembayaran/${newOrderId}`)
+  } catch (err: any) {
+    alert(err?.message || 'Gagal membuat pesanan. Silakan periksa kembali keranjang Anda.')
+  } finally {
+    isSubmitting.value = false
+  }
 }
 </script>
 
@@ -168,10 +177,10 @@ const handleProceedToPayment = async () => {
     <!-- Left Column: Address, Courier, and Delivery Slot Selection -->
     <div class="flex flex-col gap-4">
       <!-- Recipient Address Card with Tokopedia-Style 'Pilih Alamat Lain' Button -->
-      <div class="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col gap-3">
+      <div class="flex flex-col gap-3 p-4 bg-white border shadow-xs border-slate-200/90 rounded-2xl sm:p-5">
         <!-- Top Row: Title, Label Pill, Default Badge, and GPS Badge -->
-        <div class="flex items-center justify-between gap-2 flex-wrap pb-2 border-b border-slate-100">
-          <div class="flex items-center gap-2 flex-wrap">
+        <div class="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-100">
+          <div class="flex flex-wrap items-center gap-2">
             <span class="text-xs font-bold text-[#103860] flex items-center gap-1.5 uppercase tracking-wide">
               <span class="material-symbols-outlined text-[18px]">location_on</span>
               Alamat Pengiriman
@@ -231,14 +240,14 @@ const handleProceedToPayment = async () => {
         </div>
 
         <!-- Recipient & Phone -->
-        <div class="text-xs text-slate-900 font-bold flex items-center gap-2">
+        <div class="flex items-center gap-2 text-xs font-bold text-slate-900">
           <span>{{ checkoutStore.address.recipientName }}</span>
-          <span class="text-slate-400 font-normal">|</span>
-          <span class="font-mono text-slate-700 font-normal">{{ checkoutStore.address.recipientPhone }}</span>
+          <span class="font-normal text-slate-400">|</span>
+          <span class="font-mono font-normal text-slate-700">{{ checkoutStore.address.recipientPhone }}</span>
         </div>
 
         <!-- Full Street & Administrative Region -->
-        <div class="text-xs text-slate-600 leading-relaxed space-y-1">
+        <div class="space-y-1 text-xs leading-relaxed text-slate-600">
           <p class="font-medium text-slate-800">{{ checkoutStore.address.street }}</p>
           <p v-if="checkoutStore.address.desaNama || checkoutStore.address.kecamatanNama || checkoutStore.address.kabupatenNama" class="text-[11px] text-slate-500">
             {{ [checkoutStore.address.desaNama, checkoutStore.address.kecamatanNama ? 'Kec. ' + checkoutStore.address.kecamatanNama : null, checkoutStore.address.kabupatenNama, checkoutStore.address.provinsiNama].filter(Boolean).join(', ') }}
@@ -255,7 +264,7 @@ const handleProceedToPayment = async () => {
             <span v-if="!checkoutStore.isTextOnlyFallback && checkoutStore.address.latitude != null" class="font-mono text-slate-700">
               {{ checkoutStore.address.latitude?.toFixed(4) }}, {{ checkoutStore.address.longitude?.toFixed(4) }}
             </span>
-            <span v-else class="text-slate-500 italic">
+            <span v-else class="italic text-slate-500">
               Titik GPS tidak diset
             </span>
             <span v-if="checkoutStore.deliveryDistanceKm !== null" class="ml-1 pl-1.5 border-l border-slate-200 font-semibold"
@@ -288,14 +297,14 @@ const handleProceedToPayment = async () => {
       <!-- Warning Box: Delivery Restricted to Banyuwangi Only -->
       <div
         v-if="!checkoutStore.isDeliveryAllowed"
-        class="p-4 bg-red-50/95 border border-red-200 rounded-xl text-xs text-red-950 flex items-start gap-3 shadow-xs"
+        class="flex items-start gap-3 p-4 text-xs border border-red-200 shadow-xs bg-red-50/95 rounded-xl text-red-950"
       >
         <span class="material-symbols-outlined text-[22px] text-red-600 shrink-0 mt-0.5">fmd_bad</span>
         <div class="space-y-1">
-          <span class="font-bold text-xs text-red-950 block">Pengiriman Belum Tersedia ke Lokasi Ini</span>
+          <span class="block text-xs font-bold text-red-950">Pengiriman Belum Tersedia ke Lokasi Ini</span>
           <p class="text-[11px] leading-relaxed text-red-800">
             Saat ini pengiriman rantai dingin Laut Berkah Abadi hanya melayani alamat di seluruh wilayah <b>Kabupaten Banyuwangi</b> (maksimal 100 km dari Cold Storage Muncar) untuk menjamin kualitas kesegaran 0-2°C.
-            <span v-if="checkoutStore.deliveryDistanceKm !== null" class="font-bold block mt-1 text-red-900">
+            <span v-if="checkoutStore.deliveryDistanceKm !== null" class="block mt-1 font-bold text-red-900">
               Jarak terdeteksi: {{ checkoutStore.deliveryDistanceKm }} km (di luar jangkauan operasional).
             </span>
           </p>
@@ -501,15 +510,15 @@ const handleProceedToPayment = async () => {
       <button 
         type="button"
         @click="handleProceedToPayment"
-        :disabled="!checkoutStore.isDeliveryAllowed"
+        :disabled="!checkoutStore.isDeliveryAllowed || isSubmitting"
         class="w-full py-3.5 rounded-xl text-xs font-bold transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         :class="!checkoutStore.isDeliveryAllowed ? 'bg-slate-300 text-slate-500 hover:bg-slate-300 shadow-none' : 'bg-[#103860] hover:bg-[#13446E] text-white active:scale-95'"
       >
-        <span class="material-symbols-outlined text-[18px]">
-          {{ !checkoutStore.isDeliveryAllowed ? 'block' : (orderStore.selectedPaymentMethod === 'qris_dynamic' ? 'qr_code_2' : 'lock') }}
+        <span class="material-symbols-outlined text-[18px]" :class="{ 'animate-spin': isSubmitting }">
+          {{ isSubmitting ? 'sync' : (!checkoutStore.isDeliveryAllowed ? 'block' : (orderStore.selectedPaymentMethod === 'qris_dynamic' ? 'qr_code_2' : 'lock')) }}
         </span>
         <span>
-          {{ !checkoutStore.isDeliveryAllowed ? 'Alamat di Luar Wilayah Pengantaran (Khusus Banyuwangi)' : (orderStore.selectedPaymentMethod === 'qris_dynamic' ? 'Lanjut ke QRIS Dinamis' : 'Lanjut ke Virtual Account') }}
+          {{ isSubmitting ? 'Menyiapkan Pembayaran Midtrans...' : (!checkoutStore.isDeliveryAllowed ? 'Alamat di Luar Wilayah Pengantaran (Khusus Banyuwangi)' : (orderStore.selectedPaymentMethod === 'qris_dynamic' ? 'Lanjut ke QRIS Dinamis' : 'Lanjut ke Virtual Account')) }}
         </span>
       </button>
 
@@ -552,23 +561,23 @@ const handleProceedToPayment = async () => {
       @click.self="isShippingFormOpen = false"
     >
       <div class="bg-white rounded-2xl max-w-xl w-full border border-slate-200 shadow-2xl overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[92vh]">
-        <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/80 shrink-0">
+        <div class="flex items-center justify-between p-4 border-b border-slate-100 bg-slate-50/80 shrink-0">
           <div class="flex items-center space-x-2">
             <span class="material-symbols-outlined text-[20px] text-[#103860]">edit_location_alt</span>
             <div>
-              <h2 class="text-xs font-bold sm:text-sm text-slate-900 leading-tight">Pengaturan Alamat & Dropship</h2>
+              <h2 class="text-xs font-bold leading-tight sm:text-sm text-slate-900">Pengaturan Alamat & Dropship</h2>
               <p class="text-[11px] text-slate-500">Kunci titik peta kurir, tempel shareloc, atau aktifkan mode dropship.</p>
             </div>
           </div>
           <button
             type="button"
             @click="isShippingFormOpen = false"
-            class="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200 transition cursor-pointer"
+            class="p-1 transition rounded-lg cursor-pointer text-slate-400 hover:text-slate-600 hover:bg-slate-200"
           >
             <span class="material-symbols-outlined text-[18px]">close</span>
           </button>
         </div>
-        <div class="p-4 overflow-y-auto flex-1">
+        <div class="flex-1 p-4 overflow-y-auto">
           <ShippingAddressForm
             :show-as-modal="true"
             @close="isShippingFormOpen = false"

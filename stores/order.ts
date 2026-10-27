@@ -50,6 +50,8 @@ export interface Order {
   senderName?: string
   senderPhone?: string
   hidePriceOnInvoice?: boolean
+  snapToken?: string
+  snapRedirectUrl?: string
   trackingStages: TrackingStage[]
 }
 
@@ -199,6 +201,8 @@ export const useOrderStore = defineStore('order', {
       const checkoutStore = useCheckoutStore()
 
       let orderNumber = `LBA-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}-${Math.floor(100 + Math.random() * 900)}`
+      let snapToken: string | undefined = undefined
+      let snapRedirectUrl: string | undefined = undefined
       const total = checkoutStore.totalBill
 
       // Attempt to generate real order in backend first if logged in
@@ -238,13 +242,18 @@ export const useOrderStore = defineStore('order', {
             latitude: !isTextFallback ? checkoutStore.address.coordinates?.lat : null,
             longitude: !isTextFallback ? checkoutStore.address.coordinates?.lng : null,
             hide_price_on_invoice: isDropship,
-            payment_method: 'qris',
+            payment_method: 'midtrans_snap',
           }
-          const res = await api.post<any>('/orders', backendPayload)
+          const res = await api.post<any>('/orders/checkout', backendPayload)
           if (res && (res.orderNumber || res.order_number || res.id)) {
             orderNumber = res.orderNumber || res.order_number || res.id
+            snapToken = res.snapToken || res.snap_token
+            snapRedirectUrl = res.snapRedirectUrl || res.snap_redirect_url
           }
-        } catch {}
+        } catch (err: any) {
+          console.error('Failed to create order on backend:', err)
+          throw new Error(err?.data?.detail || err?.message || 'Gagal membuat pesanan di server.')
+        }
       }
 
       const newOrder: Order = {
@@ -273,12 +282,15 @@ export const useOrderStore = defineStore('order', {
         senderName: checkoutStore.isDropship ? checkoutStore.senderName : undefined,
         senderPhone: checkoutStore.isDropship ? checkoutStore.senderPhone : undefined,
         hidePriceOnInvoice: checkoutStore.isDropship,
+        snapToken,
+        snapRedirectUrl,
         trackingStages: JSON.parse(JSON.stringify(DEFAULT_STAGES))
       }
 
       this.currentOrder = newOrder
       this.ordersHistory.unshift(newOrder)
       this.startQrisTimer()
+      cartStore.clearCart()
 
       return newOrder.id
     },
