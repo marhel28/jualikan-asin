@@ -86,18 +86,18 @@ const paymentPartners = [
           Metode Pembayaran Resmi & Terverifikasi
         </div>
 
-        <!-- Local Vector Payment Logos -->
-        <div class="flex items-center justify-center flex-wrap gap-2 sm:gap-2.5">
+        <!-- Local Vector Payment Logos (Official Brand SVGs) -->
+        <div class="flex items-center justify-center flex-wrap gap-2 sm:gap-3">
           <div
             v-for="logo in paymentPartners"
             :key="logo.name"
-            class="px-2.5 py-1.5 bg-white border border-slate-200/80 rounded-md shadow-2xs flex items-center justify-center hover:border-slate-300 transition-all"
+            class="h-8 sm:h-9 px-3 py-1 bg-white border border-slate-200/90 rounded-md shadow-2xs flex items-center justify-center hover:border-slate-300 transition-all"
             :title="logo.name"
           >
             <img
               :src="logo.src"
               :alt="logo.name"
-              class="h-5 sm:h-5.5 max-w-[70px] sm:max-w-[80px] object-contain"
+              class="max-h-5 sm:max-h-6 max-w-[65px] sm:max-w-[75px] object-contain"
               loading="lazy"
             />
           </div>
@@ -115,3 +115,4 @@ const paymentPartners = [
     </div>
   </div>
 </template>
+
