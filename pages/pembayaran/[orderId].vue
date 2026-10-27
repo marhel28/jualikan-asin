@@ -102,11 +102,32 @@ const bankDisplayTitle = computed(() => {
   return 'Virtual Account Bank'
 })
 
+const fallbackCopy = (text: string) => {
+  try {
+    const el = document.createElement('textarea')
+    el.value = text
+    el.style.position = 'fixed'
+    el.style.opacity = '0'
+    document.body.appendChild(el)
+    el.select()
+    document.execCommand('copy')
+    document.body.removeChild(el)
+  } catch {}
+}
+
 const copyToClipboard = (text: string, label: string) => {
-  if (typeof navigator !== 'undefined' && navigator.clipboard) {
-    navigator.clipboard.writeText(text)
-    showToast(`${label} berhasil disalin!`)
+  try {
+    if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).catch(() => {
+        fallbackCopy(text)
+      })
+    } else {
+      fallbackCopy(text)
+    }
+  } catch {
+    fallbackCopy(text)
   }
+  showToast(`${label} berhasil disalin!`)
 }
 
 const showToast = (msg: string) => {
@@ -115,7 +136,7 @@ const showToast = (msg: string) => {
     if (toastMessage.value === msg) {
       toastMessage.value = null
     }
-  }, 2500)
+  }, 5000)
 }
 
 const downloadQrImage = () => {
@@ -262,17 +283,48 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="w-full max-w-xl mx-auto flex flex-col gap-4 py-2 px-3 sm:px-4">
-    <!-- Toast Notification Floating -->
-    <Transition name="fade">
-      <div 
-        v-if="toastMessage" 
-        class="fixed top-5 left-1/2 -translate-x-1/2 z-50 bg-[#103860] text-white text-xs font-bold px-4 py-2.5 rounded-full shadow-lg flex items-center gap-2 border border-blue-300/40"
-      >
-        <span class="material-symbols-outlined text-[18px] text-emerald-400">check_circle</span>
-        <span>{{ toastMessage }}</span>
+  <div class="w-full max-w-xl mx-auto flex flex-col gap-4 py-1 px-1 sm:px-2 relative">
+    <!-- Connected Stepper Bar (4-Step Checkout Progress) -->
+    <div class="bg-white/95 backdrop-blur-xs border border-slate-200/90 rounded-2xl p-3 sm:p-4 shadow-xs">
+      <div class="flex items-center justify-between relative px-2 sm:px-4">
+        <!-- Connecting Line Background -->
+        <div class="absolute left-8 right-8 top-3.5 -translate-y-1/2 h-0.5 bg-slate-200 -z-0"></div>
+        <!-- Active Connecting Line (Progress up to Step 3) -->
+        <div class="absolute left-8 w-[66%] top-3.5 -translate-y-1/2 h-0.5 bg-emerald-500 -z-0"></div>
+
+        <!-- Step 1: Keranjang (Selesai) -->
+        <div class="flex flex-col items-center gap-1.5 z-10">
+          <div class="w-7 h-7 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold shadow-xs">
+            <span class="material-symbols-outlined text-[15px]">check</span>
+          </div>
+          <span class="text-[10px] sm:text-[11px] font-bold text-slate-700">Keranjang</span>
+        </div>
+
+        <!-- Step 2: Pengiriman (Selesai) -->
+        <div class="flex flex-col items-center gap-1.5 z-10">
+          <div class="w-7 h-7 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold shadow-xs">
+            <span class="material-symbols-outlined text-[15px]">check</span>
+          </div>
+          <span class="text-[10px] sm:text-[11px] font-bold text-slate-700">Pengiriman</span>
+        </div>
+
+        <!-- Step 3: Pembayaran (Aktif) -->
+        <div class="flex flex-col items-center gap-1.5 z-10">
+          <div class="w-7 h-7 rounded-full bg-[#103860] text-white flex items-center justify-center text-xs font-bold shadow-xs ring-4 ring-blue-100 animate-pulse">
+            <span class="text-[11px]">3</span>
+          </div>
+          <span class="text-[10px] sm:text-[11px] font-extrabold text-[#103860]">Pembayaran</span>
+        </div>
+
+        <!-- Step 4: Dikemas (Menunggu) -->
+        <div class="flex flex-col items-center gap-1.5 z-10">
+          <div class="w-7 h-7 rounded-full bg-slate-100 border border-slate-300 text-slate-400 flex items-center justify-center text-xs font-semibold">
+            <span class="text-[11px]">4</span>
+          </div>
+          <span class="text-[10px] sm:text-[11px] font-medium text-slate-400">Dikemas</span>
+        </div>
       </div>
-    </Transition>
+    </div>
 
     <!-- Header & Order Identifier Badge -->
     <div class="flex items-center justify-between text-xs text-slate-500 pt-1">
@@ -342,9 +394,10 @@ onUnmounted(() => {
 
     <!-- Card 2: Rincian Tagihan & Informasi Nomor Rekening/QRIS (Hanya tampil jika belum expired) -->
     <div v-else class="flex flex-col gap-4">
-      <!-- Tagihan Total Card -->
-      <div class="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col gap-3">
-        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+      <!-- Tagihan Total Card (Classic Ticket Cutout Style) -->
+      <div class="bg-white border border-slate-200/90 rounded-2xl shadow-xs flex flex-col border-t-4 border-t-[#103860] relative overflow-hidden">
+        <!-- Top Half of Ticket: Total Tagihan & Salin Nominal -->
+        <div class="p-4 sm:p-5 flex items-center justify-between pb-3">
           <div class="flex flex-col">
             <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Tagihan Pembayaran</span>
             <span class="text-xl sm:text-2xl font-extrabold text-[#103860]">
@@ -354,20 +407,33 @@ onUnmounted(() => {
           <button
             type="button"
             @click="copyToClipboard(String(totalAmount), 'Jumlah pembayaran')"
-            class="px-3 py-1.5 rounded-lg border border-slate-200 hover:border-slate-300 bg-slate-50 text-[11px] font-bold text-[#103860] flex items-center gap-1.5 cursor-pointer transition-colors"
+            class="px-3 py-1.5 rounded-lg border border-slate-200 hover:border-slate-300 bg-slate-50 text-[11px] font-bold text-[#103860] flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
           >
             <span class="material-symbols-outlined text-[15px]">content_copy</span>
             <span>Salin Jumlah</span>
           </button>
         </div>
 
-        <div class="flex items-center justify-between text-xs text-slate-500">
-          <span>Jadwal Pengantaran:</span>
-          <span class="font-bold text-[#103860]">{{ deliverySlot }}</span>
+        <!-- Ticket Dashed Divider with Notches -->
+        <div class="relative flex items-center my-0.5">
+          <!-- Left Notch -->
+          <div class="absolute -left-2.5 w-5 h-5 bg-slate-50 rounded-full border-r border-slate-200 shadow-inner"></div>
+          <!-- Dashed Line -->
+          <div class="w-full border-t-2 border-dashed border-slate-200 mx-4"></div>
+          <!-- Right Notch -->
+          <div class="absolute -right-2.5 w-5 h-5 bg-slate-50 rounded-full border-l border-slate-200 shadow-inner"></div>
         </div>
-        <div class="flex items-center justify-between text-xs text-slate-500">
-          <span>Penerima:</span>
-          <span class="font-medium text-slate-700 truncate max-w-[260px]">{{ recipientName }} ({{ addressStreet }})</span>
+
+        <!-- Bottom Half of Ticket: Delivery Slot & Recipient -->
+        <div class="p-4 sm:p-5 pt-3 flex flex-col gap-2 bg-slate-50/40">
+          <div class="flex items-center justify-between text-xs text-slate-500">
+            <span>Jadwal Pengantaran:</span>
+            <span class="font-bold text-[#103860]">{{ deliverySlot }}</span>
+          </div>
+          <div class="flex items-center justify-between text-xs text-slate-500">
+            <span>Penerima:</span>
+            <span class="font-medium text-slate-700 truncate max-w-[260px]">{{ recipientName }} ({{ addressStreet }})</span>
+          </div>
         </div>
       </div>
 
@@ -602,6 +668,42 @@ onUnmounted(() => {
       </div>
     </div>
 
+    <!-- Cold Chain & Payment Trust Badges (3 Mini Feature Cards) -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-0.5">
+      <!-- Badge 1: Rantai Dingin -->
+      <div class="bg-white/95 backdrop-blur-xs border border-slate-200/90 rounded-xl p-3 shadow-2xs flex items-center sm:flex-col sm:text-center gap-2.5">
+        <span class="w-8 h-8 rounded-lg bg-sky-50 text-sky-700 flex items-center justify-center shrink-0">
+          <span class="material-symbols-outlined text-[18px]">ac_unit</span>
+        </span>
+        <div class="flex flex-col">
+          <span class="text-xs font-bold text-slate-900">Rantai Dingin 0-4°C</span>
+          <span class="text-[10px] text-slate-500">Es & kemasan insulasi termal</span>
+        </div>
+      </div>
+
+      <!-- Badge 2: Garansi Segar -->
+      <div class="bg-white/95 backdrop-blur-xs border border-slate-200/90 rounded-xl p-3 shadow-2xs flex items-center sm:flex-col sm:text-center gap-2.5">
+        <span class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
+          <span class="material-symbols-outlined text-[18px]">verified</span>
+        </span>
+        <div class="flex flex-col">
+          <span class="text-xs font-bold text-slate-900">100% Tangkapan Segar</span>
+          <span class="text-[10px] text-slate-500">Ikan diseleksi harian di Muncar</span>
+        </div>
+      </div>
+
+      <!-- Badge 3: Verifikasi Otomatis -->
+      <div class="bg-white/95 backdrop-blur-xs border border-slate-200/90 rounded-xl p-3 shadow-2xs flex items-center sm:flex-col sm:text-center gap-2.5">
+        <span class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center shrink-0">
+          <span class="material-symbols-outlined text-[18px]">security</span>
+        </span>
+        <div class="flex flex-col">
+          <span class="text-xs font-bold text-slate-900">Verifikasi 24 Jam</span>
+          <span class="text-[10px] text-slate-500">Didukung Midtrans & BI</span>
+        </div>
+      </div>
+    </div>
+
     <!-- Error Alert jika verifikasi manual gagal -->
     <div v-if="errorMessage" class="bg-red-50 border border-red-200 rounded-xl p-3 text-xs text-red-800 flex items-start gap-2 shadow-xs">
       <span class="material-symbols-outlined text-[16px] text-red-600 shrink-0 mt-0.5">error</span>
@@ -640,6 +742,17 @@ onUnmounted(() => {
         </NuxtLink>
       </div>
     </div>
+
+    <!-- Toast Notification Floating (Teleport style at bottom of page) -->
+    <Transition name="fade">
+      <div 
+        v-if="toastMessage" 
+        class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[9999] bg-[#103860] text-white text-xs font-bold px-5 py-3 rounded-full shadow-2xl flex items-center gap-2 border border-blue-300/40 pointer-events-none whitespace-nowrap"
+      >
+        <span class="material-symbols-outlined text-[18px] text-emerald-400">check_circle</span>
+        <span>{{ toastMessage }}</span>
+      </div>
+    </Transition>
   </div>
 </template>
 
@@ -652,6 +765,6 @@ onUnmounted(() => {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
-  transform: translate(-50%, -10px);
+  transform: translate(-50%, 10px);
 }
 </style>

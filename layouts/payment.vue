@@ -29,11 +29,21 @@ const paymentPartners = [
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#F8FAFC] text-[#0F172A] font-sans antialiased flex flex-col items-center selection:bg-[#103860] selection:text-white">
-    <!-- Focused Distraction-Free Frame -->
-    <div class="w-full max-w-md md:max-w-4xl lg:max-w-5xl bg-white min-h-screen flex flex-col md:my-6 md:min-h-[88vh] md:rounded-2xl md:border md:border-slate-200/90 md:shadow-xs border-x border-slate-200/80 relative">
-      <!-- Minimalist Focused Header -->
-      <header class="bg-white/95 backdrop-blur-md sticky top-0 z-50 flex items-center justify-between w-full px-4 sm:px-6 py-3.5 border-b border-slate-200">
+  <div class="min-h-screen bg-slate-50 text-[#0F172A] font-sans antialiased flex flex-col relative overflow-hidden selection:bg-[#103860] selection:text-white">
+    <!-- 1. Background Atmosphere: Soft Ocean Gradient + Subtle Wave SVG -->
+    <div class="absolute top-0 left-0 right-0 h-72 bg-gradient-to-b from-sky-100/70 via-sky-50/40 to-transparent -z-10 pointer-events-none">
+      <svg class="absolute bottom-0 w-full h-12 sm:h-16 text-slate-50 fill-current opacity-90" viewBox="0 0 1440 320" preserveAspectRatio="none">
+        <path d="M0,160L80,170.7C160,181,320,203,480,192C640,181,800,139,960,128C1120,117,1280,139,1360,149.3L1440,160L1440,320L1360,320C1280,320,1120,320,960,320C800,320,640,320,480,320C320,320,160,320,80,320L0,320Z"></path>
+      </svg>
+    </div>
+
+    <!-- 2. Ambient Glow Blurs on Left & Right Canvas -->
+    <div class="absolute top-28 -left-32 w-96 h-96 bg-sky-200/25 rounded-full blur-3xl -z-10 pointer-events-none"></div>
+    <div class="absolute top-96 -right-32 w-96 h-96 bg-teal-200/20 rounded-full blur-3xl -z-10 pointer-events-none"></div>
+
+    <!-- Minimalist Focused Header -->
+    <header class="bg-white/95 backdrop-blur-md sticky top-0 z-40 w-full border-b border-slate-200/90 shadow-2xs">
+      <div class="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
         <!-- Left: Back to Home Button -->
         <NuxtLink
           to="/"
@@ -75,15 +85,17 @@ const paymentPartners = [
           <span class="material-symbols-outlined text-[18px]">chat</span>
           <span class="hidden sm:inline">Bantuan CS</span>
         </a>
-      </header>
+      </div>
+    </header>
 
-      <!-- Main Payment Content Slot -->
-      <main class="flex-1 px-3 sm:px-6 py-5 flex flex-col">
-        <slot />
-      </main>
+    <!-- Main Payment Content Slot -->
+    <main class="flex-1 w-full max-w-5xl mx-auto px-3 sm:px-6 py-5 sm:py-8 flex flex-col items-center relative">
+      <slot />
+    </main>
 
-      <!-- Minimalist Trust & Regulatory Footer -->
-      <footer class="mt-auto border-t border-slate-200/90 bg-slate-50/70 px-4 sm:px-6 py-6 text-center space-y-3.5 md:rounded-b-2xl">
+    <!-- Minimalist Trust & Regulatory Footer -->
+    <footer class="mt-auto border-t border-slate-200/80 bg-white/80 backdrop-blur-xs w-full py-6 px-4 sm:px-6 text-center space-y-3.5 relative z-10">
+      <div class="max-w-5xl mx-auto space-y-3.5">
         <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500">
           Metode Pembayaran Resmi & Terverifikasi
         </div>
@@ -113,8 +125,8 @@ const paymentPartners = [
         <div class="pt-2 border-t border-slate-200/70 text-[10px] text-slate-500 font-medium">
           © 2026 Laut Berkah Abadi Banyuwangi. Pusat Pengolahan & Cold Chain Ikan Segar Muncar.
         </div>
-      </footer>
-    </div>
+      </div>
+    </footer>
   </div>
 </template>
 
