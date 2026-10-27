@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useAuthStore } from '~/stores/auth'
+import { useOrderStore } from '~/stores/order'
 import { useRoute, useRouter } from 'vue-router'
 import { useCartStore } from '~/stores/cart'
 import { useLocale } from '~/composables/useLocale'
@@ -9,6 +10,7 @@ const route = useRoute()
 const router = useRouter()
 const cartStore = useCartStore()
 const authStore = useAuthStore()
+const orderStore = useOrderStore()
 const { t, isEn } = useLocale()
 const runtimeConfig = useRuntimeConfig()
 const apiBase = (runtimeConfig.public?.apiBase as string) || 'https://api-muncar.ammarabufadhel.my.id'
@@ -65,8 +67,21 @@ onMounted(async () => {
         await authStore.initAuth()
       }
     }
+    if (authStore.isAuthenticated) {
+      orderStore.fetchUnpaidOrders()
+    }
   }
 })
+
+// Refresh unpaid orders on route changes if logged in
+watch(
+  () => route.path,
+  () => {
+    if (authStore.isAuthenticated) {
+      orderStore.fetchUnpaidOrders()
+    }
+  }
+)
 
 const logoError = ref(false)
 const cartCount = computed(() => cartStore?.totalItemCount ?? 0)
@@ -185,8 +200,15 @@ const handleSearchClick = () => {
           <NuxtLink to="/katalog" class="hover:text-[#103860] transition-colors" active-class="text-[#103860] font-bold">
             {{ t('Katalog Ikan', 'Seafood Catalog') }}
           </NuxtLink>
-          <NuxtLink v-if="authStore.isAuthenticated" to="/pesanan" class="hover:text-[#103860] transition-colors" active-class="text-[#103860] font-bold">
-            {{ t('Pesanan', 'Orders') }}
+          <NuxtLink v-if="authStore.isAuthenticated" to="/pesanan" class="hover:text-[#103860] transition-colors relative flex items-center gap-1.5" active-class="text-[#103860] font-bold">
+            <span>{{ t('Pesanan', 'Orders') }}</span>
+            <span
+              v-if="orderStore.unpaidCount > 0"
+              class="bg-amber-500 text-white text-[10px] font-bold px-1.5 py-0.2 min-w-[16px] h-[16px] rounded-full flex items-center justify-center animate-pulse shadow-xs"
+              title="Pesanan menunggu pembayaran"
+            >
+              {{ orderStore.unpaidCount }}
+            </span>
           </NuxtLink>
           <NuxtLink to="/tentang" class="hover:text-[#103860] transition-colors" active-class="text-[#103860] font-bold">
             {{ t('Tentang Kami', 'About Us') }}
@@ -283,10 +305,18 @@ const handleSearchClick = () => {
       <NuxtLink 
         v-if="authStore.isAuthenticated"
         to="/pesanan" 
-        class="flex flex-col items-center justify-center w-full py-1 text-slate-500 hover:text-[#002242] transition-colors"
+        class="flex flex-col items-center justify-center w-full py-1 text-slate-500 hover:text-[#002242] transition-colors relative"
         active-class="text-[#002242] font-bold"
       >
-        <span class="material-symbols-outlined text-[22px]">receipt_long</span>
+        <div class="relative flex items-center justify-center">
+          <span class="material-symbols-outlined text-[22px]">receipt_long</span>
+          <span
+            v-if="orderStore.unpaidCount > 0"
+            class="absolute -top-1 -right-2 bg-amber-500 text-white text-[9px] font-bold px-1 min-w-[15px] h-[15px] rounded-full flex items-center justify-center animate-pulse"
+          >
+            {{ orderStore.unpaidCount }}
+          </span>
+        </div>
         <span class="text-[10px] mt-0.5 font-medium">{{ t('Pesanan', 'Orders') }}</span>
       </NuxtLink>
 
@@ -300,6 +330,9 @@ const handleSearchClick = () => {
         <span class="text-[10px] mt-0.5 font-medium">{{ t('Akun', 'Account') }}</span>
       </NuxtLink>
     </nav>
+
+    <!-- Desktop Persistent Unpaid Orders Drawer -->
+    <CommonUnpaidOrdersDrawer />
 
     <!-- Floating Concierge WhatsApp -->
     <CommonFloatingWhatsApp />

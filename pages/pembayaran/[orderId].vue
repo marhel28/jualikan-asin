@@ -17,48 +17,123 @@ const orderStore = useOrderStore()
 
 const orderId = computed(() => String(route.params.orderId || ''))
 const orderNumber = ref<string>('')
-const snapToken = ref<string>('')
 const totalAmount = ref<number>(0)
 const deliverySlot = ref<string>('')
 const recipientName = ref<string>('')
 const addressStreet = ref<string>('')
+const paymentStatus = ref<string>('PENDING')
+const paymentMethod = ref<string>('qris')
+const paymentBank = ref<string>('qris')
+const paymentPayload = ref<any>(null)
+const expiredAt = ref<string | null>(null)
 
-const isSnapLoading = ref(true)
-const isCheckingStatus = ref(false)
-const errorMessage = ref<string | null>(null)
+// Countdown Timer State (20 minutes = 1200 seconds)
+const remainingSeconds = ref<number>(1200)
+let timerInterval: any = null
 let pollTimer: any = null
 
-const ensureSnapScript = (): Promise<void> => {
-  return new Promise((resolve) => {
-    if (typeof window === 'undefined') return resolve()
-    if ((window as any).snap) return resolve()
+const isCheckingStatus = ref(false)
+const errorMessage = ref<string | null>(null)
+const toastMessage = ref<string | null>(null)
+const activeVaTab = ref<'mbanking' | 'atm' | 'ibanking'>('mbanking')
+const isSimulating = ref(false)
 
-    const existingScript = document.getElementById('midtrans-snap-script')
-    if (existingScript) {
-      existingScript.addEventListener('load', () => resolve())
-      setTimeout(() => resolve(), 2000)
-      return
-    }
+const formattedTimer = computed(() => {
+  const m = Math.floor(Math.max(0, remainingSeconds.value) / 60)
+  const s = Math.max(0, remainingSeconds.value) % 60
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+})
 
-    const script = document.createElement('script')
-    script.id = 'midtrans-snap-script'
-    script.src = 'https://app.sandbox.midtrans.com/snap/snap.js'
-    script.setAttribute('data-client-key', 'Mid-client-vE8vECZNYD2RyXbI')
-    script.async = true
-    script.onload = () => resolve()
-    script.onerror = () => {
-      console.error('Failed to load Midtrans Snap JS script')
-      resolve()
+const timerProgressPercentage = computed(() => {
+  return Math.min(100, Math.max(0, (remainingSeconds.value / 1200) * 100))
+})
+
+const isExpired = computed(() => {
+  return remainingSeconds.value <= 0 || paymentStatus.value === 'EXPIRED'
+})
+
+const isPaid = computed(() => {
+  return paymentStatus.value === 'PAID'
+})
+
+const isQris = computed(() => {
+  return (
+    paymentBank.value === 'qris' ||
+    paymentMethod.value === 'qris' ||
+    paymentPayload.value?.payment_type === 'qris' ||
+    Boolean(paymentPayload.value?.qr_code_url || paymentPayload.value?.qr_string)
+  )
+})
+
+const isMandiri = computed(() => {
+  return (
+    paymentBank.value === 'mandiri' ||
+    paymentPayload.value?.payment_type === 'echannel' ||
+    Boolean(paymentPayload.value?.biller_code)
+  )
+})
+
+const resolvedVaNumber = computed(() => {
+  return (
+    paymentPayload.value?.va_number ||
+    paymentPayload.value?.permata_va_number ||
+    orderStore.currentOrder?.virtualAccountNumber ||
+    '-'
+  )
+})
+
+const resolvedQrUrl = computed(() => {
+  if (paymentPayload.value?.qr_code_url) {
+    return paymentPayload.value.qr_code_url
+  }
+  if (paymentPayload.value?.qr_string) {
+    return `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(paymentPayload.value.qr_string)}`
+  }
+  return 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=LAUT_BERKAH_ABADI_MUNCAR_QRIS'
+})
+
+const bankDisplayTitle = computed(() => {
+  const b = (paymentBank.value || paymentPayload.value?.bank || '').toLowerCase()
+  if (b === 'bca') return 'BCA Virtual Account'
+  if (b === 'bni') return 'BNI Virtual Account'
+  if (b === 'bri') return 'BRI Virtual Account'
+  if (b === 'mandiri') return 'Mandiri Bill (E-Channel)'
+  if (b === 'permata') return 'Permata Virtual Account'
+  return 'Virtual Account Bank'
+})
+
+const copyToClipboard = (text: string, label: string) => {
+  if (typeof navigator !== 'undefined' && navigator.clipboard) {
+    navigator.clipboard.writeText(text)
+    showToast(`${label} berhasil disalin!`)
+  }
+}
+
+const showToast = (msg: string) => {
+  toastMessage.value = msg
+  setTimeout(() => {
+    if (toastMessage.value === msg) {
+      toastMessage.value = null
     }
-    document.head.appendChild(script)
-  })
+  }, 2500)
+}
+
+const downloadQrImage = () => {
+  const url = resolvedQrUrl.value
+  const a = document.createElement('a')
+  a.href = url
+  a.target = '_blank'
+  a.download = `QRIS-LBA-${orderNumber.value || orderId.value}.png`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  showToast('Memulai pengunduhan QRIS...')
 }
 
 const loadOrderData = async () => {
   try {
     const api = useApi()
     const target = orderId.value
-    // Cek detail pesanan dari backend
     const res = await api.get<any>(`/orders/track/${target}`).catch(async () => {
       return await api.get<any>(`/orders/${target}`).catch(() => null)
     })
@@ -66,27 +141,32 @@ const loadOrderData = async () => {
     if (res) {
       orderNumber.value = res.order_number || res.orderNumber || target
       totalAmount.value = Number(res.grand_total || res.total_amount || res.totalAmount || 0)
-      deliverySlot.value = res.delivery_slot || res.deliverySlot || 'Slot Pagi (06:00 - 08:30 WIB)'
-      recipientName.value = res.recipient_name || (res.shipping_address?.recipientName) || 'Pelanggan'
-      addressStreet.value = res.address_detail || (res.shipping_address?.street) || 'Banyuwangi'
+      deliverySlot.value = res.delivery_slot || res.deliverySlot || 'Slot Pagi Subuh (06:00 - 08:30 WIB)'
+      recipientName.value = res.recipient_name || res.shipping_address?.recipientName || 'Pelanggan LBA'
+      addressStreet.value = res.address_detail || res.shipping_address?.street || 'Banyuwangi'
+      paymentStatus.value = res.payment_status || 'PENDING'
+      paymentMethod.value = res.payment_method || 'qris'
+      paymentBank.value = res.payment_bank || res.payment_type || 'qris'
+      expiredAt.value = res.expired_at || null
+
+      if (res.payment_payload) {
+        paymentPayload.value = typeof res.payment_payload === 'string' ? JSON.parse(res.payment_payload) : res.payment_payload
+      }
 
       if (res.payment_status === 'PAID' || res.cold_chain_status === 'COLD_ROOM_INTAKE') {
+        if (pollTimer) clearInterval(pollTimer)
+        if (timerInterval) clearInterval(timerInterval)
         router.replace(`/orders/success?order_number=${orderNumber.value}&order_id=${res.id || target}`)
         return
       }
 
-      if (res.snap_token || res.snapToken) {
-        snapToken.value = res.snap_token || res.snapToken
-      }
-    } else if (orderStore.currentOrder) {
-      const co = orderStore.currentOrder
-      orderNumber.value = co.id
-      totalAmount.value = co.totalAmount
-      deliverySlot.value = co.deliverySlotLabel || 'Slot Pagi (06:00 - 08:30 WIB)'
-      recipientName.value = co.address?.recipientName || 'Pelanggan'
-      addressStreet.value = co.address?.street || 'Banyuwangi'
-      if (co.snapToken) {
-        snapToken.value = co.snapToken
+      // Hitung sisa waktu 20 menit
+      if (typeof res.expires_in_seconds === 'number') {
+        remainingSeconds.value = Math.max(0, res.expires_in_seconds)
+      } else if (res.expired_at) {
+        const expTime = new Date(res.expired_at).getTime()
+        const now = Date.now()
+        remainingSeconds.value = Math.max(0, Math.floor((expTime - now) / 1000))
       }
     }
   } catch (err: any) {
@@ -94,52 +174,34 @@ const loadOrderData = async () => {
   }
 }
 
-const embedSnap = () => {
-  if (typeof window === 'undefined') return
-  if (!snapToken.value) {
-    isSnapLoading.value = false
-    return
-  }
-
-  const snap = (window as any).snap
-  if (snap && typeof snap.embed === 'function') {
-    isSnapLoading.value = false
-    try {
-      snap.embed(snapToken.value, {
-        embedId: 'snap-container',
-        onSuccess: function (result: any) {
-          console.log('Payment success callback from Midtrans Snap:', result)
-          router.replace(`/orders/success?order_number=${orderNumber.value || orderId.value}&order_id=${orderId.value}`)
-        },
-        onPending: function (result: any) {
-          console.log('Payment pending callback from Midtrans Snap:', result)
-        },
-        onError: function (result: any) {
-          console.error('Payment error callback from Midtrans Snap:', result)
-          errorMessage.value = 'Pembayaran mengalami kendala. Silakan coba kembali atau gunakan metode lain.'
-        },
-        onClose: function () {
-          console.log('Midtrans Snap widget closed')
-        }
-      })
-    } catch (err: any) {
-      console.error('Failed to embed Midtrans Snap:', err)
-      errorMessage.value = 'Gagal memuat antarmuka pembayaran. Silakan muat ulang halaman.'
+const startCountdown = () => {
+  if (timerInterval) clearInterval(timerInterval)
+  timerInterval = setInterval(() => {
+    if (remainingSeconds.value > 0) {
+      remainingSeconds.value--
+    } else {
+      clearInterval(timerInterval)
+      timerInterval = null
+      paymentStatus.value = 'EXPIRED'
     }
-  } else {
-    setTimeout(embedSnap, 300)
-  }
+  }, 1000)
 }
 
 const pollPaymentStatus = async () => {
   if (typeof window === 'undefined') return
+  if (isPaid.value || isExpired.value) return
   try {
     const api = useApi()
     const target = orderNumber.value || orderId.value
     const data = await api.get<any>(`/orders/track/${target}`)
     if (data && (data.payment_status === 'PAID' || data.cold_chain_status === 'COLD_ROOM_INTAKE')) {
+      paymentStatus.value = 'PAID'
       if (pollTimer) clearInterval(pollTimer)
+      if (timerInterval) clearInterval(timerInterval)
       router.replace(`/orders/success?order_number=${data.order_number || target}&order_id=${data.id || orderId.value}`)
+    } else if (data && data.payment_status === 'EXPIRED') {
+      paymentStatus.value = 'EXPIRED'
+      remainingSeconds.value = 0
     }
   } catch {}
 }
@@ -155,163 +217,441 @@ const handleManualSync = async () => {
     })
 
     if (res && (res.payment_status === 'PAID' || res.cold_chain_status === 'COLD_ROOM_INTAKE')) {
+      paymentStatus.value = 'PAID'
       router.replace(`/orders/success?order_number=${res.order_number || target}&order_id=${res.id || orderId.value}`)
     } else {
-      errorMessage.value = 'Pembayaran belum terdeteksi masuk. Jika sudah transfer, mohon tunggu beberapa saat hingga bank mengonfirmasi.'
+      errorMessage.value = 'Pembayaran belum terdeteksi masuk. Mohon selesaikan transfer atau scan QRIS sesuai nominal yang tertera.'
     }
   } catch (err: any) {
-    errorMessage.value = 'Belum dapat memverifikasi status pembayaran ke Midtrans. Mohon coba beberapa saat lagi.'
+    errorMessage.value = 'Belum dapat memverifikasi status pembayaran. Silakan coba kembali.'
   } finally {
     isCheckingStatus.value = false
   }
 }
 
-onMounted(async () => {
-  await ensureSnapScript()
-  await loadOrderData()
-
-  if (snapToken.value) {
-    embedSnap()
-  } else {
-    isSnapLoading.value = false
+const handleSimulatePayment = async () => {
+  isSimulating.value = true
+  errorMessage.value = null
+  try {
+    const api = useApi()
+    const target = orderId.value
+    await api.post(`/orders/${target}/simulate-payment`)
+    paymentStatus.value = 'PAID'
+    showToast('Simulasi sukses! Mengalihkan ke resi pesanan...')
+    setTimeout(() => {
+      router.replace(`/orders/success?order_number=${orderNumber.value || target}&order_id=${target}`)
+    }, 1000)
+  } catch (err: any) {
+    errorMessage.value = err?.data?.detail || err?.message || 'Gagal menjalankan simulasi pembayaran.'
+  } finally {
+    isSimulating.value = false
   }
+}
 
-  // Polling aktif setiap 4 detik untuk menangkap konfirmasi webhook otomatis
-  pollTimer = setInterval(pollPaymentStatus, 4000)
+onMounted(async () => {
+  await loadOrderData()
+  startCountdown()
+  // Polling aktif setiap 3.5 detik untuk konfirmasi otomatis dari Webhook Midtrans
+  pollTimer = setInterval(pollPaymentStatus, 3500)
 })
 
 onUnmounted(() => {
-  if (pollTimer) {
-    clearInterval(pollTimer)
-    pollTimer = null
-  }
+  if (timerInterval) clearInterval(timerInterval)
+  if (pollTimer) clearInterval(pollTimer)
 })
 </script>
 
 <template>
-  <div class="w-full max-w-xl mx-auto flex flex-col gap-4 py-2">
-    <!-- Notice Banner Sandbox & Keamanan -->
-    <div class="bg-blue-50/80 border border-blue-200/80 rounded-xl p-3 sm:p-4 flex items-start gap-3 shadow-xs">
-      <span class="material-symbols-outlined text-[20px] text-[#103860] shrink-0 mt-0.5">verified_user</span>
-      <div class="flex flex-col gap-0.5 text-xs text-slate-700">
-        <span class="font-bold text-[#103860]">Gerbang Pembayaran Resmi Midtrans (Mode Sandbox)</span>
-        <span class="text-[11px] text-slate-600 leading-relaxed">
-          Pilih QRIS Dinamis (GoPay, OVO, BCA, Mandiri) atau Virtual Account resmi di bawah. Sistem otomatis mendeteksi pembayaran tanpa upload bukti transfer.
-        </span>
+  <div class="w-full max-w-xl mx-auto flex flex-col gap-4 py-2 px-3 sm:px-4">
+    <!-- Toast Notification Floating -->
+    <Transition name="fade">
+      <div 
+        v-if="toastMessage" 
+        class="fixed top-5 left-1/2 -translate-x-1/2 z-50 bg-[#103860] text-white text-xs font-bold px-4 py-2.5 rounded-full shadow-lg flex items-center gap-2 border border-blue-300/40"
+      >
+        <span class="material-symbols-outlined text-[18px] text-emerald-400">check_circle</span>
+        <span>{{ toastMessage }}</span>
+      </div>
+    </Transition>
+
+    <!-- Header & Breadcrumb -->
+    <nav class="flex items-center justify-between text-xs text-slate-500 pt-1">
+      <NuxtLink to="/checkout" class="inline-flex items-center gap-1 text-slate-600 hover:text-[#103860] font-medium transition-colors">
+        <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+        <span>Kembali ke Checkout</span>
+      </NuxtLink>
+      <span class="font-mono text-slate-400 font-semibold text-[11px]">#{{ orderNumber || orderId }}</span>
+    </nav>
+
+    <!-- Card 1: Status Banner & 20-Minute Countdown Timer -->
+    <div 
+      class="border rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col gap-3 transition-colors"
+      :class="isExpired ? 'bg-red-50/90 border-red-200' : (remainingSeconds < 300 ? 'bg-amber-50/80 border-amber-200' : 'bg-blue-50/70 border-blue-200/80')"
+    >
+      <div class="flex items-center justify-between flex-wrap gap-2">
+        <div class="flex items-center gap-2">
+          <span 
+            class="material-symbols-outlined text-[22px]"
+            :class="isExpired ? 'text-red-600' : (remainingSeconds < 300 ? 'text-amber-600' : 'text-[#103860]')"
+          >
+            {{ isExpired ? 'event_busy' : 'timer' }}
+          </span>
+          <div class="flex flex-col">
+            <span class="text-xs font-bold" :class="isExpired ? 'text-red-900' : 'text-[#103860]'">
+              {{ isExpired ? 'Batas Waktu Pembayaran Habis' : 'Selesaikan Pembayaran Dalam' }}
+            </span>
+            <span class="text-[11px] text-slate-500">
+              {{ isExpired ? 'Stok ikan telah dilepas kembali ke etalase.' : 'Kunci stok ikan segar & pengiriman subuh.' }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Timer Monospace Display -->
+        <div 
+          class="font-mono text-xl sm:text-2xl font-extrabold tracking-wider px-3 py-1 rounded-xl shadow-2xs border"
+          :class="isExpired ? 'bg-red-100 text-red-700 border-red-300' : (remainingSeconds < 300 ? 'bg-amber-100 text-amber-900 border-amber-300 animate-pulse' : 'bg-white text-[#103860] border-blue-200')"
+        >
+          {{ formattedTimer }}
+        </div>
+      </div>
+
+      <!-- Live Visual Progress Bar -->
+      <div v-if="!isExpired" class="w-full bg-slate-200/80 h-1.5 rounded-full overflow-hidden">
+        <div 
+          class="h-full transition-all duration-1000 rounded-full"
+          :class="remainingSeconds < 300 ? 'bg-red-500' : (remainingSeconds < 600 ? 'bg-amber-500' : 'bg-[#103860]')"
+          :style="{ width: `${timerProgressPercentage}%` }"
+        ></div>
       </div>
     </div>
 
-    <!-- Ringkasan Tagihan & Resi Pesanan -->
-    <div class="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col gap-3">
-      <div class="flex items-center justify-between pb-3 border-b border-slate-100 flex-wrap gap-2">
-        <div class="flex flex-col">
-          <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Nomor Pesanan</span>
-          <span class="text-sm font-bold text-[#103860] font-mono">#{{ orderNumber || orderId }}</span>
-        </div>
-        <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold">
-          <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-          <span>Menunggu Pembayaran</span>
-        </div>
-      </div>
+    <!-- Alert Jika Pesanan Expired -->
+    <div v-if="isExpired" class="bg-white border border-red-200 rounded-2xl p-5 shadow-xs flex flex-col items-center text-center gap-3">
+      <span class="material-symbols-outlined text-[44px] text-red-500">schedule_send</span>
+      <h2 class="text-base font-bold text-slate-900">Pembayaran Melewati Batas 20 Menit</h2>
+      <p class="text-xs text-slate-600 max-w-md leading-relaxed">
+        Demi menjaga presisi rantai dingin (*cold chain*) dan keadilan ketersediaan stok bagi seluruh pelanggan, pesanan ini telah otomatis dibatalkan. Silakan pesan ulang untuk menjadwalkan pengiriman subuh berikutnya.
+      </p>
+      <NuxtLink 
+        to="/katalog"
+        class="mt-2 px-6 py-2.5 rounded-xl bg-[#103860] text-white text-xs font-bold hover:bg-[#13446E] transition-all cursor-pointer shadow-xs"
+      >
+        Pesan Ulang di Katalog Ikan
+      </NuxtLink>
+    </div>
 
-      <div class="grid grid-cols-2 gap-3 text-xs">
-        <div class="flex flex-col">
-          <span class="text-[11px] text-slate-500">Jadwal Kirim Dingin:</span>
+    <!-- Card 2: Rincian Tagihan & Informasi Nomor Rekening/QRIS (Hanya tampil jika belum expired) -->
+    <div v-else class="flex flex-col gap-4">
+      <!-- Tagihan Total Card -->
+      <div class="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col gap-3">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div class="flex flex-col">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Tagihan Pembayaran</span>
+            <span class="text-xl sm:text-2xl font-extrabold text-[#103860]">
+              Rp {{ (totalAmount || 0).toLocaleString('id-ID') }}
+            </span>
+          </div>
+          <button
+            type="button"
+            @click="copyToClipboard(String(totalAmount), 'Jumlah pembayaran')"
+            class="px-3 py-1.5 rounded-lg border border-slate-200 hover:border-slate-300 bg-slate-50 text-[11px] font-bold text-[#103860] flex items-center gap-1.5 cursor-pointer transition-colors"
+          >
+            <span class="material-symbols-outlined text-[15px]">content_copy</span>
+            <span>Salin Jumlah</span>
+          </button>
+        </div>
+
+        <div class="flex items-center justify-between text-xs text-slate-500">
+          <span>Jadwal Pengantaran:</span>
           <span class="font-bold text-[#103860]">{{ deliverySlot }}</span>
         </div>
-        <div class="flex flex-col text-right">
-          <span class="text-[11px] text-slate-500">Total Pembayaran:</span>
-          <span class="text-base font-extrabold text-[#103860]">
-            Rp {{ (totalAmount || 0).toLocaleString('id-ID') }}
+        <div class="flex items-center justify-between text-xs text-slate-500">
+          <span>Penerima:</span>
+          <span class="font-medium text-slate-700 truncate max-w-[260px]">{{ recipientName }} ({{ addressStreet }})</span>
+        </div>
+      </div>
+
+      <!-- SUB-VIEW 1: METODE QRIS DINAMIS -->
+      <div v-if="isQris" class="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs flex flex-col items-center gap-4 text-center">
+        <!-- Brand Header QRIS -->
+        <div class="flex flex-col items-center gap-1">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-bold">
+            <span class="material-symbols-outlined text-[16px] text-emerald-600">verified</span>
+            <span>QRIS Dinamis Resmi Bank Indonesia</span>
+          </div>
+          <h3 class="text-sm font-bold text-slate-900 mt-1">Laut Berkah Abadi Banyuwangi</h3>
+          <p class="text-[11px] text-slate-500">NMID: ID1026388116 • Seluruh Aplikasi E-Wallet & Mobile Banking</p>
+        </div>
+
+        <!-- QR Code Container -->
+        <div class="p-3 bg-white border-2 border-slate-200 rounded-2xl shadow-xs relative group flex flex-col items-center justify-center">
+          <img 
+            :src="resolvedQrUrl" 
+            alt="Kode QRIS Dinamis Laut Berkah Abadi"
+            class="w-56 h-56 sm:w-64 sm:h-64 object-contain rounded-lg"
+            loading="eager"
+          />
+          <div class="absolute bottom-2 bg-slate-900/80 backdrop-blur-xs text-white text-[10px] px-2.5 py-0.5 rounded-full font-medium">
+            Scan untuk bayar Rp {{ (totalAmount || 0).toLocaleString('id-ID') }}
+          </div>
+        </div>
+
+        <!-- Download QR Action -->
+        <div class="flex flex-wrap items-center justify-center gap-2 w-full pt-1">
+          <button
+            type="button"
+            @click="downloadQrImage"
+            class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border border-slate-200"
+          >
+            <span class="material-symbols-outlined text-[16px] text-[#103860]">download</span>
+            <span>Unduh Gambar QR</span>
+          </button>
+        </div>
+
+        <!-- Supported Apps Badges -->
+        <div class="w-full pt-3 border-t border-slate-100 flex flex-col gap-2">
+          <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Mendukung Pembayaran:</span>
+          <div class="flex flex-wrap items-center justify-center gap-1.5 text-[11px] font-bold text-slate-600">
+            <span class="px-2 py-0.5 rounded-md bg-slate-50 border border-slate-200">GoPay</span>
+            <span class="px-2 py-0.5 rounded-md bg-slate-50 border border-slate-200">BCA Mobile</span>
+            <span class="px-2 py-0.5 rounded-md bg-slate-50 border border-slate-200">Livin' Mandiri</span>
+            <span class="px-2 py-0.5 rounded-md bg-slate-50 border border-slate-200">ShopeePay</span>
+            <span class="px-2 py-0.5 rounded-md bg-slate-50 border border-slate-200">OVO</span>
+            <span class="px-2 py-0.5 rounded-md bg-slate-50 border border-slate-200">DANA</span>
+            <span class="px-2 py-0.5 rounded-md bg-slate-50 border border-slate-200">BRImo</span>
+            <span class="px-2 py-0.5 rounded-md bg-slate-50 border border-slate-200">LinkAja</span>
+          </div>
+        </div>
+
+        <!-- Langkah Pembayaran QRIS -->
+        <div class="w-full text-left bg-slate-50/80 border border-slate-200/80 rounded-xl p-3.5 space-y-2 text-xs text-slate-600">
+          <span class="font-bold text-[#103860] block text-xs">Cara Membayar via QRIS:</span>
+          <ol class="list-decimal pl-4 space-y-1 text-[11px] leading-relaxed">
+            <li>Buka aplikasi m-Banking (BCA Mobile, Livin, BRImo) atau E-Wallet (GoPay, OVO, Dana, ShopeePay).</li>
+            <li>Pilih menu <strong>Scan / Bayar QRIS</strong>.</li>
+            <li>Arahkan kamera ke kode QR di atas (atau unggah gambar QR yang telah diunduh).</li>
+            <li>Periksa nama merchant <strong>Laut Berkah Abadi</strong> dan nominal <strong>Rp {{ (totalAmount || 0).toLocaleString('id-ID') }}</strong>, lalu konfirmasi pembayaran.</li>
+          </ol>
+        </div>
+      </div>
+
+      <!-- SUB-VIEW 2: METODE MANDIRI BILL (E-CHANNEL) -->
+      <div v-else-if="isMandiri" class="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs flex flex-col gap-4">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-yellow-50 border border-yellow-200 flex items-center justify-center text-yellow-800">
+              <span class="material-symbols-outlined text-[18px]">receipt_long</span>
+            </div>
+            <div class="flex flex-col">
+              <span class="text-xs font-bold text-slate-900">Mandiri Bill Payment (E-Channel)</span>
+              <span class="text-[11px] text-slate-500">Pembayaran tagihan otomatis 24 jam</span>
+            </div>
+          </div>
+          <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-700">Bank Mandiri</span>
+        </div>
+
+        <!-- Kode Perusahaan & Nomor Tagihan -->
+        <div class="space-y-3">
+          <!-- Kode Perusahaan -->
+          <div class="bg-slate-50 border border-slate-200/80 rounded-xl p-3 flex items-center justify-between">
+            <div class="flex flex-col">
+              <span class="text-[10px] text-slate-500 font-semibold uppercase">Kode Perusahaan (Biller Code)</span>
+              <span class="font-mono text-base font-extrabold text-[#103860]">
+                {{ paymentPayload?.biller_code || '70012' }}
+              </span>
+              <span class="text-[10px] text-slate-400">Midtrans / Laut Berkah Abadi</span>
+            </div>
+            <button
+              type="button"
+              @click="copyToClipboard(paymentPayload?.biller_code || '70012', 'Kode Perusahaan')"
+              class="px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-bold text-[#103860] hover:bg-slate-100 flex items-center gap-1 cursor-pointer"
+            >
+              <span class="material-symbols-outlined text-[15px]">content_copy</span>
+              <span>Salin</span>
+            </button>
+          </div>
+
+          <!-- Nomor Tagihan / Bill Key -->
+          <div class="bg-slate-50 border border-slate-200/80 rounded-xl p-3 flex items-center justify-between">
+            <div class="flex flex-col">
+              <span class="text-[10px] text-slate-500 font-semibold uppercase">Nomor Pelanggan / Bill Key</span>
+              <span class="font-mono text-base font-extrabold text-[#103860] tracking-wide">
+                {{ paymentPayload?.bill_key || resolvedVaNumber }}
+              </span>
+            </div>
+            <button
+              type="button"
+              @click="copyToClipboard(paymentPayload?.bill_key || resolvedVaNumber, 'Nomor Tagihan')"
+              class="px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-bold text-[#103860] hover:bg-slate-100 flex items-center gap-1 cursor-pointer"
+            >
+              <span class="material-symbols-outlined text-[15px]">content_copy</span>
+              <span>Salin</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Panduan Pembayaran Mandiri -->
+        <div class="bg-slate-50 border border-slate-200/80 rounded-xl p-3.5 space-y-2 text-xs text-slate-600">
+          <span class="font-bold text-[#103860] block text-xs">Cara Bayar via Livin' by Mandiri:</span>
+          <ol class="list-decimal pl-4 space-y-1 text-[11px] leading-relaxed">
+            <li>Buka dan login aplikasi <strong>Livin' by Mandiri</strong>.</li>
+            <li>Pilih menu <strong>Bayar</strong> > cari penyedia jasa <strong>70012 (Midtrans)</strong>.</li>
+            <li>Masukkan Nomor Pelanggan / Bill Key: <strong>{{ paymentPayload?.bill_key || resolvedVaNumber }}</strong>.</li>
+            <li>Periksa nominal <strong>Rp {{ (totalAmount || 0).toLocaleString('id-ID') }}</strong> dan selesaikan pembayaran.</li>
+          </ol>
+        </div>
+      </div>
+
+      <!-- SUB-VIEW 3: METODE VIRTUAL ACCOUNT (BCA, BNI, BRI, PERMATA) -->
+      <div v-else class="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs flex flex-col gap-4">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-blue-50 border border-blue-200 flex items-center justify-center text-[#103860]">
+              <span class="material-symbols-outlined text-[18px]">account_balance</span>
+            </div>
+            <div class="flex flex-col">
+              <span class="text-xs font-bold text-slate-900">{{ bankDisplayTitle }}</span>
+              <span class="text-[11px] text-slate-500">Transfer otomatis tanpa konfirmasi manual</span>
+            </div>
+          </div>
+          <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 text-[#103860] uppercase">
+            {{ paymentBank || 'Bank' }}
           </span>
         </div>
-      </div>
 
-      <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-        <span class="truncate max-w-[280px]">Penerima: <strong class="text-slate-700">{{ recipientName }}</strong> ({{ addressStreet }})</span>
-        <span class="font-medium text-emerald-700">Rantai Dingin Terjamin</span>
+        <!-- Card Nomor Virtual Account -->
+        <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div class="flex flex-col">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Nomor Virtual Account</span>
+            <span class="font-mono text-lg sm:text-xl font-extrabold text-[#103860] tracking-wider">
+              {{ resolvedVaNumber }}
+            </span>
+            <span class="text-[10px] text-slate-500">Atas nama: <strong>LAUT BERKAH ABADI / MIDTRANS</strong></span>
+          </div>
+
+          <button
+            type="button"
+            @click="copyToClipboard(resolvedVaNumber, 'Nomor Virtual Account')"
+            class="px-3.5 py-2 rounded-xl bg-[#103860] text-white text-xs font-bold hover:bg-[#13446E] transition-all flex items-center gap-1.5 cursor-pointer shadow-xs shrink-0"
+          >
+            <span class="material-symbols-outlined text-[16px]">content_copy</span>
+            <span>Salin Nomor VA</span>
+          </button>
+        </div>
+
+        <!-- Tab Panduan Transfer -->
+        <div class="space-y-3 pt-1">
+          <div class="flex border-b border-slate-200 text-xs font-semibold">
+            <button
+              type="button"
+              @click="activeVaTab = 'mbanking'"
+              class="pb-2 px-3 transition-colors cursor-pointer"
+              :class="activeVaTab === 'mbanking' ? 'text-[#103860] border-b-2 border-[#103860] font-bold' : 'text-slate-400 hover:text-slate-600'"
+            >
+              Mobile Banking
+            </button>
+            <button
+              type="button"
+              @click="activeVaTab = 'atm'"
+              class="pb-2 px-3 transition-colors cursor-pointer"
+              :class="activeVaTab === 'atm' ? 'text-[#103860] border-b-2 border-[#103860] font-bold' : 'text-slate-400 hover:text-slate-600'"
+            >
+              ATM
+            </button>
+            <button
+              type="button"
+              @click="activeVaTab = 'ibanking'"
+              class="pb-2 px-3 transition-colors cursor-pointer"
+              :class="activeVaTab === 'ibanking' ? 'text-[#103860] border-b-2 border-[#103860] font-bold' : 'text-slate-400 hover:text-slate-600'"
+            >
+              Internet Banking
+            </button>
+          </div>
+
+          <!-- Petunjuk Tab Mobile Banking -->
+          <div v-if="activeVaTab === 'mbanking'" class="bg-slate-50/80 border border-slate-200/80 rounded-xl p-3.5 text-xs text-slate-600 leading-relaxed">
+            <ol class="list-decimal pl-4 space-y-1.5 text-[11px]">
+              <li>Buka aplikasi Mobile Banking bank Anda (BCA Mobile, BRImo, BNI Mobile, PermataMobile X).</li>
+              <li>Pilih menu <strong>Transfer</strong> > <strong>Virtual Account</strong>.</li>
+              <li>Masukkan nomor VA: <strong>{{ resolvedVaNumber }}</strong>.</li>
+              <li>Pastikan nominal transfer tepat sebesar <strong>Rp {{ (totalAmount || 0).toLocaleString('id-ID') }}</strong>.</li>
+              <li>Konfirmasi pembayaran dengan memasukkan PIN m-Banking Anda.</li>
+            </ol>
+          </div>
+
+          <!-- Petunjuk Tab ATM -->
+          <div v-else-if="activeVaTab === 'atm'" class="bg-slate-50/80 border border-slate-200/80 rounded-xl p-3.5 text-xs text-slate-600 leading-relaxed">
+            <ol class="list-decimal pl-4 space-y-1.5 text-[11px]">
+              <li>Masukkan kartu ATM dan 6 digit PIN Anda di mesin ATM.</li>
+              <li>Pilih menu <strong>Transaksi Lainnya</strong> > <strong>Transfer</strong> > <strong>Ke Rek Virtual Account</strong>.</li>
+              <li>Masukkan nomor VA: <strong>{{ resolvedVaNumber }}</strong> lalu tekan Benar.</li>
+              <li>Periksa informasi tagihan di layar, lalu pilih <strong>Ya</strong> untuk menyelesaikan transaksi.</li>
+            </ol>
+          </div>
+
+          <!-- Petunjuk Tab Internet Banking -->
+          <div v-else class="bg-slate-50/80 border border-slate-200/80 rounded-xl p-3.5 text-xs text-slate-600 leading-relaxed">
+            <ol class="list-decimal pl-4 space-y-1.5 text-[11px]">
+              <li>Login ke website Internet Banking resmi bank Anda.</li>
+              <li>Pilih menu <strong>Pembayaran Tagihan</strong> > <strong>Virtual Account</strong>.</li>
+              <li>Input nomor VA <strong>{{ resolvedVaNumber }}</strong> dan pastikan nama penerima Laut Berkah Abadi.</li>
+              <li>Otorisasikan transaksi menggunakan Token / OTP Anda.</li>
+            </ol>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Container Flat Snap Embed (Proporsional, Flat, Non-Popup) -->
-    <div class="bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-hidden flex flex-col">
-      <!-- Header Flat Card -->
-      <div class="px-4 py-3 border-b border-slate-100 bg-slate-50/70 flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <span class="material-symbols-outlined text-[18px] text-[#103860]">credit_card</span>
-          <span class="text-xs font-bold text-[#103860]">Pilihan Pembayaran</span>
-        </div>
-        <span class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
-          Enkripsi SSL 256-Bit
-        </span>
-      </div>
-
-      <!-- Error State -->
-      <div v-if="errorMessage" class="p-4 bg-red-50 border-b border-red-100 text-xs text-red-800 flex items-start gap-2">
-        <span class="material-symbols-outlined text-[16px] text-red-600 shrink-0 mt-0.5">error</span>
-        <div class="flex-1">
-          <span>{{ errorMessage }}</span>
-        </div>
-      </div>
-
-      <!-- Loading State -->
-      <div v-if="isSnapLoading" class="min-h-[480px] flex flex-col items-center justify-center p-8 text-center gap-3 bg-white">
-        <div class="w-10 h-10 border-3 border-[#103860]/20 border-t-[#103860] rounded-full animate-spin"></div>
-        <p class="text-xs font-bold text-[#103860]">Menghubungkan ke Gerbang Pembayaran...</p>
-        <p class="text-[11px] text-slate-500 max-w-xs">
-          Menyiapkan QRIS Dinamis dan Virtual Account resmi untuk pesanan Anda.
-        </p>
-      </div>
-
-      <!-- Midtrans Snap Flat Iframe Target Container -->
-      <div
-        id="snap-container"
-        class="w-full min-h-[540px] bg-white transition-opacity duration-300"
-        :class="{ 'opacity-0 h-0 overflow-hidden': isSnapLoading, 'opacity-100': !isSnapLoading }"
-      ></div>
-
-      <!-- Fallback Token Tidak Ditemukan -->
-      <div v-if="!isSnapLoading && !snapToken" class="p-8 text-center flex flex-col items-center gap-3">
-        <span class="material-symbols-outlined text-[40px] text-amber-600">receipt_long</span>
-        <h3 class="text-sm font-bold text-slate-800">Sesi Pembayaran Perlu Diperbarui</h3>
-        <p class="text-xs text-slate-500 max-w-sm">
-          Token pembayaran belum tersedia pada peramban ini. Anda dapat menyegarkan halaman atau memeriksa status pesanan di dashboard.
-        </p>
-        <button
-          type="button"
-          @click="loadOrderData"
-          class="px-4 py-2 rounded-xl bg-[#103860] text-white text-xs font-bold hover:bg-[#13446E] transition-all cursor-pointer"
-        >
-          Muat Ulang Sesi
-        </button>
-      </div>
+    <!-- Error Alert jika verifikasi manual gagal -->
+    <div v-if="errorMessage" class="bg-red-50 border border-red-200 rounded-xl p-3 text-xs text-red-800 flex items-start gap-2 shadow-xs">
+      <span class="material-symbols-outlined text-[16px] text-red-600 shrink-0 mt-0.5">error</span>
+      <span class="flex-1">{{ errorMessage }}</span>
     </div>
 
-    <!-- Tombol Bantuan & Verifikasi Manual -->
+    <!-- Card 3: Action Buttons (Cek Status, Simulasi Sandbox, Navigasi) -->
     <div class="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs flex flex-col gap-3">
-      <div class="flex items-center justify-between text-xs text-slate-600">
-        <span>Sudah menyelesaikan transfer atau scan QRIS?</span>
-        <span class="font-medium text-emerald-600">Verifikasi Real-time</span>
-      </div>
-
       <button
         type="button"
         @click="handleManualSync"
-        :disabled="isCheckingStatus"
-        class="w-full py-3 rounded-xl bg-[#103860] text-white text-xs font-bold hover:bg-[#13446E] transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+        :disabled="isCheckingStatus || isExpired"
+        class="w-full py-3 rounded-xl bg-[#103860] hover:bg-[#13446E] text-white text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <span class="material-symbols-outlined text-[18px]" :class="{ 'animate-spin': isCheckingStatus }">sync</span>
-        <span>{{ isCheckingStatus ? 'Mengecek Status ke Midtrans...' : 'Cek Status Pembayaran Sekarang' }}</span>
+        <span>{{ isCheckingStatus ? 'Mengecek Pembayaran ke Bank...' : 'Cek Status Pembayaran' }}</span>
+      </button>
+
+      <!-- Tombol Khusus Simulasi Sandbox (Mempermudah Testing Pengguna) -->
+      <button
+        type="button"
+        @click="handleSimulatePayment"
+        :disabled="isSimulating || isExpired"
+        class="w-full py-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold transition-all border border-emerald-200 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+      >
+        <span class="material-symbols-outlined text-[16px] text-emerald-600" :class="{ 'animate-spin': isSimulating }">play_circle</span>
+        <span>{{ isSimulating ? 'Memverifikasi...' : '⚡ Simulasikan Pembayaran Berhasil (Mode Sandbox)' }}</span>
       </button>
 
       <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-[11px] text-slate-500">
-        <NuxtLink to="/pesanan" class="hover:text-[#103860] transition-colors">
+        <NuxtLink to="/pesanan" class="hover:text-[#103860] font-medium transition-colors">
           Lihat Daftar Pesanan Saya
         </NuxtLink>
-        <NuxtLink to="/" class="hover:text-[#103860] transition-colors">
+        <NuxtLink to="/" class="hover:text-[#103860] font-medium transition-colors">
           Kembali ke Beranda
         </NuxtLink>
       </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: translate(-50%, -10px);
+}
+</style>

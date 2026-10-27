@@ -52,6 +52,12 @@ export interface Order {
   hidePriceOnInvoice?: boolean
   snapToken?: string
   snapRedirectUrl?: string
+  paymentStatus?: string
+  paymentBank?: string
+  orderNumber?: string
+  paymentPayload?: any
+  expiredAt?: string
+  expiresInSeconds?: number
   trackingStages: TrackingStage[]
 }
 
@@ -59,6 +65,8 @@ export interface OrderState {
   currentOrder: Order | null
   ordersHistory: Order[]
   selectedPaymentMethod: PaymentMethod
+  selectedPaymentBank: string
+  unpaidOrders: any[]
   qrisRemainingSeconds: number
   isScaleSlipModalOpen: boolean
   qrisInterval: any
@@ -176,7 +184,9 @@ export const useOrderStore = defineStore('order', {
     },
     ordersHistory: [],
     selectedPaymentMethod: 'qris_dynamic',
-    qrisRemainingSeconds: 899,
+    selectedPaymentBank: 'qris',
+    unpaidOrders: [],
+    qrisRemainingSeconds: 1200,
     isScaleSlipModalOpen: false,
     qrisInterval: null,
     isLoading: false,
@@ -184,6 +194,7 @@ export const useOrderStore = defineStore('order', {
   }),
 
   getters: {
+    unpaidCount: (state): number => state.unpaidOrders.length,
     formattedRemainingTime: (state): string => {
       const minutes = Math.floor(state.qrisRemainingSeconds / 60)
       const seconds = state.qrisRemainingSeconds % 60
@@ -246,7 +257,8 @@ export const useOrderStore = defineStore('order', {
             latitude: !isTextFallback ? checkoutStore.address.coordinates?.lat : null,
             longitude: !isTextFallback ? checkoutStore.address.coordinates?.lng : null,
             hide_price_on_invoice: isDropship,
-            payment_method: 'midtrans_snap',
+            payment_method: this.selectedPaymentMethod === 'qris_dynamic' ? 'qris' : 'bank_transfer',
+            payment_bank: this.selectedPaymentBank || (this.selectedPaymentMethod === 'qris_dynamic' ? 'qris' : 'bca'),
           }
           const res = await api.post<any>('/orders/checkout', backendPayload)
           if (res && (res.orderNumber || res.order_number || res.id)) {
@@ -296,13 +308,43 @@ export const useOrderStore = defineStore('order', {
       this.startQrisTimer()
       cartStore.clearCart()
 
+      // Refresh unpaid orders counter
+      this.fetchUnpaidOrders()
+
       return newOrder.id
     },
 
     setPaymentMethod(method: PaymentMethod) {
       this.selectedPaymentMethod = method
+      if (method === 'qris_dynamic') {
+        this.selectedPaymentBank = 'qris'
+      } else if (this.selectedPaymentBank === 'qris') {
+        this.selectedPaymentBank = 'bca'
+      }
       if (this.currentOrder) {
         this.currentOrder.paymentMethod = method
+      }
+    },
+
+    setPaymentBank(bank: string) {
+      this.selectedPaymentBank = bank
+      if (bank === 'qris') {
+        this.selectedPaymentMethod = 'qris_dynamic'
+      } else {
+        this.selectedPaymentMethod = 'bank_transfer'
+      }
+    },
+
+    async fetchUnpaidOrders() {
+      if (typeof window === 'undefined') return
+      try {
+        const api = useApi()
+        const res = await api.get<any[]>('/orders/unpaid')
+        if (Array.isArray(res)) {
+          this.unpaidOrders = res
+        }
+      } catch (err) {
+        console.warn('Failed to fetch unpaid orders:', err)
       }
     },
 
@@ -587,6 +629,12 @@ export const useOrderStore = defineStore('order', {
               productsSubtotal: Number(o.products_subtotal || 0),
               totalAmount: Number(o.total_amount || 0),
               paymentMethod: (o.payment_method || 'qris_dynamic') as PaymentMethod,
+              paymentStatus: o.payment_status || (status === 'PENDING_PAYMENT' ? 'PENDING' : 'PAID'),
+              paymentBank: o.payment_bank || '',
+              orderNumber: o.order_number || o.id,
+              paymentPayload: o.payment_payload,
+              expiredAt: o.expired_at,
+              expiresInSeconds: o.expires_in_seconds,
               qrisPayloadString: '',
               qrisImageUrl: '',
               scaleSlipImageUrl: o.scale_slip_url || 'https://cdn.ammarabufadhel.my.id/banners/banner-packing-thermal-aa77a0a0.webp',

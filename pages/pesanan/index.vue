@@ -21,7 +21,10 @@ const fetchOrders = async () => {
   if (!authStore.isAuthenticated) return
   isLoadingOrders.value = true
   try {
-    await orderStore.fetchMyOrders()
+    await Promise.all([
+      orderStore.fetchMyOrders(),
+      orderStore.fetchUnpaidOrders()
+    ])
     if (activeOrders.value.length > 0 && activeOrders.value[0]?.id) {
       await orderStore.fetchOrderStatus(activeOrders.value[0].id)
     }
@@ -30,6 +33,14 @@ const fetchOrders = async () => {
   } finally {
     isLoadingOrders.value = false
   }
+}
+
+const formatCurrency = (val: number) => {
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    maximumFractionDigits: 0
+  }).format(val || 0)
 }
 
 onMounted(async () => {
@@ -215,7 +226,39 @@ const handleQuickTrack = () => {
       </div>
 
       <!-- Active Orders Tab View -->
-      <div v-else-if="activeTab === 'aktif'">
+      <div v-else-if="activeTab === 'aktif'" class="flex flex-col gap-5">
+        <!-- Unpaid Orders Alert Banner -->
+        <div
+          v-if="orderStore.unpaidOrders && orderStore.unpaidOrders.length > 0"
+          class="bg-amber-50/90 border border-amber-200/90 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs"
+        >
+          <div class="flex items-start gap-3">
+            <div class="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+              <span class="material-symbols-outlined text-[24px] animate-pulse">credit_card_clock</span>
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <span>{{ orderStore.unpaidOrders.length }} Pesanan Menunggu Pembayaran</span>
+                <span class="px-2 py-0.5 bg-amber-200 text-amber-900 rounded-full text-[10px] font-bold">Batas 20 Menit</span>
+              </h3>
+              <p class="text-xs text-slate-600 mt-0.5">
+                Selesaikan pembayaran agar stok ikan segar Anda tidak dibatalkan otomatis oleh sistem.
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 shrink-0">
+            <NuxtLink
+              :to="`/pembayaran/${orderStore.unpaidOrders[0].order_number || orderStore.unpaidOrders[0].id}`"
+              class="w-full sm:w-auto px-4 py-2.5 bg-[#103860] hover:bg-[#13446E] text-white text-xs font-bold rounded-xl flex items-center justify-center gap-2 shadow-xs transition cursor-pointer"
+            >
+              <span class="material-symbols-outlined text-[16px]">payments</span>
+              <span>Bayar Sekarang ({{ formatCurrency(orderStore.unpaidOrders[0].grand_total) }})</span>
+              <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+            </NuxtLink>
+          </div>
+        </div>
+
         <div v-if="activeOrders.length > 0" class="flex flex-col gap-6">
           <div
             v-for="ord in activeOrders"
@@ -228,7 +271,12 @@ const handleQuickTrack = () => {
               <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                 <div class="flex flex-col">
                   <span class="font-mono text-sm md:text-base font-bold text-[#103860]">#{{ ord.id }}</span>
-                  <span class="text-[11px] text-slate-400">Pembayaran Lunas via QRIS</span>
+                  <span
+                    class="text-[11px] font-medium"
+                    :class="(ord.status === 'PENDING_PAYMENT' || ord.paymentStatus === 'PENDING') ? 'text-amber-600 font-semibold' : 'text-slate-400'"
+                  >
+                    {{ (ord.status === 'PENDING_PAYMENT' || ord.paymentStatus === 'PENDING') ? 'Menunggu Pembayaran' : ('Pembayaran Lunas via ' + (ord.paymentBank ? ord.paymentBank.toUpperCase() + ' VA' : 'QRIS')) }}
+                  </span>
                 </div>
 
                 <div class="text-right">
@@ -335,7 +383,12 @@ const handleQuickTrack = () => {
 
                 <div class="flex items-center justify-between text-xs">
                   <span class="text-slate-500">Status Pembayaran:</span>
-                  <span class="font-bold text-[#059669]">Lunas (QRIS)</span>
+                  <span
+                    class="font-bold"
+                    :class="(ord.status === 'PENDING_PAYMENT' || ord.paymentStatus === 'PENDING') ? 'text-amber-600' : 'text-[#059669]'"
+                  >
+                    {{ (ord.status === 'PENDING_PAYMENT' || ord.paymentStatus === 'PENDING') ? 'Menunggu Pembayaran' : ('Lunas (' + (ord.paymentBank ? ord.paymentBank.toUpperCase() : 'QRIS') + ')') }}
+                  </span>
                 </div>
 
                 <div class="flex items-baseline justify-between border-t border-slate-100 pt-2.5">
@@ -347,6 +400,17 @@ const handleQuickTrack = () => {
 
                 <!-- Action Buttons -->
                 <div class="flex flex-col sm:flex-row md:flex-col gap-2.5 pt-2">
+                  <!-- Bayar Sekarang Button if Unpaid -->
+                  <NuxtLink
+                    v-if="ord.status === 'PENDING_PAYMENT' || ord.paymentStatus === 'PENDING'"
+                    :to="`/pembayaran/${ord.orderNumber || ord.id}`"
+                    class="w-full py-2.5 px-3 rounded-xl bg-[#103860] hover:bg-[#13446E] text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-colors shadow-xs text-center cursor-pointer"
+                  >
+                    <span class="material-symbols-outlined text-[16px]">payments</span>
+                    <span>Bayar Sekarang</span>
+                    <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+                  </NuxtLink>
+
                   <NuxtLink :to="`/pesanan/${ord.id}`"
                     class="w-full py-2.5 px-3 rounded-xl border border-[#103860]/20 bg-blue-50/50 hover:bg-blue-50 text-xs font-bold text-[#103860] flex items-center justify-center gap-1.5 transition-colors text-center">
                     <span class="material-symbols-outlined text-[16px]">local_shipping</span>

@@ -477,31 +477,107 @@ const handleProceedToPayment = async () => {
           Metode Pembayaran
         </span>
 
-        <div class="grid grid-cols-2 gap-2">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <!-- 1. QRIS Dinamis -->
           <button
             type="button"
-            @click="orderStore.setPaymentMethod('qris_dynamic')"
-            class="p-2.5 rounded-lg border text-left transition-all flex flex-col gap-1 cursor-pointer"
-            :class="orderStore.selectedPaymentMethod === 'qris_dynamic' ? 'border-[#103860] bg-blue-50/50 ring-1 ring-[#103860]/20' : 'border-slate-200 hover:border-slate-300'"
+            @click="orderStore.setPaymentBank('qris')"
+            class="p-2.5 rounded-xl border text-left transition-all flex flex-col gap-1 cursor-pointer"
+            :class="orderStore.selectedPaymentBank === 'qris' ? 'border-[#103860] bg-blue-50/60 ring-2 ring-[#103860]/20' : 'border-slate-200 hover:border-slate-300 bg-white'"
           >
             <div class="flex items-center justify-between">
-              <span class="text-xs font-bold text-[#103860]">QRIS Instan</span>
-              <span v-if="orderStore.selectedPaymentMethod === 'qris_dynamic'" class="material-symbols-outlined text-[16px] text-[#059669]">check_circle</span>
+              <span class="text-xs font-bold text-[#103860] flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[16px] text-sky-700">qr_code_2</span>
+                QRIS Dinamis
+              </span>
+              <span v-if="orderStore.selectedPaymentBank === 'qris'" class="material-symbols-outlined text-[16px] text-[#059669]">check_circle</span>
             </div>
-            <span class="text-[10px] text-slate-500">BCA, Mandiri, GoPay, OVO</span>
+            <span class="text-[10px] text-slate-500">BCA, Mandiri, GoPay, OVO, ShopeePay</span>
           </button>
 
+          <!-- 2. BCA Virtual Account -->
           <button
             type="button"
-            @click="orderStore.setPaymentMethod('bank_transfer')"
-            class="p-2.5 rounded-lg border text-left transition-all flex flex-col gap-1 cursor-pointer"
-            :class="orderStore.selectedPaymentMethod === 'bank_transfer' ? 'border-[#103860] bg-blue-50/50 ring-1 ring-[#103860]/20' : 'border-slate-200 hover:border-slate-300'"
+            @click="orderStore.setPaymentBank('bca')"
+            class="p-2.5 rounded-xl border text-left transition-all flex flex-col gap-1 cursor-pointer"
+            :class="orderStore.selectedPaymentBank === 'bca' ? 'border-[#103860] bg-blue-50/60 ring-2 ring-[#103860]/20' : 'border-slate-200 hover:border-slate-300 bg-white'"
           >
             <div class="flex items-center justify-between">
-              <span class="text-xs font-bold text-[#103860]">Virtual Account</span>
-              <span v-if="orderStore.selectedPaymentMethod === 'bank_transfer'" class="material-symbols-outlined text-[16px] text-[#059669]">check_circle</span>
+              <span class="text-xs font-bold text-[#103860] flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[16px] text-blue-700">account_balance</span>
+                BCA Virtual Account
+              </span>
+              <span v-if="orderStore.selectedPaymentBank === 'bca'" class="material-symbols-outlined text-[16px] text-[#059669]">check_circle</span>
             </div>
-            <span class="text-[10px] text-slate-500">Transfer Otomatis 24 Jam</span>
+            <span class="text-[10px] text-slate-500">Verifikasi Otomatis 24 Jam</span>
+          </button>
+
+          <!-- 3. BNI Virtual Account -->
+          <button
+            type="button"
+            @click="orderStore.setPaymentBank('bni')"
+            class="p-2.5 rounded-xl border text-left transition-all flex flex-col gap-1 cursor-pointer"
+            :class="orderStore.selectedPaymentBank === 'bni' ? 'border-[#103860] bg-blue-50/60 ring-2 ring-[#103860]/20' : 'border-slate-200 hover:border-slate-300 bg-white'"
+          >
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-[#103860] flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[16px] text-amber-700">account_balance</span>
+                BNI Virtual Account
+              </span>
+              <span v-if="orderStore.selectedPaymentBank === 'bni'" class="material-symbols-outlined text-[16px] text-[#059669]">check_circle</span>
+            </div>
+            <span class="text-[10px] text-slate-500">ATM, Mobile & SMS Banking</span>
+          </button>
+
+          <!-- 4. BRI Virtual Account -->
+          <button
+            type="button"
+            @click="orderStore.setPaymentBank('bri')"
+            class="p-2.5 rounded-xl border text-left transition-all flex flex-col gap-1 cursor-pointer"
+            :class="orderStore.selectedPaymentBank === 'bri' ? 'border-[#103860] bg-blue-50/60 ring-2 ring-[#103860]/20' : 'border-slate-200 hover:border-slate-300 bg-white'"
+          >
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-[#103860] flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[16px] text-blue-800">account_balance</span>
+                BRI Virtual Account
+              </span>
+              <span v-if="orderStore.selectedPaymentBank === 'bri'" class="material-symbols-outlined text-[16px] text-[#059669]">check_circle</span>
+            </div>
+            <span class="text-[10px] text-slate-500">BRImo & ATM BRI</span>
+          </button>
+
+          <!-- 5. Mandiri Bill -->
+          <button
+            type="button"
+            @click="orderStore.setPaymentBank('mandiri')"
+            class="p-2.5 rounded-xl border text-left transition-all flex flex-col gap-1 cursor-pointer"
+            :class="orderStore.selectedPaymentBank === 'mandiri' ? 'border-[#103860] bg-blue-50/60 ring-2 ring-[#103860]/20' : 'border-slate-200 hover:border-slate-300 bg-white'"
+          >
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-[#103860] flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[16px] text-yellow-700">receipt_long</span>
+                Mandiri Bill / E-Channel
+              </span>
+              <span v-if="orderStore.selectedPaymentBank === 'mandiri'" class="material-symbols-outlined text-[16px] text-[#059669]">check_circle</span>
+            </div>
+            <span class="text-[10px] text-slate-500">Livin' by Mandiri & ATM</span>
+          </button>
+
+          <!-- 6. Permata Virtual Account -->
+          <button
+            type="button"
+            @click="orderStore.setPaymentBank('permata')"
+            class="p-2.5 rounded-xl border text-left transition-all flex flex-col gap-1 cursor-pointer"
+            :class="orderStore.selectedPaymentBank === 'permata' ? 'border-[#103860] bg-blue-50/60 ring-2 ring-[#103860]/20' : 'border-slate-200 hover:border-slate-300 bg-white'"
+          >
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-[#103860] flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[16px] text-emerald-700">account_balance</span>
+                Permata Virtual Account
+              </span>
+              <span v-if="orderStore.selectedPaymentBank === 'permata'" class="material-symbols-outlined text-[16px] text-[#059669]">check_circle</span>
+            </div>
+            <span class="text-[10px] text-slate-500">PermataMobile X & ATM</span>
           </button>
         </div>
       </div>
@@ -515,10 +591,10 @@ const handleProceedToPayment = async () => {
         :class="!checkoutStore.isDeliveryAllowed ? 'bg-slate-300 text-slate-500 hover:bg-slate-300 shadow-none' : 'bg-[#103860] hover:bg-[#13446E] text-white active:scale-95'"
       >
         <span class="material-symbols-outlined text-[18px]" :class="{ 'animate-spin': isSubmitting }">
-          {{ isSubmitting ? 'sync' : (!checkoutStore.isDeliveryAllowed ? 'block' : (orderStore.selectedPaymentMethod === 'qris_dynamic' ? 'qr_code_2' : 'lock')) }}
+          {{ isSubmitting ? 'sync' : (!checkoutStore.isDeliveryAllowed ? 'block' : (orderStore.selectedPaymentBank === 'qris' ? 'qr_code_2' : 'account_balance')) }}
         </span>
         <span>
-          {{ isSubmitting ? 'Menyiapkan Pembayaran Midtrans...' : (!checkoutStore.isDeliveryAllowed ? 'Alamat di Luar Wilayah Pengantaran (Khusus Banyuwangi)' : (orderStore.selectedPaymentMethod === 'qris_dynamic' ? 'Lanjut ke QRIS Dinamis' : 'Lanjut ke Virtual Account')) }}
+          {{ isSubmitting ? 'Menyiapkan Pembayaran...' : (!checkoutStore.isDeliveryAllowed ? 'Alamat di Luar Wilayah Pengantaran (Khusus Banyuwangi)' : (orderStore.selectedPaymentBank === 'qris' ? 'Bayar Sekarang via QRIS Dinamis' : (orderStore.selectedPaymentBank === 'mandiri' ? 'Bayar via Mandiri Bill / E-Channel' : `Bayar via ${orderStore.selectedPaymentBank.toUpperCase()} Virtual Account`))) }}
         </span>
       </button>
 

@@ -73,6 +73,7 @@ const fetchConfirmedOrder = async () => {
 
 onMounted(() => {
   fetchConfirmedOrder()
+  orderStore.fetchUnpaidOrders()
 })
 </script>
 
