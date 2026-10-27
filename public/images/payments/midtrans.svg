@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 40" fill="none">
+  <rect width="120" height="40" rx="4" fill="#FFFFFF"/>
+  <!-- Midtrans Cubes -->
+  <g transform="translate(10, 10)">
+    <rect x="0" y="4" width="7" height="7" rx="1.5" fill="#002855"/>
+    <rect x="9" y="0" width="7" height="7" rx="1.5" fill="#103860"/>
+    <rect x="9" y="9" width="7" height="7" rx="1.5" fill="#0284C7"/>
+  </g>
+  <!-- Text midtrans -->
+  <text x="34" y="25" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="16" fill="#002855" letter-spacing="-0.3">midtrans</text>
+</svg>

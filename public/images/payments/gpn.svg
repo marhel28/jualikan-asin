@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 110 40" fill="none">
+  <rect width="110" height="40" rx="4" fill="#FFFFFF"/>
+  <!-- GPN Eagle Wing Symbol -->
+  <circle cx="22" cy="20" r="14" fill="#E11D48"/>
+  <path d="M14 24c3-6 10-9 14-8-3 1-6 3-7 6 3-2 7-2 9 0-3 1-5 3-5 5 3-1 6-1 7 1-4 1-9 1-12-2-2-1-4-1-6-2z" fill="#FFFFFF"/>
+  <!-- Text GPN -->
+  <text x="44" y="24" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="16" fill="#1E293B" letter-spacing="-0.5">GPN</text>
+  <text x="44" y="32" font-family="system-ui, -apple-system, sans-serif" font-weight="700" font-size="5" fill="#E11D48" letter-spacing="0.5">GERBANG PEMBAYARAN</text>
+</svg>

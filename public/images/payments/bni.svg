@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 40" fill="none">
+  <rect width="100" height="40" rx="4" fill="#FFFFFF"/>
+  <!-- BNI Text in Teal -->
+  <text x="12" y="27" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="21" fill="#006699" letter-spacing="-0.5">BNI</text>
+  <!-- Orange stylized 46 badge -->
+  <g transform="translate(56, 10)">
+    <rect width="24" height="20" rx="4" fill="#E55302"/>
+    <text x="12" y="15" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="12" fill="#FFFFFF" text-anchor="middle">46</text>
+  </g>
+</svg>

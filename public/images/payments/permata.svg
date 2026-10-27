@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 40" fill="none">
+  <rect width="120" height="40" rx="4" fill="#FFFFFF"/>
+  <!-- Permata Diamond Facet -->
+  <g transform="translate(10, 10)">
+    <path d="M10 0L20 8L10 20L0 8Z" fill="#00965E"/>
+    <path d="M10 0L10 20L20 8Z" fill="#84BD00"/>
+    <path d="M0 8L10 20L5 14Z" fill="#006272"/>
+  </g>
+  <!-- Text Permata -->
+  <text x="36" y="22" font-family="system-ui, -apple-system, sans-serif" font-weight="800" font-size="14" fill="#006272">Permata</text>
+  <text x="36" y="30" font-family="system-ui, -apple-system, sans-serif" font-weight="700" font-size="8" fill="#84BD00" letter-spacing="1">BANK</text>
+</svg>

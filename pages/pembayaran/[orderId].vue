@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useOrderStore } from '~/stores/order'
 
 definePageMeta({
-  layout: 'clean'
+  layout: 'payment'
 })
 
 useHead({
@@ -274,14 +274,14 @@ onUnmounted(() => {
       </div>
     </Transition>
 
-    <!-- Header & Breadcrumb -->
-    <nav class="flex items-center justify-between text-xs text-slate-500 pt-1">
-      <NuxtLink to="/checkout" class="inline-flex items-center gap-1 text-slate-600 hover:text-[#103860] font-medium transition-colors">
-        <span class="material-symbols-outlined text-[16px]">arrow_back</span>
-        <span>Kembali ke Checkout</span>
-      </NuxtLink>
-      <span class="font-mono text-slate-400 font-semibold text-[11px]">#{{ orderNumber || orderId }}</span>
-    </nav>
+    <!-- Header & Order Identifier Badge -->
+    <div class="flex items-center justify-between text-xs text-slate-500 pt-1">
+      <div class="flex items-center gap-1.5 font-bold text-slate-800">
+        <span class="material-symbols-outlined text-[16px] text-[#103860]">receipt</span>
+        <span>Tagihan Pesanan Segar</span>
+      </div>
+      <span class="font-mono text-slate-600 font-bold text-[11px] bg-slate-100 px-2.5 py-0.5 rounded border border-slate-200">#{{ orderNumber || orderId }}</span>
+    </div>
 
     <!-- Card 1: Status Banner & 20-Minute Countdown Timer -->
     <div 
