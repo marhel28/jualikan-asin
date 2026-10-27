@@ -18,7 +18,7 @@ const authStore = useAuthStore()
 const api = useApi()
 
 // Form states
-const isEditing = computed(() => !!props.initialData?.id)
+const isEditing = computed(() => !!props.initialData?.id)
 const isMaxReached = computed(() => !isEditing.value && (authStore.user?.addresses?.length || 0) >= 3)
 const formLabel = ref('Rumah')
 const customLabel = ref('')
@@ -270,10 +270,10 @@ const handleDetectGps = () => {
   )
 }
 
-const handleSubmit = async () => {
-  if (isMaxReached.value) {
-    errorMessage.value = 'Batas maksimal 3 alamat telah tercapai. Ubah atau hapus salah satu alamat terlebih dahulu.'
-    return
+const handleSubmit = async () => {
+  if (isMaxReached.value) {
+    errorMessage.value = 'Batas maksimal 3 alamat telah tercapai. Ubah atau hapus salah satu alamat terlebih dahulu.'
+    return
   }
   if (!formRecipientName.value.trim()) {
     errorMessage.value = 'Nama penerima wajib diisi.'

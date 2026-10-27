@@ -8,6 +8,7 @@ export interface UserAddress {
   recipientPhone: string
   label: string
   street: string
+  addressDetail?: string
   benchmark?: string
   isDefault?: boolean
   isGpsVerified?: boolean
@@ -20,27 +21,37 @@ export interface UserAddress {
   kecamatanNama?: string
   desaNama?: string
   postalCode?: string
+  latitude?: number | null
+  longitude?: number | null
+  fullAddressText?: string
 }
 
 export function normalizeAddress(raw: any): UserAddress {
+  const lat = raw.latitude !== undefined && raw.latitude !== null ? Number(raw.latitude) : null
+  const lng = raw.longitude !== undefined && raw.longitude !== null ? Number(raw.longitude) : null
+  const street = raw.street || raw.address_detail || raw.addressDetail || ''
   return {
     id: String(raw.id || ''),
     recipientName: raw.recipient_name || raw.recipientName || '',
     recipientPhone: raw.recipient_phone || raw.recipientPhone || '',
     label: raw.label || 'Rumah / Dapur Pribadi',
-    street: raw.street || '',
-    benchmark: raw.benchmark || '',
+    street,
+    addressDetail: street,
+    benchmark: raw.benchmark || raw.notes || '',
     isDefault: raw.is_default !== undefined ? Boolean(raw.is_default) : Boolean(raw.isDefault),
-    isGpsVerified: raw.is_gps_verified !== undefined ? Boolean(raw.is_gps_verified) : (raw.isGpsVerified !== undefined ? Boolean(raw.isGpsVerified) : true),
+    isGpsVerified: raw.is_gps_verified !== undefined ? Boolean(raw.is_gps_verified) : (raw.isGpsVerified !== undefined ? Boolean(raw.isGpsVerified) : (lat !== null && lng !== null)),
     provinsiKode: raw.provinsi_kode || raw.provinsiKode,
     kabupatenKode: raw.kabupaten_kode || raw.kabupatenKode,
     kecamatanKode: raw.kecamatan_kode || raw.kecamatanKode,
     desaKode: raw.desa_kode || raw.desaKode,
-    provinsiNama: raw.provinsi_nama || raw.provinsiNama,
-    kabupatenNama: raw.kabupaten_nama || raw.kabupatenNama,
-    kecamatanNama: raw.kecamatan_nama || raw.kecamatanNama,
-    desaNama: raw.desa_nama || raw.desaNama,
-    postalCode: raw.postal_code || raw.postalCode || ''
+    provinsiNama: raw.provinsi_nama || raw.provinsiNama || raw.province_name,
+    kabupatenNama: raw.kabupaten_nama || raw.kabupatenNama || raw.city_name,
+    kecamatanNama: raw.kecamatan_nama || raw.kecamatanNama || raw.district_name,
+    desaNama: raw.desa_nama || raw.desaNama || raw.subdistrict_name,
+    postalCode: raw.postal_code || raw.postalCode || '',
+    latitude: lat,
+    longitude: lng,
+    fullAddressText: raw.full_address_text || raw.fullAddressText || ''
   }
 }
 
@@ -500,7 +511,9 @@ export const useAuthStore = defineStore('auth', {
             recipient_phone: newAddrData.recipientPhone,
             label: newAddrData.label,
             street: newAddrData.street,
+            address_detail: newAddrData.street,
             benchmark: newAddrData.benchmark || '',
+            notes: newAddrData.benchmark || '',
             is_gps_verified: newAddrData.isGpsVerified ?? true,
             provinsi_kode: newAddrData.provinsiKode,
             kabupaten_kode: newAddrData.kabupatenKode,
@@ -511,6 +524,8 @@ export const useAuthStore = defineStore('auth', {
             kecamatan_nama: newAddrData.kecamatanNama,
             desa_nama: newAddrData.desaNama,
             is_default: isDef,
+            latitude: newAddrData.latitude,
+            longitude: newAddrData.longitude,
           })
           if (res && res.id) {
             const added = normalizeAddress(res)
@@ -577,7 +592,9 @@ export const useAuthStore = defineStore('auth', {
               recipient_phone: current.recipientPhone,
               label: current.label,
               street: current.street,
+              address_detail: current.street,
               benchmark: current.benchmark || '',
+              notes: current.benchmark || '',
               is_gps_verified: current.isGpsVerified ?? true,
               provinsi_kode: current.provinsiKode,
               kabupaten_kode: current.kabupatenKode,
@@ -588,6 +605,8 @@ export const useAuthStore = defineStore('auth', {
               kecamatan_nama: current.kecamatanNama,
               desa_nama: current.desaNama,
               is_default: current.isDefault ?? false,
+              latitude: current.latitude,
+              longitude: current.longitude,
             })
           } catch {}
         }

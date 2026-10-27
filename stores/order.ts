@@ -46,6 +46,10 @@ export interface Order {
   scaleSlipImageUrl: string
   qualityCertificateUrl: string
   scaleWeightGrossKg: number
+  isDropship?: boolean
+  senderName?: string
+  senderPhone?: string
+  hidePriceOnInvoice?: boolean
   trackingStages: TrackingStage[]
 }
 
@@ -201,6 +205,8 @@ export const useOrderStore = defineStore('order', {
       if (typeof window !== 'undefined') {
         try {
           const api = useApi()
+          const isDropship = Boolean(checkoutStore.isDropship)
+          const isTextFallback = Boolean(checkoutStore.isTextOnlyFallback)
           const backendPayload = {
             items: cartStore.items.map(it => ({
               product_id: it.productId,
@@ -212,7 +218,26 @@ export const useOrderStore = defineStore('order', {
             delivery_slot: checkoutStore.slotDetails.title,
             packaging_type: cartStore.packagingType,
             shipping_courier: checkoutStore.selectedCourier,
-            shipping_address: checkoutStore.address,
+            shipping_address: {
+              ...checkoutStore.address,
+              isDropship,
+              senderName: isDropship ? checkoutStore.senderName : null,
+              senderPhone: isDropship ? checkoutStore.senderPhone : null,
+              isTextOnlyFallback: isTextFallback,
+            },
+            is_dropship: isDropship,
+            sender_name: isDropship ? checkoutStore.senderName : null,
+            sender_phone: isDropship ? checkoutStore.senderPhone : null,
+            recipient_name: checkoutStore.address.recipientName,
+            recipient_phone: checkoutStore.address.recipientPhone,
+            province_name: checkoutStore.address.provinsiNama || 'Jawa Timur',
+            city_name: checkoutStore.address.kabupatenNama || 'Banyuwangi',
+            district_name: checkoutStore.address.kecamatanNama || '',
+            subdistrict_name: checkoutStore.address.desaNama || '',
+            address_detail: checkoutStore.address.street,
+            latitude: !isTextFallback ? checkoutStore.address.coordinates?.lat : null,
+            longitude: !isTextFallback ? checkoutStore.address.coordinates?.lng : null,
+            hide_price_on_invoice: isDropship,
             payment_method: 'qris',
           }
           const res = await api.post<any>('/orders', backendPayload)
@@ -244,6 +269,10 @@ export const useOrderStore = defineStore('order', {
         scaleSlipImageUrl: '',
         qualityCertificateUrl: '',
         scaleWeightGrossKg: cartStore.totalGrossWeightKg,
+        isDropship: checkoutStore.isDropship,
+        senderName: checkoutStore.isDropship ? checkoutStore.senderName : undefined,
+        senderPhone: checkoutStore.isDropship ? checkoutStore.senderPhone : undefined,
+        hidePriceOnInvoice: checkoutStore.isDropship,
         trackingStages: JSON.parse(JSON.stringify(DEFAULT_STAGES))
       }
 

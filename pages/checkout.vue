@@ -7,6 +7,7 @@ import { useOrderStore } from '~/stores/order'
 import { useAuthStore } from '~/stores/auth'
 import AddressSelectModal from '~/components/address/AddressSelectModal.vue'
 import AddressFormModal from '~/components/address/AddressFormModal.vue'
+import ShippingAddressForm from '~/components/checkout/ShippingAddressForm.vue'
 import type { UserAddress } from '~/stores/auth'
 
 definePageMeta({
@@ -25,9 +26,12 @@ const authStore = useAuthStore()
 
 const isSelectAddressOpen = ref(false)
 const isFormAddressOpen = ref(false)
+const isShippingFormOpen = ref(false)
 const editingAddress = ref<UserAddress | null>(null)
 
 const handleSelectAddress = (addr: UserAddress) => {
+  const lat = addr.latitude || -8.4328
+  const lng = addr.longitude || 114.3361
   checkoutStore.setAddress({
     id: addr.id,
     recipientName: addr.recipientName,
@@ -45,7 +49,9 @@ const handleSelectAddress = (addr: UserAddress) => {
     kabupatenNama: addr.kabupatenNama,
     kecamatanNama: addr.kecamatanNama,
     desaNama: addr.desaNama,
-    coordinates: { lat: -8.4328, lng: 114.3361 }
+    coordinates: { lat, lng },
+    latitude: addr.latitude ?? null,
+    longitude: addr.longitude ?? null
   })
 }
 
@@ -189,12 +195,36 @@ const handleProceedToPayment = async () => {
             <span>Di Luar Jangkauan</span>
           </span>
 
-          <!-- GPS Chip -->
+          <!-- GPS / Accuracy Chip -->
           <span 
-            class="text-[11px] font-semibold flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 text-[#059669]"
+            v-if="!checkoutStore.isTextOnlyFallback"
+            class="text-[11px] font-semibold flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 text-[#059669] border border-emerald-200"
           >
             <span class="material-symbols-outlined text-[14px]">verified</span>
-            <span>GPS Terverifikasi</span>
+            <span>Pin Peta Terkunci</span>
+          </span>
+          <span 
+            v-else
+            class="text-[11px] font-semibold flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200"
+          >
+            <span class="material-symbols-outlined text-[14px] text-amber-600">edit_note</span>
+            <span>Alamat Teks Tanpa Pin</span>
+          </span>
+        </div>
+
+        <!-- Dropship Mode Notice Banner -->
+        <div v-if="checkoutStore.isDropship" class="p-2.5 bg-blue-50 border border-blue-200/90 rounded-xl text-xs flex items-center justify-between gap-2">
+          <div class="flex items-center space-x-2">
+            <span class="material-symbols-outlined text-[20px] text-[#103860]">inventory</span>
+            <div>
+              <div class="font-bold text-[#103860] leading-tight">Pesanan Mode Dropship</div>
+              <div class="text-[11px] text-slate-600">
+                Pengirim: <strong>{{ checkoutStore.senderName || 'Toko Dropshipper' }}</strong> ({{ checkoutStore.senderPhone || '-' }})
+              </div>
+            </div>
+          </div>
+          <span class="text-[10px] font-bold px-2 py-0.5 bg-white border border-blue-200 text-[#103860] rounded-md shrink-0">
+            Resi Tanpa Harga
           </span>
         </div>
 
@@ -216,30 +246,34 @@ const handleProceedToPayment = async () => {
           </p>
         </div>
 
-        <!-- Action Buttons (Tokopedia-Style) -->
+        <!-- Action Buttons -->
         <div class="flex flex-wrap items-center justify-between gap-2 pt-2.5 border-t border-slate-100">
           <div class="inline-flex items-center gap-1 text-[11px] text-slate-500 bg-slate-50 border border-slate-200/70 px-2.5 py-1 rounded-lg">
             <span class="material-symbols-outlined text-[14px] text-[#103860]">pin_drop</span>
-            <span class="font-mono text-slate-700">
+            <span v-if="!checkoutStore.isTextOnlyFallback" class="font-mono text-slate-700">
               {{ checkoutStore.address.coordinates?.lat?.toFixed(4) }}, {{ checkoutStore.address.coordinates?.lng?.toFixed(4) }}
+            </span>
+            <span v-else class="text-slate-500 italic">
+              Titik GPS tidak diset
             </span>
           </div>
 
           <div class="flex items-center gap-2">
             <button
               type="button"
-              @click="handleOpenEditAddress(checkoutStore.address as any)"
-              class="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 border border-slate-200 hover:bg-slate-50 rounded-xl transition cursor-pointer"
+              @click="isShippingFormOpen = true"
+              class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-[#103860] bg-blue-50/80 hover:bg-blue-100 border border-blue-200 rounded-xl transition cursor-pointer"
             >
-              Ubah
+              <span class="material-symbols-outlined text-[15px]">edit_location_alt</span>
+              <span>Atur Peta & Dropship</span>
             </button>
             <button
               type="button"
               @click="isSelectAddressOpen = true"
-              class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-[#103860]/40 hover:border-[#103860] bg-blue-50/70 hover:bg-blue-100/80 text-[#103860] text-xs font-bold transition-all cursor-pointer shadow-2xs"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-all cursor-pointer shadow-2xs"
             >
               <span class="material-symbols-outlined text-[16px]">swap_horiz</span>
-              <span>Pilih Alamat Lain</span>
+              <span>Buku Alamat</span>
             </button>
           </div>
         </div>
@@ -492,6 +526,41 @@ const handleProceedToPayment = async () => {
     @close="isFormAddressOpen = false"
     @saved="handleAddressSaved"
   />
+
+  <!-- Dedicated Shipping & Dropship Mapping Modal -->
+  <Teleport to="body">
+    <div
+      v-if="isShippingFormOpen"
+      class="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-md overflow-y-auto"
+      @click.self="isShippingFormOpen = false"
+    >
+      <div class="bg-white rounded-2xl max-w-xl w-full border border-slate-200 shadow-2xl overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[92vh]">
+        <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/80 shrink-0">
+          <div class="flex items-center space-x-2">
+            <span class="material-symbols-outlined text-[20px] text-[#103860]">edit_location_alt</span>
+            <div>
+              <h2 class="text-xs font-bold sm:text-sm text-slate-900 leading-tight">Pengaturan Alamat & Dropship</h2>
+              <p class="text-[11px] text-slate-500">Kunci titik peta kurir, tempel shareloc, atau aktifkan mode dropship.</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            @click="isShippingFormOpen = false"
+            class="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200 transition cursor-pointer"
+          >
+            <span class="material-symbols-outlined text-[18px]">close</span>
+          </button>
+        </div>
+        <div class="p-4 overflow-y-auto flex-1">
+          <ShippingAddressForm
+            :show-as-modal="true"
+            @close="isShippingFormOpen = false"
+            @save="isShippingFormOpen = false"
+          />
+        </div>
+      </div>
+    </div>
+  </Teleport>
   </div>
 </template>
 

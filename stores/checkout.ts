@@ -21,6 +21,7 @@ export interface AddressInfo {
   recipientPhone: string
   label: string
   street: string
+  addressDetail?: string
   benchmark: string
   isGpsVerified: boolean
   isDefault?: boolean
@@ -32,6 +33,10 @@ export interface AddressInfo {
   kabupatenNama?: string
   kecamatanNama?: string
   desaNama?: string
+  postalCode?: string
+  fullAddressText?: string
+  latitude?: number | null
+  longitude?: number | null
   coordinates: {
     lat: number
     lng: number
@@ -54,6 +59,10 @@ export interface ShippingPolicy {
 
 export interface CheckoutState {
   address: AddressInfo
+  isDropship: boolean
+  senderName: string
+  senderPhone: string
+  isTextOnlyFallback: boolean
   selectedCourier: CourierType
   selectedDeliverySlot: DeliverySlot
   deliverySlots: DeliverySlotOption[]
@@ -107,6 +116,10 @@ export const useCheckoutStore = defineStore('checkout', {
     },
     selectedCourier: 'lba_cold_courier',
     selectedDeliverySlot: 'subuh',
+    isDropship: false,
+    senderName: '',
+    senderPhone: '',
+    isTextOnlyFallback: false,
     deliverySlots: DEFAULT_SLOTS,
     shippingPolicy: {
       onlyBanyuwangi: true,
@@ -170,6 +183,16 @@ export const useCheckoutStore = defineStore('checkout', {
     setDeliverySlot(slotId: string) {
       this.selectedDeliverySlot = slotId
     },
+    setIsDropship(val: boolean) {
+      this.isDropship = val
+    },
+    setDropshipSender(name: string, phone: string) {
+      this.senderName = name
+      this.senderPhone = phone
+    },
+    setTextOnlyFallback(val: boolean) {
+      this.isTextOnlyFallback = val
+    },
     setAddress(newAddress: Partial<AddressInfo>) {
       this.address = {
         ...this.address,
@@ -178,12 +201,17 @@ export const useCheckoutStore = defineStore('checkout', {
           lat: newAddress.coordinates?.lat ?? this.address.coordinates.lat,
           lng: newAddress.coordinates?.lng ?? this.address.coordinates.lng
         },
-        isGpsVerified: true
+        latitude: newAddress.coordinates?.lat ?? newAddress.latitude ?? this.address.coordinates.lat,
+        longitude: newAddress.coordinates?.lng ?? newAddress.longitude ?? this.address.coordinates.lng,
+        isGpsVerified: !this.isTextOnlyFallback
       }
     },
     updateAddressCoordinates(lat: number, lng: number) {
       this.address.coordinates = { lat, lng }
+      this.address.latitude = lat
+      this.address.longitude = lng
       this.address.isGpsVerified = true
+      this.isTextOnlyFallback = false
     },
     async fetchDeliveryConfig() {
       this.isLoadingSlots = true
