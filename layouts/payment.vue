@@ -46,9 +46,11 @@ const paymentPartners = [
 
         <!-- Center: Brand Logo + Security Trust Badge -->
         <div class="flex items-center gap-2.5">
-          <div class="w-8 h-8 rounded-lg bg-[#103860] text-white flex items-center justify-center font-black text-sm tracking-tight shadow-xs">
-            LBA
-          </div>
+          <img
+            src="/brand/logo.webp"
+            alt="Laut Berkah Abadi"
+            class="w-8 h-8 sm:w-9 sm:h-9 object-contain rounded-full shadow-2xs shrink-0"
+          />
           <div class="flex flex-col items-start">
             <span class="text-xs sm:text-sm font-extrabold text-[#103860] tracking-tight leading-tight">
               LAUT BERKAH ABADI
