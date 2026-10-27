@@ -30,8 +30,8 @@ const isShippingFormOpen = ref(false)
 const editingAddress = ref<UserAddress | null>(null)
 
 const handleSelectAddress = (addr: UserAddress) => {
-  const lat = addr.latitude || -8.4328
-  const lng = addr.longitude || 114.3361
+  const lat = addr.latitude != null ? Number(addr.latitude) : null
+  const lng = addr.longitude != null ? Number(addr.longitude) : null
   checkoutStore.setAddress({
     id: addr.id,
     recipientName: addr.recipientName,
@@ -40,7 +40,7 @@ const handleSelectAddress = (addr: UserAddress) => {
     street: addr.street,
     benchmark: addr.benchmark || '',
     isDefault: addr.isDefault,
-    isGpsVerified: addr.isGpsVerified ?? true,
+    isGpsVerified: addr.isGpsVerified ?? (lat != null && lng != null),
     provinsiKode: addr.provinsiKode,
     kabupatenKode: addr.kabupatenKode,
     kecamatanKode: addr.kecamatanKode,
@@ -49,9 +49,9 @@ const handleSelectAddress = (addr: UserAddress) => {
     kabupatenNama: addr.kabupatenNama,
     kecamatanNama: addr.kecamatanNama,
     desaNama: addr.desaNama,
-    coordinates: { lat, lng },
-    latitude: addr.latitude ?? null,
-    longitude: addr.longitude ?? null
+    coordinates: (lat != null && lng != null) ? { lat, lng } : { lat: -8.4328, lng: 114.3361 },
+    latitude: lat,
+    longitude: lng
   })
 }
 
@@ -92,7 +92,7 @@ onMounted(async () => {
     const def = addresses.find(a => a.isDefault) || addresses[0]
     if (def) {
       handleSelectAddress(def)
-    } else if (authStore.user?.defaultAddress) {
+    } else if (authStore.user?.defaultAddress && authStore.user.defaultAddress.street) {
       const da = authStore.user.defaultAddress
       checkoutStore.setAddress({
         id: da.id,
@@ -100,9 +100,11 @@ onMounted(async () => {
         recipientPhone: da.recipientPhone || authStore.user.phoneWhatsApp,
         label: da.label || 'Rumah',
         street: da.street,
-        benchmark: da.benchmark || 'Banyuwangi',
-        isGpsVerified: da.isGpsVerified ?? true,
-        coordinates: { lat: -8.4328, lng: 114.3361 }
+        benchmark: da.benchmark || '',
+        isGpsVerified: da.isGpsVerified ?? false,
+        coordinates: { lat: -8.4328, lng: 114.3361 },
+        latitude: null,
+        longitude: null
       })
     }
   }
@@ -248,13 +250,17 @@ const handleProceedToPayment = async () => {
 
         <!-- Action Buttons -->
         <div class="flex flex-wrap items-center justify-between gap-2 pt-2.5 border-t border-slate-100">
-          <div class="inline-flex items-center gap-1 text-[11px] text-slate-500 bg-slate-50 border border-slate-200/70 px-2.5 py-1 rounded-lg">
+          <div class="inline-flex items-center gap-1.5 text-[11px] text-slate-500 bg-slate-50 border border-slate-200/70 px-2.5 py-1 rounded-lg">
             <span class="material-symbols-outlined text-[14px] text-[#103860]">pin_drop</span>
-            <span v-if="!checkoutStore.isTextOnlyFallback" class="font-mono text-slate-700">
-              {{ checkoutStore.address.coordinates?.lat?.toFixed(4) }}, {{ checkoutStore.address.coordinates?.lng?.toFixed(4) }}
+            <span v-if="!checkoutStore.isTextOnlyFallback && checkoutStore.address.latitude != null" class="font-mono text-slate-700">
+              {{ checkoutStore.address.latitude?.toFixed(4) }}, {{ checkoutStore.address.longitude?.toFixed(4) }}
             </span>
             <span v-else class="text-slate-500 italic">
               Titik GPS tidak diset
+            </span>
+            <span v-if="checkoutStore.deliveryDistanceKm !== null" class="ml-1 pl-1.5 border-l border-slate-200 font-semibold"
+              :class="checkoutStore.isDeliveryAllowed ? 'text-[#059669]' : 'text-rose-600'">
+              {{ checkoutStore.deliveryDistanceKm }} km dari Muncar
             </span>
           </div>
 
@@ -286,18 +292,29 @@ const handleProceedToPayment = async () => {
       >
         <span class="material-symbols-outlined text-[22px] text-red-600 shrink-0 mt-0.5">fmd_bad</span>
         <div class="space-y-1">
-          <span class="font-bold text-xs text-red-950 block">Pengiriman Belum Tersedia ke Wilayah Ini</span>
+          <span class="font-bold text-xs text-red-950 block">Pengiriman Belum Tersedia ke Lokasi Ini</span>
           <p class="text-[11px] leading-relaxed text-red-800">
-            Saat ini pengiriman rantai dingin Laut Berkah Abadi hanya melayani alamat di seluruh wilayah <b>Kabupaten Banyuwangi</b> untuk menjamin kualitas kesegaran 0-2°C. Alamat terpilih berada di luar jangkauan pengiriman.
+            Saat ini pengiriman rantai dingin Laut Berkah Abadi hanya melayani alamat di seluruh wilayah <b>Kabupaten Banyuwangi</b> (maksimal 100 km dari Cold Storage Muncar) untuk menjamin kualitas kesegaran 0-2°C.
+            <span v-if="checkoutStore.deliveryDistanceKm !== null" class="font-bold block mt-1 text-red-900">
+              Jarak terdeteksi: {{ checkoutStore.deliveryDistanceKm }} km (di luar jangkauan operasional).
+            </span>
           </p>
-          <div class="pt-1">
+          <div class="pt-1.5 flex flex-wrap items-center gap-2">
             <button
               type="button"
               @click="isSelectAddressOpen = true"
               class="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-red-300 hover:bg-red-100/60 text-red-900 font-bold text-[11px] rounded-lg transition cursor-pointer shadow-2xs"
             >
               <span class="material-symbols-outlined text-[14px]">swap_horiz</span>
-              <span>Ganti Alamat ke Area Banyuwangi</span>
+              <span>Pilih Alamat Banyuwangi</span>
+            </button>
+            <button
+              type="button"
+              @click="isShippingFormOpen = true"
+              class="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-red-300 hover:bg-red-100/60 text-red-900 font-bold text-[11px] rounded-lg transition cursor-pointer shadow-2xs"
+            >
+              <span class="material-symbols-outlined text-[14px]">edit_location</span>
+              <span>Atur Ulang Pin Peta</span>
             </button>
           </div>
         </div>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
-import { useCheckoutStore } from '~/stores/checkout'
+import { useCheckoutStore, BANYUWANGI_BOUNDS, calculateDistanceKm } from '~/stores/checkout'
 import { useApi } from '~/composables/useApi'
 import 'leaflet/dist/leaflet.css'
 
@@ -172,9 +172,19 @@ const handleResolveGmapsLink = async () => {
 
     if (res?.success && res.latitude && res.longitude) {
       updatePinLocation(res.latitude, res.longitude, 16)
-      sharelocFeedback.value = {
-        type: 'success',
-        message: `Titik koordinat berhasil dikunci: ${res.latitude.toFixed(5)}, ${res.longitude.toFixed(5)} (Jarak: ${res.distance_km || 0} km)`
+      const dist = res.distance_km || calculateDistanceKm(res.latitude, res.longitude)
+      const inBounds = res.latitude >= BANYUWANGI_BOUNDS.minLat && res.latitude <= BANYUWANGI_BOUNDS.maxLat &&
+                       res.longitude >= BANYUWANGI_BOUNDS.minLng && res.longitude <= BANYUWANGI_BOUNDS.maxLng
+      if (!inBounds || dist > BANYUWANGI_BOUNDS.maxDistanceKm) {
+        sharelocFeedback.value = {
+          type: 'error',
+          message: `Titik koordinat (${res.latitude.toFixed(5)}, ${res.longitude.toFixed(5)}) berjarak ${dist} km, berada di luar jangkauan pengiriman Banyuwangi (maksimal 100 km).`
+        }
+      } else {
+        sharelocFeedback.value = {
+          type: 'success',
+          message: `Titik koordinat berhasil dikunci: ${res.latitude.toFixed(5)}, ${res.longitude.toFixed(5)} (Jarak: ${dist} km dari Muncar)`
+        }
       }
     } else {
       sharelocFeedback.value = {
@@ -231,6 +241,15 @@ const handleSelectSearchResult = (result: { lat: string; lon: string; display_na
     updatePinLocation(lat, lon, 16)
     searchQuery.value = result.display_name.split(',').slice(0, 3).join(', ')
     searchResults.value = []
+
+    const inBounds = lat >= BANYUWANGI_BOUNDS.minLat && lat <= BANYUWANGI_BOUNDS.maxLat &&
+                     lon >= BANYUWANGI_BOUNDS.minLng && lon <= BANYUWANGI_BOUNDS.maxLng
+    const dist = calculateDistanceKm(lat, lon)
+    if (!inBounds || dist > BANYUWANGI_BOUNDS.maxDistanceKm) {
+      validationError.value = `Lokasi pencarian berjarak ${dist} km dari Muncar, berada di luar jangkauan pengiriman Banyuwangi (maksimal 100 km).`
+    } else {
+      validationError.value = ''
+    }
   }
 }
 
@@ -242,10 +261,22 @@ const handleDetectCurrentGps = () => {
   }
 
   isDetectingGps.value = true
+  validationError.value = ''
   navigator.geolocation.getCurrentPosition(
     (pos) => {
       isDetectingGps.value = false
-      updatePinLocation(pos.coords.latitude, pos.coords.longitude, 17)
+      const lat = Number(pos.coords.latitude.toFixed(6))
+      const lng = Number(pos.coords.longitude.toFixed(6))
+      updatePinLocation(lat, lng, 17)
+
+      const inBounds = lat >= BANYUWANGI_BOUNDS.minLat && lat <= BANYUWANGI_BOUNDS.maxLat &&
+                       lng >= BANYUWANGI_BOUNDS.minLng && lng <= BANYUWANGI_BOUNDS.maxLng
+      const dist = calculateDistanceKm(lat, lng)
+      if (!inBounds || dist > BANYUWANGI_BOUNDS.maxDistanceKm) {
+        validationError.value = `Lokasi GPS Anda (${lat}, ${lng}) berjarak ${dist} km dari Muncar, berada di luar jangkauan pengiriman Banyuwangi (maksimal 100 km).`
+      } else {
+        validationError.value = ''
+      }
     },
     (err) => {
       isDetectingGps.value = false
@@ -347,10 +378,10 @@ const handleSave = () => {
     recipientPhone: recipientPhone.value.trim(),
     street: addressDetail.value.trim(),
     addressDetail: addressDetail.value.trim(),
-    benchmark: benchmark.value.trim() || 'Kabupaten Banyuwangi',
+    benchmark: benchmark.value.trim(),
     coordinates: isTextOnlyFallback.value
-      ? { lat: -8.4328, lng: 114.3361 }
-      : { lat: currentLat.value || -8.4328, lng: currentLng.value || 114.3361 },
+      ? { lat: BANYUWANGI_BOUNDS.storeLat, lng: BANYUWANGI_BOUNDS.storeLng }
+      : { lat: currentLat.value || BANYUWANGI_BOUNDS.storeLat, lng: currentLng.value || BANYUWANGI_BOUNDS.storeLng },
     latitude: isTextOnlyFallback.value ? null : currentLat.value,
     longitude: isTextOnlyFallback.value ? null : currentLng.value,
     isGpsVerified: !isTextOnlyFallback.value

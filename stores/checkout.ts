@@ -70,6 +70,35 @@ export interface CheckoutState {
   isLoadingSlots: boolean
 }
 
+// Bounding box & parameter geofencing Kabupaten Banyuwangi
+export const BANYUWANGI_BOUNDS = {
+  minLat: -8.8500,
+  maxLat: -7.7000,
+  minLng: 113.8000,
+  maxLng: 114.6500,
+  storeLat: -8.4328,
+  storeLng: 114.3361,
+  maxDistanceKm: 100.0,
+}
+
+// Kalkulasi jarak Haversine jalan darat (faktor belokan 1.3x)
+export function calculateDistanceKm(
+  lat1: number,
+  lon1: number,
+  lat2: number = BANYUWANGI_BOUNDS.storeLat,
+  lon2: number = BANYUWANGI_BOUNDS.storeLng
+): number {
+  const R = 6371.0
+  const dLat = (lat2 - lat1) * Math.PI / 180.0
+  const dLon = (lon2 - lon1) * Math.PI / 180.0
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180.0) * Math.cos(lat2 * Math.PI / 180.0) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  return Number((R * c * 1.3).toFixed(1))
+}
+
 const DEFAULT_SLOTS: DeliverySlotOption[] = [
   {
     id: 'subuh',
@@ -103,15 +132,17 @@ const DEFAULT_SLOTS: DeliverySlotOption[] = [
 export const useCheckoutStore = defineStore('checkout', {
   state: (): CheckoutState => ({
     address: {
-      recipientName: 'Ibu Ratna Dewi',
-      recipientPhone: '0812-3456-7890',
+      recipientName: '',
+      recipientPhone: '',
       label: 'Rumah / Dapur Pribadi',
-      street: 'Jl. Basuki Rahmat No. 42, Banyuwangi Kota',
-      benchmark: 'Patokan seberang Bank BCA Banyuwangi',
-      isGpsVerified: true,
+      street: '',
+      benchmark: '',
+      isGpsVerified: false,
+      latitude: null,
+      longitude: null,
       coordinates: {
-        lat: -8.2192,
-        lng: 114.3692
+        lat: BANYUWANGI_BOUNDS.storeLat,
+        lng: BANYUWANGI_BOUNDS.storeLng
       }
     },
     selectedCourier: 'lba_cold_courier',
@@ -125,8 +156,8 @@ export const useCheckoutStore = defineStore('checkout', {
       onlyBanyuwangi: true,
       freeShippingBanyuwangi: true,
       standardFee: 0,
-      warehouseLat: -8.4328,
-      warehouseLng: 114.3361,
+      warehouseLat: BANYUWANGI_BOUNDS.storeLat,
+      warehouseLng: BANYUWANGI_BOUNDS.storeLng,
       warehouseAddress: 'Dermaga Pelabuhan Perikanan Pantai Muncar, Banyuwangi',
       distancePricingEnabled: false,
       pricePerKm: 2500
@@ -135,33 +166,72 @@ export const useCheckoutStore = defineStore('checkout', {
   }),
 
   getters: {
+    deliveryDistanceKm: (state): number | null => {
+      const addr = state.address
+      if (!addr) return null
+      const lat = addr.latitude ?? (addr.isGpsVerified ? addr.coordinates?.lat : null)
+      const lng = addr.longitude ?? (addr.isGpsVerified ? addr.coordinates?.lng : null)
+      if (lat != null && lng != null && !isNaN(lat) && !isNaN(lng)) {
+        return calculateDistanceKm(lat, lng)
+      }
+      return null
+    },
+
     isAddressInBanyuwangi: (state): boolean => {
       const addr = state.address
       if (!addr) return false
+
+      // 1. Validasi koordinat jika ada (GPS browser atau pin Leaflet)
+      const lat = addr.latitude ?? (addr.isGpsVerified ? addr.coordinates?.lat : null)
+      const lng = addr.longitude ?? (addr.isGpsVerified ? addr.coordinates?.lng : null)
+      if (lat != null && lng != null && !isNaN(lat) && !isNaN(lng)) {
+        const inBounds =
+          lat >= BANYUWANGI_BOUNDS.minLat && lat <= BANYUWANGI_BOUNDS.maxLat &&
+          lng >= BANYUWANGI_BOUNDS.minLng && lng <= BANYUWANGI_BOUNDS.maxLng
+        const distance = calculateDistanceKm(lat, lng)
+        return inBounds && distance <= BANYUWANGI_BOUNDS.maxDistanceKm
+      }
+
+      // 2. Mode fallback teks tanpa pin GPS
+      const street = (addr.street || '').toLowerCase()
+      if (street.trim().length < 5) {
+        return false
+      }
+
       const kab = (addr.kabupatenNama || '').toLowerCase()
       const kec = (addr.kecamatanNama || '').toLowerCase()
-      const street = (addr.street || '').toLowerCase()
       const kode = String(addr.kabupatenKode || '')
+
+      // Tolak tegas jika ada nama kota lain di luar Banyuwangi
+      const forbiddenCities = [
+        'jakarta', 'surabaya', 'malang', 'bandung', 'semarang',
+        'denpasar', 'badung', 'jembrana', 'tabanan', 'sidoarjo',
+        'jember', 'kediri', 'pasuruan', 'probolinggo', 'situbondo',
+        'bondowoso', 'lumajang', 'yogyakarta', 'solo', 'surakarta',
+        'bogor', 'bekasi', 'tangerang', 'depok'
+      ]
+      if (forbiddenCities.some(fc => kab.includes(fc) || street.includes(fc))) {
+        return false
+      }
+
       return kab.includes('banyuwangi') || kec.includes('muncar') || street.includes('banyuwangi') || kode === '35.10'
     },
-    isDeliveryAllowed: (state): boolean => {
-      if (state.shippingPolicy.onlyBanyuwangi === false) return true
-      const addr = state.address
-      if (!addr) return false
-      const kab = (addr.kabupatenNama || '').toLowerCase()
-      const kec = (addr.kecamatanNama || '').toLowerCase()
-      const street = (addr.street || '').toLowerCase()
-      const kode = String(addr.kabupatenKode || '')
-      return kab.includes('banyuwangi') || kec.includes('muncar') || street.includes('banyuwangi') || kode === '35.10'
+
+    isDeliveryAllowed(): boolean {
+      if (this.shippingPolicy.onlyBanyuwangi === false) return true
+      return this.isAddressInBanyuwangi
     },
+
     activeSlots: (state): DeliverySlotOption[] => {
       const active = state.deliverySlots.filter(s => s.isActive !== false)
       return active.length > 0 ? active : DEFAULT_SLOTS
     },
+
     slotDetails: (state): DeliverySlotOption => {
       const found = state.deliverySlots.find(s => s.id === state.selectedDeliverySlot)
       return found || state.deliverySlots[0] || DEFAULT_SLOTS[0]
     },
+
     shippingFee: (state): number => {
       // Default: Bebas ongkos kirim seluruh area Banyuwangi
       if (state.shippingPolicy.freeShippingBanyuwangi) {
@@ -173,6 +243,7 @@ export const useCheckoutStore = defineStore('checkout', {
       }
       return state.shippingPolicy.standardFee ?? (state.shippingPolicy.localFee || 12000)
     },
+
     totalBill(): number {
       const cartStore = useCartStore()
       return cartStore.productsSubtotal + cartStore.packagingFee + this.shippingFee
@@ -194,16 +265,17 @@ export const useCheckoutStore = defineStore('checkout', {
       this.isTextOnlyFallback = val
     },
     setAddress(newAddress: Partial<AddressInfo>) {
+      const hasCoords = newAddress.latitude != null && newAddress.longitude != null
+      const lat = hasCoords ? Number(newAddress.latitude) : (newAddress.coordinates?.lat ?? this.address.latitude)
+      const lng = hasCoords ? Number(newAddress.longitude) : (newAddress.coordinates?.lng ?? this.address.longitude)
+
       this.address = {
         ...this.address,
         ...newAddress,
-        coordinates: {
-          lat: newAddress.coordinates?.lat ?? this.address.coordinates.lat,
-          lng: newAddress.coordinates?.lng ?? this.address.coordinates.lng
-        },
-        latitude: newAddress.coordinates?.lat ?? newAddress.latitude ?? this.address.coordinates.lat,
-        longitude: newAddress.coordinates?.lng ?? newAddress.longitude ?? this.address.coordinates.lng,
-        isGpsVerified: !this.isTextOnlyFallback
+        coordinates: (lat != null && lng != null) ? { lat, lng } : this.address.coordinates,
+        latitude: lat,
+        longitude: lng,
+        isGpsVerified: !this.isTextOnlyFallback && (lat != null && lng != null)
       }
     },
     updateAddressCoordinates(lat: number, lng: number) {
@@ -225,7 +297,6 @@ export const useCheckoutStore = defineStore('checkout', {
         if (data) {
           if (data.deliverySlots && Array.isArray(data.deliverySlots) && data.deliverySlots.length > 0) {
             this.deliverySlots = data.deliverySlots
-            // If current selected slot is inactive, pick the first active slot
             const isCurrentActive = this.deliverySlots.some(s => s.id === this.selectedDeliverySlot && s.isActive !== false)
             if (!isCurrentActive) {
               const firstActive = this.deliverySlots.find(s => s.isActive !== false)
@@ -239,7 +310,7 @@ export const useCheckoutStore = defineStore('checkout', {
           }
         }
       } catch (err) {
-        // Graceful fallback to default slots
+        // Fallback default slots
       } finally {
         this.isLoadingSlots = false
       }
