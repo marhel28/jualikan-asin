@@ -21,13 +21,6 @@ const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 
-// Hardcoded developer demo credentials
-const DEV_CREDENTIALS = {
-  identifier: '081299998888',
-  password: 'Customer_Password_123!',
-  name: 'Ibu Ratna Dewi (Pelanggan Demo)',
-}
-
 // Active Mode: 'login' | 'register' (default to login unless explicitly requested)
 const activeMode = ref<'login' | 'register'>((route.query.mode as any) || 'login')
 
@@ -41,19 +34,10 @@ const regPassword = ref('')
 const regPhone = ref('')
 const showRegPassword = ref(false)
 
-// Form State: Login Password (prefilled with developer credentials for instant testing)
-const loginIdentifier = ref(DEV_CREDENTIALS.identifier)
-const loginPassword = ref(DEV_CREDENTIALS.password)
+// Form State: Login Password (clean empty inputs by default)
+const loginIdentifier = ref('')
+const loginPassword = ref('')
 const showLoginPassword = ref(false)
-
-const fillDeveloperCredentials = () => {
-  activeMode.value = 'login'
-  loginMethod.value = 'password'
-  loginIdentifier.value = DEV_CREDENTIALS.identifier
-  loginPassword.value = DEV_CREDENTIALS.password
-  localErrorMessage.value = null
-  authStore.errorMessage = null
-}
 
 // Form State: WhatsApp OTP
 const otpDigits = ref<string[]>(['', '', '', '', '', ''])
@@ -468,31 +452,6 @@ onBeforeUnmount(() => {
 
         <!-- MODE 2: MASUK (Login Email/Username + Password ATAU WhatsApp OTP) -->
         <div v-else class="space-y-4">
-          <!-- Developer Quick Credential Box -->
-          <div class="p-3 bg-blue-50/90 border border-blue-200/90 rounded-xl flex items-center justify-between gap-3 text-xs">
-            <div class="flex items-center gap-2.5 min-w-0">
-              <span class="material-symbols-outlined text-blue-700 text-[20px] shrink-0">science</span>
-              <div class="min-w-0">
-                <div class="font-bold text-blue-950 flex items-center gap-1.5">
-                  <span>Akun Uji Coba Developer</span>
-                  <span class="px-1.5 py-0.2 bg-blue-200/60 text-blue-900 rounded text-[10px] font-mono font-semibold">11 Pesanan DB</span>
-                </div>
-                <p class="text-[11px] text-blue-700/90 truncate font-mono">
-                  WA: 081299998888 • Pass: Customer_Password_123!
-                </p>
-              </div>
-            </div>
-            <button
-              type="button"
-              @click="fillDeveloperCredentials"
-              class="px-2.5 py-1.5 bg-[#103860] hover:bg-[#13446E] text-white text-[11px] font-bold rounded-lg shrink-0 transition shadow-2xs cursor-pointer flex items-center gap-1"
-              title="Isi form dengan akun developer"
-            >
-              <span class="material-symbols-outlined text-[14px]">auto_fix_high</span>
-              <span>Isi Cepat</span>
-            </button>
-          </div>
-
           <!-- SUB-MODE: Email / Username & Password -->
           <form v-if="loginMethod === 'password'" @submit.prevent="handleLoginPassword" class="space-y-4">
             <div class="space-y-1.5">
