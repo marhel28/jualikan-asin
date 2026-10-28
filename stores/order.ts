@@ -58,6 +58,21 @@ export interface Order {
   paymentPayload?: any
   expiredAt?: string
   expiresInSeconds?: number
+  paidAt?: string | null
+  recipientName?: string
+  recipientPhone?: string
+  addressDetail?: string
+  provinceName?: string
+  cityName?: string
+  districtName?: string
+  subdistrictName?: string
+  latitude?: number
+  longitude?: number
+  courierNotes?: string
+  shippingFee?: number
+  subtotalAmount?: number
+  grandTotal?: number
+  paymentVaOrCode?: string
   trackingStages: TrackingStage[]
 }
 
@@ -462,40 +477,60 @@ export const useOrderStore = defineStore('order', {
 
           const mappedItems = (data.items || []).map((it: any, i: number) => ({
             id: `item-${i}`,
-            productId: it.product_name,
+            productId: it.product_id || it.product_name,
             name: it.product_name,
             price: Number(it.price_per_kg) || 0,
+            pricePerKg: Number(it.price_per_kg) || 0,
             quantity: Number(it.gross_weight) || 1,
             selectedCut: it.cut_type || 'utuh_bersih',
             grossWeightKg: Number(it.gross_weight) || 1,
             netWeightKg: Number(it.estimated_net_weight) || Number(it.gross_weight) || 1,
-            soupBonesSeparated: false,
+            soupBonesSeparated: Boolean(it.soup_bones_separated),
             imageUrl: it.image_url || it.imageUrl || 'https://cdn.ammarabufadhel.my.id/products/asset-1544551763-ced7aa4f.webp',
             subtotal: Number(it.subtotal) || ((Number(it.price_per_kg) || 0) * (Number(it.gross_weight) || 1))
           }))
 
+          const streetAddr = data.address_detail || (typeof data.shipping_address === 'string' ? data.shipping_address : (data.shipping_address?.address_detail || data.shipping_address?.street || ''))
           this.currentOrder = {
             id: ordNum,
+            orderNumber: ordNum,
             createdAt: data.created_at || new Date().toISOString(),
+            paidAt: data.paid_at || null,
             status: status,
             items: mappedItems,
             packagingType: data.packaging_type || 'thermal_bag',
             packagingFee: Number(data.packaging_fee || 0),
             courierType: data.shipping_courier || 'kurir_lba',
             courierFee: Number(data.shipping_fee || 0),
+            shippingFee: Number(data.shipping_fee || 0),
             deliverySlot: 'subuh_06_08',
             deliverySlotLabel: data.delivery_slot || 'Slot Pagi (06:00 - 08:30 WIB)',
             kitchenNotes: data.courier_notes ? `Catatan: ${data.courier_notes}` : '',
+            courierNotes: data.courier_notes || '',
+            recipientName: data.recipient_name || data.received_by || 'Pelanggan LBA',
+            recipientPhone: data.recipient_phone || '',
+            addressDetail: streetAddr,
+            provinceName: data.province_name || 'Jawa Timur',
+            cityName: data.city_name || 'Banyuwangi',
+            districtName: data.district_name || '',
+            subdistrictName: data.subdistrict_name || '',
+            latitude: data.latitude ? Number(data.latitude) : undefined,
+            longitude: data.longitude ? Number(data.longitude) : undefined,
             address: {
-              recipientName: data.received_by || 'Pelanggan LBA',
-              phoneNumber: '',
-              streetAddress: '',
-              district: 'Banyuwangi',
-              city: 'Banyuwangi'
+              recipientName: data.recipient_name || data.received_by || 'Pelanggan LBA',
+              phoneNumber: data.recipient_phone || '',
+              streetAddress: streetAddr,
+              district: data.district_name || 'Banyuwangi',
+              city: data.city_name || 'Banyuwangi'
             },
-            productsSubtotal: Number(data.total_amount || 0),
-            totalAmount: Number(data.total_amount || 0),
+            productsSubtotal: Number(data.subtotal_amount || data.total_amount || 0),
+            subtotalAmount: Number(data.subtotal_amount || data.total_amount || 0),
+            totalAmount: Number(data.grand_total || data.total_amount || 0),
+            grandTotal: Number(data.grand_total || data.total_amount || 0),
             paymentMethod: (data.payment_method || 'qris') as any,
+            paymentBank: data.payment_bank || data.payment_type || '',
+            paymentStatus: data.payment_status || 'PENDING',
+            paymentVaOrCode: data.payment_va_or_code || '',
             qrisPayloadString: '',
             qrisImageUrl: '',
             scaleSlipImageUrl: data.scale_slip_url || '',

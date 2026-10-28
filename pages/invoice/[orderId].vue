@@ -32,6 +32,11 @@ const loadInvoiceData = async () => {
     })
     if (res) {
       order.value = res
+      if (route.query.download === '1' || route.query.download === 'true') {
+        setTimeout(() => {
+          handlePrint()
+        }, 600)
+      }
     } else {
       errorMessage.value = 'Dokumen pesanan tidak ditemukan di pangkalan data.'
     }
