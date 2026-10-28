@@ -436,45 +436,36 @@ onUnmounted(() => {
       <span class="font-mono text-slate-600 font-bold text-[11px] bg-slate-100 px-2.5 py-0.5 rounded border border-slate-200">#{{ orderNumber || orderId }}</span>
     </div>
 
-    <!-- Card 1: Status Banner & 20-Minute Countdown Timer -->
+    <!-- Card 1: Status Banner & 20-Minute Countdown Timer (Calm Monospace Clock, Anti-AI Slop) -->
     <div 
-      class="border rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col gap-3 transition-colors"
-      :class="isExpired ? 'bg-red-50/90 border-red-200' : (remainingSeconds < 300 ? 'bg-amber-50/80 border-amber-200' : 'bg-blue-50/70 border-blue-200/80')"
+      class="border rounded-2xl p-4 sm:p-5 shadow-xs flex items-center justify-between flex-wrap gap-3 transition-colors bg-white"
+      :class="isExpired ? 'bg-red-50/80 border-red-200' : (remainingSeconds < 300 ? 'bg-amber-50/70 border-amber-200' : 'border-slate-200/90')"
     >
-      <div class="flex items-center justify-between flex-wrap gap-2">
-        <div class="flex items-center gap-2">
-          <span 
-            class="material-symbols-outlined text-[22px]"
-            :class="isExpired ? 'text-red-600' : (remainingSeconds < 300 ? 'text-amber-600' : 'text-[#103860]')"
-          >
+      <div class="flex items-center gap-2.5">
+        <div 
+          class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+          :class="isExpired ? 'bg-red-100 text-red-600' : (remainingSeconds < 300 ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 text-[#103860]')"
+        >
+          <span class="material-symbols-outlined text-[20px]">
             {{ isExpired ? 'event_busy' : 'timer' }}
           </span>
-          <div class="flex flex-col">
-            <span class="text-xs font-bold" :class="isExpired ? 'text-red-900' : 'text-[#103860]'">
-              {{ isExpired ? 'Batas Waktu Pembayaran Habis' : 'Selesaikan Pembayaran Dalam' }}
-            </span>
-            <span class="text-[11px] text-slate-500">
-              {{ isExpired ? 'Stok ikan telah dilepas kembali ke etalase.' : 'Kunci stok ikan segar & pengiriman subuh.' }}
-            </span>
-          </div>
         </div>
-
-        <!-- Timer Monospace Display -->
-        <div 
-          class="font-mono text-xl sm:text-2xl font-extrabold tracking-wider px-3 py-1 rounded-xl shadow-2xs border"
-          :class="isExpired ? 'bg-red-100 text-red-700 border-red-300' : (remainingSeconds < 300 ? 'bg-amber-100 text-amber-900 border-amber-300 animate-pulse' : 'bg-white text-[#103860] border-blue-200')"
-        >
-          {{ formattedTimer }}
+        <div class="flex flex-col">
+          <span class="text-xs font-bold" :class="isExpired ? 'text-red-900' : 'text-slate-800'">
+            {{ isExpired ? 'Batas Waktu Pembayaran Habis' : 'Selesaikan Pembayaran Dalam' }}
+          </span>
+          <span class="text-[11px] text-slate-500">
+            {{ isExpired ? 'Stok ikan telah dilepas kembali ke etalase.' : 'Kunci stok tangkapan segar & slot pengiriman subuh.' }}
+          </span>
         </div>
       </div>
 
-      <!-- Live Visual Progress Bar -->
-      <div v-if="!isExpired" class="w-full bg-slate-200/80 h-1.5 rounded-full overflow-hidden">
-        <div 
-          class="h-full transition-all duration-1000 rounded-full"
-          :class="remainingSeconds < 300 ? 'bg-red-500' : (remainingSeconds < 600 ? 'bg-amber-500' : 'bg-[#103860]')"
-          :style="{ width: `${timerProgressPercentage}%` }"
-        ></div>
+      <!-- Timer Monospace Display -->
+      <div 
+        class="font-mono text-xl sm:text-2xl font-extrabold tracking-wider px-3.5 py-1.5 rounded-xl border tabular-nums shadow-2xs"
+        :class="isExpired ? 'bg-red-100 text-red-700 border-red-300' : (remainingSeconds < 300 ? 'bg-amber-100 text-amber-900 border-amber-300 animate-pulse' : 'bg-slate-50 text-[#103860] border-slate-200/90')"
+      >
+        {{ formattedTimer }}
       </div>
     </div>
 
@@ -495,45 +486,35 @@ onUnmounted(() => {
 
     <!-- Card 2: Rincian Tagihan & Informasi Nomor Rekening/QRIS (Hanya tampil jika belum expired) -->
     <div v-else class="flex flex-col gap-4">
-      <!-- Tagihan Total Card (Classic Ticket Cutout Style) -->
-      <div class="bg-white border border-slate-200/90 rounded-2xl shadow-xs flex flex-col border-t-4 border-t-[#103860] relative overflow-hidden">
-        <!-- Top Half of Ticket: Total Tagihan & Salin Nominal -->
-        <div class="p-4 sm:p-5 flex items-center justify-between pb-3">
+      <!-- Tagihan Total Card (Clean Corporate Invoice Style, No AI-Slop) -->
+      <div class="bg-white border border-slate-200/90 rounded-2xl shadow-xs flex flex-col overflow-hidden">
+        <!-- Top Section: Total Tagihan & Salin Nominal -->
+        <div class="p-4 sm:p-5 flex items-center justify-between">
           <div class="flex flex-col">
             <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Tagihan Pembayaran</span>
-            <span class="text-xl sm:text-2xl font-extrabold text-[#103860]">
+            <span class="text-2xl sm:text-3xl font-extrabold text-[#103860] tracking-tight">
               Rp {{ (totalAmount || 0).toLocaleString('id-ID') }}
             </span>
           </div>
           <button
             type="button"
             @click="copyToClipboard(String(totalAmount), 'Jumlah pembayaran')"
-            class="px-3 py-1.5 rounded-lg border border-slate-200 hover:border-slate-300 bg-slate-50 text-[11px] font-bold text-[#103860] flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
+            class="px-3.5 py-2 rounded-xl border border-slate-200 hover:border-slate-300 hover:bg-slate-100 bg-slate-50 text-xs font-bold text-[#103860] flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
           >
-            <span class="material-symbols-outlined text-[15px]">content_copy</span>
+            <span class="material-symbols-outlined text-[16px]">content_copy</span>
             <span>Salin Jumlah</span>
           </button>
         </div>
 
-        <!-- Ticket Dashed Divider with Notches -->
-        <div class="relative flex items-center my-0.5">
-          <!-- Left Notch -->
-          <div class="absolute -left-2.5 w-5 h-5 bg-slate-50 rounded-full border-r border-slate-200 shadow-inner"></div>
-          <!-- Dashed Line -->
-          <div class="w-full border-t-2 border-dashed border-slate-200 mx-4"></div>
-          <!-- Right Notch -->
-          <div class="absolute -right-2.5 w-5 h-5 bg-slate-50 rounded-full border-l border-slate-200 shadow-inner"></div>
-        </div>
-
-        <!-- Bottom Half of Ticket: Delivery Slot & Recipient -->
-        <div class="p-4 sm:p-5 pt-3 flex flex-col gap-2 bg-slate-50/40">
-          <div class="flex items-center justify-between text-xs text-slate-500">
+        <!-- Inset Sub-Panel: Delivery Slot & Recipient -->
+        <div class="px-4 py-3 sm:px-5 sm:py-3.5 flex flex-col gap-2 bg-slate-50/70 border-t border-slate-100 text-xs text-slate-500">
+          <div class="flex items-center justify-between">
             <span>Jadwal Pengantaran:</span>
             <span class="font-bold text-[#103860]">{{ deliverySlot }}</span>
           </div>
-          <div class="flex items-center justify-between text-xs text-slate-500">
+          <div class="flex items-center justify-between">
             <span>Penerima:</span>
-            <span class="font-medium text-slate-700 truncate max-w-[260px]">{{ recipientName }} ({{ addressStreet }})</span>
+            <span class="font-medium text-slate-700 truncate max-w-[260px] sm:max-w-xs">{{ recipientName }} ({{ addressStreet }})</span>
           </div>
         </div>
       </div>
