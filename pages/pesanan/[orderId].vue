@@ -151,6 +151,27 @@ const formatCutType = (cut?: string) => {
   }
   return map[cut] || cut.replace(/_/g, ' ')
 }
+
+const statusBadgeInfo = computed(() => {
+  const status = order.value?.status
+  const payStatus = order.value?.paymentStatus
+  if (status === 'CANCELLED') {
+    return { label: 'DIBATALKAN', class: 'bg-rose-50 text-rose-700 border-rose-200' }
+  }
+  if (status === 'EXPIRED') {
+    return { label: 'KEDALUWARSA', class: 'bg-slate-100 text-slate-700 border-slate-300' }
+  }
+  if (status === 'PENDING_PAYMENT' || payStatus === 'PENDING') {
+    return { label: 'MENUNGGU PEMBAYARAN', class: 'bg-amber-50 text-amber-800 border-amber-200' }
+  }
+  if (status === 'DELIVERED') {
+    return { label: 'SELESAI DITERIMA', class: 'bg-emerald-50 text-emerald-700 border-emerald-200' }
+  }
+  if (payStatus === 'PAID') {
+    return { label: 'LUNAS', class: 'bg-emerald-50 text-emerald-700 border-emerald-200' }
+  }
+  return { label: status || 'DIPROSES', class: 'bg-blue-50 text-blue-700 border-blue-200' }
+})
 </script>
 
 <template>
@@ -178,8 +199,11 @@ const formatCutType = (cut?: string) => {
         <div class="flex flex-col">
           <div class="flex items-center gap-2">
             <h1 class="text-base sm:text-lg font-bold text-[#103860]">Detail Pesanan</h1>
-            <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200 uppercase">
-              LUNAS
+            <span
+              class="px-2 py-0.5 rounded text-[10px] font-extrabold border uppercase"
+              :class="statusBadgeInfo.class"
+            >
+              {{ statusBadgeInfo.label }}
             </span>
           </div>
           <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-slate-500 mt-0.5">
@@ -233,14 +257,86 @@ const formatCutType = (cut?: string) => {
       <span class="text-xs font-bold text-slate-600">Memuat rincian pesanan hasil laut...</span>
     </div>
 
+    <!-- Error / Not Found State -->
+    <div v-else-if="!order || orderStore.error" class="w-full bg-white rounded-2xl p-10 border border-slate-200 shadow-xs flex flex-col items-center justify-center gap-3 text-center my-6">
+      <div class="w-14 h-14 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center border border-rose-200">
+        <span class="material-symbols-outlined text-[32px]">search_off</span>
+      </div>
+      <h2 class="text-sm font-bold text-slate-800">Pesanan Tidak Ditemukan</h2>
+      <p class="text-xs text-slate-500 max-w-sm">
+        Nomor pesanan <span class="font-mono font-bold text-slate-700">#{{ orderId }}</span> tidak terdaftar atau terjadi gangguan koneksi.
+      </p>
+      <div class="flex items-center gap-2 pt-2">
+        <button
+          type="button"
+          @click="refreshStatus"
+          class="px-4 py-2 rounded-xl bg-[#103860] hover:bg-[#13446E] text-white text-xs font-bold transition shadow-xs cursor-pointer"
+        >
+          Coba Lagi
+        </button>
+        <NuxtLink
+          to="/pesanan"
+          class="px-4 py-2 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-bold transition cursor-pointer"
+        >
+          Kembali ke Pesanan Saya
+        </NuxtLink>
+      </div>
+    </div>
+
     <!-- 2-Column Tokopedia-Style Grid Layout -->
     <div v-else class="grid grid-cols-1 lg:grid-cols-[1.8fr_1.1fr] gap-5 items-start">
       
       <!-- KOLOM UTAMA (KIRI): Produk, Detail Pengiriman, Live Tracking -->
       <div class="flex flex-col gap-4">
         
-        <!-- Status Card: Cold Room Intake & Rantai Dingin -->
-        <div class="p-4 bg-white border border-slate-200/90 rounded-2xl shadow-xs flex flex-col gap-2.5">
+        <!-- Status Banner: CANCELLED / EXPIRED -->
+        <div v-if="order?.status === 'CANCELLED' || order?.status === 'EXPIRED'" class="p-4 bg-rose-50/70 border border-rose-200 rounded-2xl shadow-xs flex flex-col gap-2.5">
+          <div class="flex items-center justify-between pb-2 border-b border-rose-100">
+            <div class="flex items-center gap-2 text-xs font-bold text-rose-900 uppercase tracking-wider">
+              <span class="material-symbols-outlined text-[18px] text-rose-600">cancel</span>
+              <span>Status Transaksi</span>
+            </div>
+            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-white text-rose-800 border border-rose-200">
+              {{ order.status === 'EXPIRED' ? 'Kedaluwarsa' : 'Pesanan Dibatalkan' }}
+            </span>
+          </div>
+
+          <div class="flex items-center gap-3 pt-1">
+            <div class="w-10 h-10 rounded-xl bg-rose-600 flex items-center justify-center text-white shrink-0 shadow-2xs">
+              <span class="material-symbols-outlined text-[22px]">event_busy</span>
+            </div>
+            <div class="flex flex-col">
+              <span class="text-sm font-extrabold text-rose-950">
+                {{ order.status === 'EXPIRED' ? 'Batas Waktu Pembayaran Telah Habis' : 'Pesanan Telah Dibatalkan' }}
+              </span>
+              <p class="text-xs text-rose-800 leading-snug mt-0.5">
+                Stok komoditas ikan segar telah dikembalikan ke cold storage dermaga Muncar. Silakan buat pesanan baru melalui katalog.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Status Banner: PENDING_PAYMENT -->
+        <div v-else-if="order?.status === 'PENDING_PAYMENT' || order?.paymentStatus === 'PENDING'" class="p-4 bg-amber-50 border border-amber-200 rounded-2xl shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0">
+              <span class="material-symbols-outlined text-[22px]">credit_card_clock</span>
+            </div>
+            <div>
+              <span class="text-xs font-bold text-amber-950 block">Menunggu Pembayaran</span>
+              <p class="text-[11px] text-amber-800 mt-0.5">Selesaikan pembayaran agar pesanan segar Anda segera diproses penyiapan.</p>
+            </div>
+          </div>
+          <NuxtLink
+            :to="`/pembayaran/${resolvedOrderNumber}`"
+            class="px-4 py-2.5 rounded-xl bg-[#103860] hover:bg-[#13446E] text-white text-xs font-bold shrink-0 text-center shadow-xs transition"
+          >
+            Bayar Sekarang
+          </NuxtLink>
+        </div>
+
+        <!-- Status Card: Cold Room Intake & Rantai Dingin Active -->
+        <div v-else class="p-4 bg-white border border-slate-200/90 rounded-2xl shadow-xs flex flex-col gap-2.5">
           <div class="flex items-center justify-between pb-2 border-b border-slate-100">
             <div class="flex items-center gap-2 text-xs font-bold text-[#103860] uppercase tracking-wider">
               <span class="material-symbols-outlined text-[18px] text-emerald-600">ac_unit</span>
@@ -281,9 +377,9 @@ const formatCutType = (cut?: string) => {
           </div>
 
           <!-- List Komoditas -->
-          <div class="flex flex-col divide-y divide-slate-100">
+          <div v-if="order?.items && order.items.length > 0" class="flex flex-col divide-y divide-slate-100">
             <div
-              v-for="(item, idx) in (order?.items || [])"
+              v-for="(item, idx) in order.items"
               :key="idx"
               class="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
             >
@@ -335,6 +431,10 @@ const formatCutType = (cut?: string) => {
                 </span>
               </div>
             </div>
+          </div>
+          <div v-else class="py-6 text-center text-xs text-slate-500 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
+            <span class="material-symbols-outlined text-[24px] text-slate-400 block mb-1">inventory_2</span>
+            <span>Tidak ada rincian komoditas spesifik untuk pesanan ini.</span>
           </div>
         </div>
 
@@ -475,8 +575,11 @@ const formatCutType = (cut?: string) => {
               <span class="material-symbols-outlined text-[16px]">payments</span>
               <span>Rincian Pembayaran</span>
             </h2>
-            <span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-              Terverifikasi
+            <span
+              class="text-[10px] font-bold px-2 py-0.5 rounded border"
+              :class="statusBadgeInfo.class"
+            >
+              {{ statusBadgeInfo.label }}
             </span>
           </div>
 

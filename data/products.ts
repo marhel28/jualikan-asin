@@ -97,9 +97,9 @@ export const PRODUCTS: Product[] = [
       'Bebas Formalin'
     ],
     images: {
-      hero: '',
-      texture: '',
-      scaleSlip: ''
+      hero: 'https://cdn.ammarabufadhel.my.id/products/ikan-kerapu-macan-muncar-texture-668bae1c.webp',
+      texture: 'https://cdn.ammarabufadhel.my.id/products/ikan-kerapu-macan-muncar-texture-668bae1c.webp',
+      scaleSlip: 'https://cdn.ammarabufadhel.my.id/qc/ikan-kerapu-macan-muncar-scaleSlip-292250c2.webp'
     },
     availableCuts: [
       {
@@ -149,9 +149,9 @@ export const PRODUCTS: Product[] = [
       'Bebas Formalin'
     ],
     images: {
-      hero: '',
-      texture: '',
-      scaleSlip: ''
+      hero: 'https://cdn.ammarabufadhel.my.id/products/ikan-kerapu-macan-muncar-hero-b15ce231.webp',
+      texture: 'https://cdn.ammarabufadhel.my.id/products/ikan-kerapu-macan-muncar-texture-668bae1c.webp',
+      scaleSlip: 'https://cdn.ammarabufadhel.my.id/qc/ikan-kerapu-macan-muncar-scaleSlip-292250c2.webp'
     },
     availableCuts: [
       {
@@ -194,9 +194,9 @@ export const PRODUCTS: Product[] = [
       'Bebas Pengawet'
     ],
     images: {
-      hero: '',
-      texture: '',
-      scaleSlip: ''
+      hero: 'https://cdn.ammarabufadhel.my.id/products/ikan-tongkol-lisong-segar-hero-a990fbbd.webp',
+      texture: 'https://cdn.ammarabufadhel.my.id/products/ikan-tongkol-lisong-segar-hero-a990fbbd.webp',
+      scaleSlip: 'https://cdn.ammarabufadhel.my.id/qc/fillet-ikan-baronang-tulis-scaleSlip-502d9720.webp'
     },
     availableCuts: [
       {
@@ -239,9 +239,9 @@ export const PRODUCTS: Product[] = [
       'Bebas Formalin'
     ],
     images: {
-      hero: '',
-      texture: '',
-      scaleSlip: ''
+      hero: 'https://cdn.ammarabufadhel.my.id/products/ikan-lemuru-segar-muncar-hero-5397da81.webp',
+      texture: 'https://cdn.ammarabufadhel.my.id/products/ikan-lemuru-segar-muncar-hero-5397da81.webp',
+      scaleSlip: 'https://cdn.ammarabufadhel.my.id/qc/fillet-ikan-baronang-tulis-scaleSlip-502d9720.webp'
     },
     availableCuts: [
       {
@@ -277,9 +277,9 @@ export const PRODUCTS: Product[] = [
       'Bebas Formalin'
     ],
     images: {
-      hero: '',
-      texture: '',
-      scaleSlip: ''
+      hero: 'https://cdn.ammarabufadhel.my.id/products/kakap-merah-karang-banyuwangi-primary-3f19ab8d.webp',
+      texture: 'https://cdn.ammarabufadhel.my.id/products/kakap-merah-karang-banyuwangi-primary-3f19ab8d.webp',
+      scaleSlip: 'https://cdn.ammarabufadhel.my.id/qc/ikan-kerapu-macan-muncar-scaleSlip-292250c2.webp'
     },
     availableCuts: [
       {
@@ -329,9 +329,9 @@ export const PRODUCTS: Product[] = [
       'Bebas Pengawet'
     ],
     images: {
-      hero: '',
-      texture: '',
-      scaleSlip: ''
+      hero: 'https://cdn.ammarabufadhel.my.id/products/cumi-sero-segar-muncar-hero-db3bf362.webp',
+      texture: 'https://cdn.ammarabufadhel.my.id/products/cumi-sero-segar-muncar-hero-db3bf362.webp',
+      scaleSlip: 'https://cdn.ammarabufadhel.my.id/qc/fillet-ikan-baronang-tulis-scaleSlip-502d9720.webp'
     },
     availableCuts: [
       {
@@ -367,9 +367,9 @@ export const PRODUCTS: Product[] = [
       'Bebas Formalin'
     ],
     images: {
-      hero: '',
-      texture: '',
-      scaleSlip: ''
+      hero: 'https://cdn.ammarabufadhel.my.id/products/kakap-merah-karang-banyuwangi-primary-3f19ab8d.webp',
+      texture: 'https://cdn.ammarabufadhel.my.id/products/kakap-merah-karang-banyuwangi-primary-3f19ab8d.webp',
+      scaleSlip: 'https://cdn.ammarabufadhel.my.id/qc/ikan-kerapu-macan-muncar-scaleSlip-292250c2.webp'
     },
     availableCuts: [
       {
@@ -406,9 +406,9 @@ export const PRODUCTS: Product[] = [
       'Bebas Formalin'
     ],
     images: {
-      hero: '',
-      texture: '',
-      scaleSlip: ''
+      hero: 'https://cdn.ammarabufadhel.my.id/products/asset-1534483509719-49b99676.webp',
+      texture: 'https://cdn.ammarabufadhel.my.id/products/asset-1534483509719-49b99676.webp',
+      scaleSlip: 'https://cdn.ammarabufadhel.my.id/qc/fillet-ikan-baronang-tulis-scaleSlip-502d9720.webp'
     },
     availableCuts: [
       {
@@ -445,9 +445,9 @@ export const PRODUCTS: Product[] = [
       'Timbangan Akurat Terverifikasi'
     ],
     images: {
-      hero: '',
-      texture: '',
-      scaleSlip: ''
+      hero: 'https://cdn.ammarabufadhel.my.id/products/fillet-ikan-baronang-tulis-hero-47685fbf.webp',
+      texture: 'https://cdn.ammarabufadhel.my.id/products/fillet-ikan-baronang-tulis-texture-bec184e3.webp',
+      scaleSlip: 'https://cdn.ammarabufadhel.my.id/qc/fillet-ikan-baronang-tulis-scaleSlip-502d9720.webp'
     },
     availableCuts: [
       {

@@ -70,11 +70,11 @@ const goBack = () => {
 }
 
 const historyOrders = computed(() =>
-  orderStore.ordersHistory.filter(o => o.status === 'DELIVERED' || o.status === 'EXPIRED')
+  orderStore.ordersHistory.filter(o => o.status === 'DELIVERED' || o.status === 'EXPIRED' || o.status === 'CANCELLED')
 )
 
 const activeOrders = computed(() =>
-  orderStore.ordersHistory.filter(o => o.status !== 'DELIVERED' && o.status !== 'EXPIRED')
+  orderStore.ordersHistory.filter(o => o.status !== 'DELIVERED' && o.status !== 'EXPIRED' && o.status !== 'CANCELLED')
 )
 
 const getStatusLabel = (ord: Order) => {
@@ -91,6 +91,10 @@ const getStatusLabel = (ord: Order) => {
       return 'Dalam Pengantaran'
     case 'DELIVERED':
       return 'Selesai Diterima'
+    case 'CANCELLED':
+      return 'Dibatalkan'
+    case 'EXPIRED':
+      return 'Kedaluwarsa'
     default:
       return 'Diproses'
   }
@@ -109,8 +113,24 @@ const getStepIndex = (ord: Order) => {
       return 3
     case 'DELIVERED':
       return 4
+    case 'CANCELLED':
+    case 'EXPIRED':
+      return 0
     default:
       return 2
+  }
+}
+
+const getHistoryStatusBadge = (ord: Order) => {
+  switch (ord.status) {
+    case 'DELIVERED':
+      return { label: 'Telah Diterima', class: 'bg-emerald-50 text-emerald-700 border-emerald-200/60' }
+    case 'CANCELLED':
+      return { label: 'Dibatalkan', class: 'bg-rose-50 text-rose-700 border-rose-200/60' }
+    case 'EXPIRED':
+      return { label: 'Kedaluwarsa', class: 'bg-slate-100 text-slate-600 border-slate-200/60' }
+    default:
+      return { label: ord.status, class: 'bg-slate-50 text-slate-600 border-slate-200/60' }
   }
 }
 
@@ -411,7 +431,7 @@ const handleQuickTrack = () => {
                     <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
                   </NuxtLink>
 
-                  <NuxtLink :to="`/pesanan/${ord.id}`"
+                  <NuxtLink :to="`/pesanan/${ord.orderNumber || ord.id}`"
                     class="w-full py-2.5 px-3 rounded-xl border border-[#103860]/20 bg-blue-50/50 hover:bg-blue-50 text-xs font-bold text-[#103860] flex items-center justify-center gap-1.5 transition-colors text-center">
                     <span class="material-symbols-outlined text-[16px]">local_shipping</span>
                     <span>Lacak Pesanan Live</span>
@@ -456,8 +476,9 @@ const handleQuickTrack = () => {
                 <span class="text-[11px] text-slate-400">{{ hOrder.deliverySlotLabel || hOrder.deliverySlot }}</span>
               </div>
               <span
-                class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
-                Telah Diterima
+                class="px-2.5 py-1 rounded-full text-[11px] font-bold border"
+                :class="getHistoryStatusBadge(hOrder).class">
+                {{ getHistoryStatusBadge(hOrder).label }}
               </span>
             </div>
 
@@ -492,7 +513,7 @@ const handleQuickTrack = () => {
                 <span class="font-bold text-slate-900 font-mono text-sm">
                   Rp {{ (hOrder.totalAmount || 0).toLocaleString('id-ID') }}
                 </span>
-                <NuxtLink :to="`/pesanan/${hOrder.id}`"
+                <NuxtLink :to="`/pesanan/${hOrder.orderNumber || hOrder.id}`"
                   class="ml-2 px-3.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-[#103860] font-bold text-xs transition-colors">
                   Detail & Lacak
                 </NuxtLink>

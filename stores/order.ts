@@ -11,6 +11,7 @@ export type OrderStatus =
   | 'OUT_FOR_DELIVERY'
   | 'DELIVERED'
   | 'EXPIRED'
+  | 'CANCELLED'
 
 export type PaymentMethod = 'qris_dynamic' | 'virtual_account' | 'credit_card'
 
@@ -425,8 +426,30 @@ export const useOrderStore = defineStore('order', {
           const ordNum = data.order_number || data.id
           const status = data.cold_chain_status || 'PENDING_PAYMENT'
 
-          // Build dynamic 4 simple tracking stages based on current backend status
-          const stages: TrackingStage[] = [
+          // Build dynamic tracking stages based on current backend status
+          const isCancelled = status === 'CANCELLED' || status === 'EXPIRED'
+          const stages: TrackingStage[] = isCancelled
+            ? [
+                {
+                  stageIndex: 1,
+                  key: 'created',
+                  title: 'Pesanan Dibuat',
+                  description: 'Pesanan tercatat di sistem',
+                  timestamp: data.created_at ? new Date(data.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB' : 'Tercatat',
+                  isCompleted: true,
+                  isActive: false
+                },
+                {
+                  stageIndex: 2,
+                  key: 'cancelled',
+                  title: status === 'EXPIRED' ? 'Kedaluwarsa' : 'Pesanan Dibatalkan',
+                  description: data.status_logs?.[0]?.notes || (status === 'EXPIRED' ? 'Batas waktu pembayaran habis, alokasi stok ikan dikembalikan ke cold storage.' : 'Pesanan telah dibatalkan.'),
+                  timestamp: data.updated_at ? new Date(data.updated_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB' : null,
+                  isCompleted: true,
+                  isActive: true
+                }
+              ]
+            : [
             {
               stageIndex: 1,
               key: 'created',
@@ -599,7 +622,29 @@ export const useOrderStore = defineStore('order', {
             }))
 
             const status = (o.cold_chain_status || o.payment_status || 'CONFIRMED') as OrderStatus
-            const stages: TrackingStage[] = [
+            const isCancelled = status === 'CANCELLED' || status === 'EXPIRED'
+            const stages: TrackingStage[] = isCancelled
+              ? [
+                  {
+                    stageIndex: 1,
+                    key: 'created',
+                    title: 'Pesanan Dibuat',
+                    description: 'Pesanan tercatat di sistem',
+                    timestamp: o.created_at ? new Date(o.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB' : 'Tercatat',
+                    isCompleted: true,
+                    isActive: false
+                  },
+                  {
+                    stageIndex: 2,
+                    key: 'cancelled',
+                    title: status === 'EXPIRED' ? 'Kedaluwarsa' : 'Pesanan Dibatalkan',
+                    description: status === 'EXPIRED' ? 'Batas waktu pembayaran habis, alokasi stok ikan dikembalikan ke cold storage.' : 'Pesanan telah dibatalkan.',
+                    timestamp: null,
+                    isCompleted: true,
+                    isActive: true
+                  }
+                ]
+              : [
               {
                 stageIndex: 1,
                 key: 'created',
@@ -681,7 +726,7 @@ export const useOrderStore = defineStore('order', {
 
           this.ordersHistory = mappedOrders
           if (mappedOrders.length > 0) {
-            const active = mappedOrders.find(o => o.status !== 'DELIVERED') || mappedOrders[0]
+            const active = mappedOrders.find(o => o.status !== 'DELIVERED' && o.status !== 'EXPIRED' && o.status !== 'CANCELLED') || mappedOrders[0]
             if (active) {
               this.currentOrder = active
             }

@@ -140,7 +140,7 @@ const deleteAddress = async (id: string) => {
 
 
 const activeOrdersCount = computed(() => {
-  return orderStore.ordersHistory.filter(o => o.status !== 'DELIVERED' && o.status !== 'EXPIRED').length
+  return orderStore.ordersHistory.filter(o => o.status !== 'DELIVERED' && o.status !== 'EXPIRED' && o.status !== 'CANCELLED').length
 })
 
 const getStatusBadge = (status: string) => {
@@ -158,6 +158,10 @@ const getStatusBadge = (status: string) => {
       return { label: 'Dalam Pengantaran', class: 'bg-indigo-50 text-indigo-700 border-indigo-200' }
     case 'DELIVERED':
       return { label: 'Telah Diterima', class: 'bg-emerald-50 text-emerald-700 border-emerald-200' }
+    case 'CANCELLED':
+      return { label: 'Dibatalkan', class: 'bg-rose-50 text-rose-700 border-rose-200' }
+    case 'EXPIRED':
+      return { label: 'Kedaluwarsa', class: 'bg-slate-100 text-slate-600 border-slate-300' }
     default:
       return { label: status, class: 'bg-slate-50 text-slate-700 border-slate-200' }
   }
@@ -627,7 +631,12 @@ const handleLogout = () => {
               >
                 <div class="flex items-center justify-between pb-2.5 border-b border-slate-100">
                   <div class="flex flex-col">
-                    <span class="font-mono text-xs font-bold text-[#103860]">#{{ ord.id }}</span>
+                    <NuxtLink
+                      :to="`/pesanan/${ord.orderNumber || ord.id}`"
+                      class="font-mono text-xs font-bold text-[#103860] hover:underline"
+                    >
+                      #{{ ord.id }}
+                    </NuxtLink>
                     <span class="text-[10px] text-slate-400">{{ ord.deliverySlot }}</span>
                   </div>
                   <span
@@ -665,7 +674,7 @@ const handleLogout = () => {
                   <div class="flex items-center gap-2 shrink-0">
                     <span class="font-bold text-slate-900">Rp {{ (ord.totalAmount || 0).toLocaleString('id-ID') }}</span>
                     <NuxtLink
-                      :to="`/pesanan`"
+                      :to="`/pesanan/${ord.orderNumber || ord.id}`"
                       class="px-2.5 py-1.5 rounded-lg bg-[#103860] hover:bg-[#13446E] text-white font-semibold text-[11px] transition-colors"
                     >
                       Lacak
