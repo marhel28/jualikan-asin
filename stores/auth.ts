@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { useWishlistStore } from './wishlist'
 import { useOrderStore } from './order'
+import { useCartStore } from './cart'
 
 export interface UserAddress {
   id: string
@@ -191,6 +192,10 @@ export const useAuthStore = defineStore('auth', {
                 defaultAddress: res.user.default_address || null,
                 addresses: res.user.addresses || []
               }
+              try {
+                const cartStore = useCartStore()
+                cartStore.syncOnLogin()
+              } catch {}
               return true
             }
           }
@@ -302,6 +307,10 @@ export const useAuthStore = defineStore('auth', {
               addresses: res.user.addresses || []
             }
             this.successMessage = `Pendaftaran berhasil. Selamat datang, ${u}!`
+            try {
+              const cartStore = useCartStore()
+              cartStore.syncOnLogin()
+            } catch {}
             return true
           }
         } catch (err: any) {
@@ -362,6 +371,10 @@ export const useAuthStore = defineStore('auth', {
             try {
               const wishlistStore = useWishlistStore()
               wishlistStore.fetchWishlist()
+            } catch {}
+            try {
+              const cartStore = useCartStore()
+              cartStore.syncOnLogin()
             } catch {}
             return true
           }
@@ -621,6 +634,11 @@ export const useAuthStore = defineStore('auth', {
           orderStore.currentOrder = null
         } catch {}
 
+        try {
+          const cartStore = useCartStore()
+          cartStore.resetCartOnLogout()
+        } catch {}
+
         // Langsung tendang ke Beranda secara bersih
         navigateTo('/', { replace: true })
       }
@@ -663,6 +681,10 @@ export const useAuthStore = defineStore('auth', {
               try {
                 const wishlistStore = useWishlistStore()
                 wishlistStore.fetchWishlist()
+              } catch {}
+              try {
+                const cartStore = useCartStore()
+                cartStore.fetchCartFromDb()
               } catch {}
             } else {
               this.isAuthenticated = false

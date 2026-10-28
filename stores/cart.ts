@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { useApi } from '~/composables/useApi'
+import { useAuthStore } from './auth'
 
 export type CutType = 'utuh_bersih' | 'fillet_tanpa_kulit' | 'steak_melintang'
 export type PackagingType = 'thermal_bag' | 'styrofoam_box'
@@ -93,61 +94,11 @@ export interface CartState {
   kitchenNotes: string
   shippingPolicy: ShippingPolicy
   isLoadingPolicy: boolean
+  isSyncing: boolean
+  isDbLoaded: boolean
 }
 
-const DEFAULT_MOCK_ITEMS: CartItem[] = [
-  {
-    id: 'mock-1',
-    productId: 'tenggiri-papan',
-    name: 'Ikan Tenggiri Papan Segar',
-    slug: 'ikan-tenggiri-papan-segar',
-    imageUrl: 'https://cdn.ammarabufadhel.my.id/products/asset-1544551763-ced7aa4f.webp',
-    pricePerKg: 92000,
-    quantityKg: 1,
-    cutType: 'utuh_bersih',
-    cutLabel: 'Utuh Bersih',
-    yieldRatio: 0.85,
-    estimatedNetWeightKg: 0.85,
-    estimatedNetWeightGrams: 850,
-    separateSoupBones: true,
-    itemSubtotal: 92000,
-    unit: 'kg'
-  },
-  {
-    id: 'mock-2',
-    productId: 'kerapu-macan',
-    name: 'Fillet Kerapu Cantang Muncar 500g',
-    slug: 'fillet-kerapu-cantang-muncar',
-    imageUrl: 'https://cdn.ammarabufadhel.my.id/products/asset-1519708227418-ea35d7d8.webp',
-    pricePerKg: 70000,
-    quantityKg: 2,
-    cutType: 'fillet_tanpa_kulit',
-    cutLabel: 'Fillet Tanpa Kulit',
-    yieldRatio: 0.52,
-    estimatedNetWeightKg: 1.04,
-    estimatedNetWeightGrams: 1040,
-    separateSoupBones: true,
-    itemSubtotal: 140000,
-    unit: 'pack'
-  },
-  {
-    id: 'mock-3',
-    productId: 'steak-tuna-yellowfin',
-    name: 'Steak Tuna Yellowfin 200g',
-    slug: 'steak-tuna-yellowfin-200g',
-    imageUrl: 'https://cdn.ammarabufadhel.my.id/banners/banner-cold-chain-b625a8a3.webp',
-    pricePerKg: 34000,
-    quantityKg: 1,
-    cutType: 'steak_melintang',
-    cutLabel: 'Steak Melintang',
-    yieldRatio: 0.80,
-    estimatedNetWeightKg: 0.20,
-    estimatedNetWeightGrams: 200,
-    separateSoupBones: false,
-    itemSubtotal: 34000,
-    unit: 'pack'
-  }
-]
+let syncDebounceTimer: any = null
 
 export const useCartStore = defineStore('cart', {
   state: (): CartState => ({
@@ -164,7 +115,9 @@ export const useCartStore = defineStore('cart', {
       pricePerKm: 2500,
       warehouseAddress: 'Dermaga Pelabuhan Perikanan Pantai Muncar, Banyuwangi'
     },
-    isLoadingPolicy: false
+    isLoadingPolicy: false,
+    isSyncing: false,
+    isDbLoaded: false
   }),
 
   getters: {
@@ -290,6 +243,7 @@ export const useCartStore = defineStore('cart', {
         })
       }
       this.persist()
+      this.debouncedSyncItem(cleanProductId, cutType, separateSoupBones, (existingIndex > -1 ? this.items[existingIndex].quantityKg : safeQty))
     },
 
     updateQuantity(itemId: string, delta: number) {
@@ -310,28 +264,178 @@ export const useCartStore = defineStore('cart', {
           item.estimatedNetWeightGrams = Math.round(item.quantityKg * item.yieldRatio * 1000)
         }
         this.persist()
+        this.debouncedSyncItem(item.productId, item.cutType, item.separateSoupBones, newQty)
       }
     },
 
     removeItem(itemId: string) {
+      const it = this.items.find(i => i.id === itemId)
       this.items = this.items.filter(i => i.id !== itemId)
       this.persist()
+      if (it) {
+        this.debouncedSyncItem(it.productId, it.cutType, it.separateSoupBones, 0)
+      }
     },
 
     setPackagingType(type: PackagingType) {
       this.packagingType = type
       this.persist()
+      this.syncPackagingToBackend(type)
     },
 
     setKitchenNotes(notes: string) {
       this.kitchenNotes = notes.slice(0, 250)
       this.persist()
+      this.syncNotesToBackend(this.kitchenNotes)
     },
 
-    clearCart() {
+    async clearCart() {
       this.items = []
       this.kitchenNotes = ''
       this.persist()
+      if (typeof window !== 'undefined') {
+        const authStore = useAuthStore()
+        if (authStore.isAuthenticated) {
+          try {
+            const api = useApi()
+            await api.delete('/cart')
+          } catch {}
+        }
+      }
+    },
+
+    debouncedSyncItem(productId: string, cutType: CutType, separateSoupBones: boolean, quantityKg: number) {
+      if (typeof window === 'undefined') return
+      const authStore = useAuthStore()
+      if (!authStore.isAuthenticated) return
+
+      if (syncDebounceTimer) clearTimeout(syncDebounceTimer)
+      syncDebounceTimer = setTimeout(async () => {
+        try {
+          this.isSyncing = true
+          const api = useApi()
+          await api.put('/cart/items', {
+            product_id: productId,
+            cut_type: cutType,
+            separate_soup_bones: separateSoupBones,
+            quantity_kg: quantityKg
+          })
+        } catch (err) {
+          console.error('Gagal menyinkronkan item keranjang ke DB:', err)
+        } finally {
+          this.isSyncing = false
+        }
+      }, 400)
+    },
+
+    async syncPackagingToBackend(type: PackagingType) {
+      if (typeof window === 'undefined') return
+      const authStore = useAuthStore()
+      if (!authStore.isAuthenticated) return
+      try {
+        const api = useApi()
+        await api.put('/cart/packaging', { packaging_type: type })
+      } catch (err) {
+        console.error('Gagal menyinkronkan kemasan ke DB:', err)
+      }
+    },
+
+    async syncNotesToBackend(notes: string) {
+      if (typeof window === 'undefined') return
+      const authStore = useAuthStore()
+      if (!authStore.isAuthenticated) return
+      try {
+        const api = useApi()
+        await api.put('/cart/notes', { kitchen_notes: notes })
+      } catch (err) {
+        console.error('Gagal menyinkronkan catatan dapur ke DB:', err)
+      }
+    },
+
+    async syncOnLogin() {
+      if (typeof window === 'undefined') return
+      const authStore = useAuthStore()
+      if (!authStore.isAuthenticated) return
+
+      this.isSyncing = true
+      try {
+        const api = useApi()
+        const guestItems = this.items.map(it => ({
+          product_id: it.productId || it.id,
+          cut_type: it.cutType,
+          separate_soup_bones: it.separateSoupBones,
+          quantity_kg: it.quantityKg
+        }))
+
+        const payload = {
+          items: guestItems,
+          packaging_type: this.packagingType,
+          kitchen_notes: this.kitchenNotes
+        }
+
+        const data = await api.post<any>('/cart/sync', payload)
+        if (data && Array.isArray(data.items)) {
+          this.applyBackendCart(data)
+        }
+      } catch (err) {
+        console.error('Gagal sinkronisasi keranjang login:', err)
+      } finally {
+        this.isSyncing = false
+      }
+    },
+
+    async fetchCartFromDb() {
+      if (typeof window === 'undefined') return
+      const authStore = useAuthStore()
+      if (!authStore.isAuthenticated) return
+
+      try {
+        const api = useApi()
+        const data = await api.get<any>('/cart')
+        if (data && Array.isArray(data.items)) {
+          this.applyBackendCart(data)
+        }
+      } catch (err) {
+        console.error('Gagal mengambil keranjang DB:', err)
+      }
+    },
+
+    applyBackendCart(data: any) {
+      this.packagingType = (data.packaging_type as PackagingType) || 'thermal_bag'
+      this.kitchenNotes = data.kitchen_notes || ''
+      this.items = data.items.map((it: any) => ({
+        id: it.id,
+        productId: it.product_id,
+        name: it.name,
+        slug: it.slug,
+        imageUrl: it.image_url,
+        pricePerKg: it.price_per_kg,
+        quantityKg: it.quantity_kg,
+        cutType: it.cut_type,
+        cutLabel: it.cut_label,
+        yieldRatio: it.yield_ratio,
+        estimatedNetWeightKg: it.estimated_net_weight_kg,
+        estimatedNetWeightGrams: it.estimated_net_weight_grams,
+        separateSoupBones: it.separate_soup_bones,
+        itemSubtotal: it.item_subtotal,
+        unit: it.unit || 'kg'
+      }))
+      this.isDbLoaded = true
+      this.persist()
+    },
+
+    resetCartOnLogout() {
+      this.items = []
+      this.packagingType = 'thermal_bag'
+      this.kitchenNotes = ''
+      this.isDbLoaded = false
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.removeItem('lba_cart_items')
+          localStorage.removeItem('lba_cart_packaging')
+          localStorage.removeItem('lba_cart_notes')
+        } catch {}
+      }
     },
 
     persist() {
@@ -365,6 +469,11 @@ export const useCartStore = defineStore('cart', {
           if (pack) this.packagingType = pack
           const notes = localStorage.getItem('lba_cart_notes')
           if (notes) this.kitchenNotes = notes
+
+          const authStore = useAuthStore()
+          if (authStore.isAuthenticated) {
+            this.fetchCartFromDb()
+          }
         } catch {}
       }
       this.fetchDeliveryConfig()
