@@ -525,7 +525,8 @@ onMounted(async () => {
           soldCount: Number(bp.soldCount ?? bp.sold_count ?? local?.soldCount ?? 0),
           wishlistCount: Number(bp.wishlistCount ?? bp.wishlist_count ?? local?.wishlistCount ?? 0),
           qualityBadges: bp.qualityBadges || local?.qualityBadges || ['Tangkapan Hari Ini', 'Bebas Formalin'],
-          supportsSoupBones: bp.supportsSoupBones ?? local?.supportsSoupBones ?? false
+          supportsSoupBones: bp.supportsSoupBones ?? local?.supportsSoupBones ?? false,
+          customVariants: bp.customVariants || bp.custom_variants || local?.customVariants || null
         } as Product
       })
     } else {

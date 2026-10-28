@@ -211,7 +211,8 @@ const fetchProducts = async () => {
           tags: local?.tags || ['Segar Muncar', 'Cold Chain'],
           unit: bp.unit || local?.unit || 'kg',
           soldCount: Number(bp.soldCount ?? bp.sold_count ?? local?.soldCount ?? 0),
-          wishlistCount: Number(bp.wishlistCount ?? bp.wishlist_count ?? local?.wishlistCount ?? 0)
+          wishlistCount: Number(bp.wishlistCount ?? bp.wishlist_count ?? local?.wishlistCount ?? 0),
+          customVariants: bp.customVariants || bp.custom_variants || local?.customVariants || null
         } as Product
       })
     }

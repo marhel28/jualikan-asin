@@ -342,6 +342,26 @@ export const PRODUCTS: Product[] = [
         yieldBadge: '~850g/kg (Rendemen 85%)'
       }
     ],
+    customVariants: {
+      tier1: {
+        name: 'Pilihan Berat',
+        unit: 'gram',
+        options: [
+          { id: 'opt-100', label: '100', weightValue: 0.1, price: 8000, stock: 20, inStock: true },
+          { id: 'opt-150', label: '150', weightValue: 0.15, price: 11500, stock: 20, inStock: true },
+          { id: 'opt-200', label: '200', weightValue: 0.2, price: 15500, stock: 20, inStock: true },
+          { id: 'opt-250', label: '250', weightValue: 0.25, price: 19500, stock: 20, inStock: true }
+        ]
+      },
+      tier2: {
+        enabled: false,
+        name: 'Pilihan Kulit',
+        options: [
+          { id: 'cut-1', label: 'Tanpa Kulit', priceDelta: 0, inStock: true },
+          { id: 'cut-2', label: 'Dengan Kulit', priceDelta: 0, inStock: false }
+        ]
+      }
+    },
     supportsSoupBones: false,
     isFeatured: true,
     soldCount: 540,
