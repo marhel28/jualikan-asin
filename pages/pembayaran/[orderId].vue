@@ -390,8 +390,8 @@ onUnmounted(() => {
       <div class="flex items-center justify-between relative px-2 sm:px-4">
         <!-- Connecting Line Background -->
         <div class="absolute left-8 right-8 top-3.5 -translate-y-1/2 h-0.5 bg-slate-200 -z-0"></div>
-        <!-- Active Connecting Line (Progress up to Step 3) -->
-        <div class="absolute left-8 w-[66%] top-3.5 -translate-y-1/2 h-0.5 bg-emerald-500 -z-0"></div>
+        <!-- Active Connecting Line (Progress up to Step 2: Pembayaran) -->
+        <div class="absolute left-8 w-[33%] top-3.5 -translate-y-1/2 h-0.5 bg-emerald-500 -z-0 transition-all duration-500"></div>
 
         <!-- Step 1: Keranjang (Selesai) -->
         <div class="flex flex-col items-center gap-1.5 z-10">
@@ -401,28 +401,28 @@ onUnmounted(() => {
           <span class="text-[10px] sm:text-[11px] font-bold text-slate-700">Keranjang</span>
         </div>
 
-        <!-- Step 2: Pengiriman (Selesai) -->
-        <div class="flex flex-col items-center gap-1.5 z-10">
-          <div class="w-7 h-7 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold shadow-xs">
-            <span class="material-symbols-outlined text-[15px]">check</span>
-          </div>
-          <span class="text-[10px] sm:text-[11px] font-bold text-slate-700">Pengiriman</span>
-        </div>
-
-        <!-- Step 3: Pembayaran (Aktif) -->
+        <!-- Step 2: Pembayaran (Aktif) -->
         <div class="flex flex-col items-center gap-1.5 z-10">
           <div class="w-7 h-7 rounded-full bg-[#103860] text-white flex items-center justify-center text-xs font-bold shadow-xs ring-4 ring-blue-100 animate-pulse">
-            <span class="text-[11px]">3</span>
+            <span class="text-[11px]">2</span>
           </div>
           <span class="text-[10px] sm:text-[11px] font-extrabold text-[#103860]">Pembayaran</span>
         </div>
 
-        <!-- Step 4: Dikemas (Menunggu) -->
+        <!-- Step 3: Dikemas (Menunggu) -->
+        <div class="flex flex-col items-center gap-1.5 z-10">
+          <div class="w-7 h-7 rounded-full bg-slate-100 border border-slate-300 text-slate-400 flex items-center justify-center text-xs font-semibold">
+            <span class="text-[11px]">3</span>
+          </div>
+          <span class="text-[10px] sm:text-[11px] font-medium text-slate-400">Dikemas</span>
+        </div>
+
+        <!-- Step 4: Pengiriman (Menunggu) -->
         <div class="flex flex-col items-center gap-1.5 z-10">
           <div class="w-7 h-7 rounded-full bg-slate-100 border border-slate-300 text-slate-400 flex items-center justify-center text-xs font-semibold">
             <span class="text-[11px]">4</span>
           </div>
-          <span class="text-[10px] sm:text-[11px] font-medium text-slate-400">Dikemas</span>
+          <span class="text-[10px] sm:text-[11px] font-medium text-slate-400">Pengiriman</span>
         </div>
       </div>
     </div>
