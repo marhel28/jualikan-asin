@@ -242,12 +242,20 @@ export const useOrderStore = defineStore('order', {
             items: cartStore.items.map(it => {
               const rawPid = it.productId || it.id || ''
               const cleanPid = rawPid.includes('-opt-') ? rawPid.split('-opt-')[0] : rawPid
+              const isPack = it.unit === 'pack'
+              const grossKg = isPack
+                ? Number((((it.netGrams || 250) * it.quantityKg) / 1000).toFixed(3))
+                : it.quantityKg
+              const netKg = it.estimatedNetWeightKg || grossKg
               return {
                 product_id: cleanPid,
+                product_name: it.name,
                 cut_type: it.cutType,
-                gross_weight: it.quantityKg,
-                estimated_net_weight: it.estimatedNetWeightKg,
+                gross_weight: Math.max(0.05, grossKg),
+                estimated_net_weight: Math.max(0.05, netKg),
                 soup_bones_separated: it.separateSoupBones || false,
+                item_subtotal: it.itemSubtotal,
+                price_per_kg: it.pricePerKg
               }
             }),
             delivery_slot: checkoutStore.slotDetails.title,
