@@ -222,97 +222,73 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Official Invoice & Print Recommendation Banner -->
-    <div class="bg-gradient-to-r from-[#103860] to-[#13446E] text-white rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4 print:hidden">
-      <div class="flex items-center gap-3.5">
-        <div class="w-11 h-11 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center shrink-0">
-          <span class="material-symbols-outlined text-[24px] text-emerald-400">receipt_long</span>
+    <!-- 1 Kartu Struk Tunggal Terpadu (Unified Official Receipt Slip) -->
+    <div class="bg-white border border-slate-200/90 rounded-2xl p-5 sm:p-7 shadow-xs flex flex-col gap-5">
+      <!-- 1. Header Kuitansi: Konfirmasi Status (Kiri) & Aksi Faktur Resmi (Kanan) -->
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+        <div class="flex items-start sm:items-center gap-3.5">
+          <div class="w-11 h-11 min-w-[44px] min-h-[44px] aspect-square rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center text-[#059669] shrink-0 self-start sm:self-center">
+            <span class="material-symbols-outlined text-[24px]">check_circle</span>
+          </div>
+          <div class="flex flex-col">
+            <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+              <h1 class="text-base sm:text-lg font-extrabold text-[#103860] tracking-tight">
+                Pembayaran Berhasil Dikonfirmasi
+              </h1>
+              <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200 uppercase shrink-0">
+                LUNAS
+              </span>
+            </div>
+            <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-slate-500 mt-0.5">
+              <span class="font-mono font-bold text-slate-700">#{{ resolvedOrderCode }}</span>
+              <span>•</span>
+              <span>{{ formatDate(orderData?.paid_at) }}</span>
+            </div>
+          </div>
         </div>
-        <div class="flex flex-col">
-          <div class="flex items-center gap-2">
-            <span class="text-xs font-extrabold text-white tracking-wide uppercase">Faktur Resmi & Kuitansi Lunas</span>
-            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
-              Dokumen Sah
+
+        <!-- Aksi Akses Dokumen Faktur Resmi A4 (Pojok Kanan) -->
+        <div class="flex items-center gap-2 w-full sm:w-auto print:hidden">
+          <NuxtLink
+            :to="`/invoice/${resolvedOrderCode}`"
+            class="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-[#103860] text-xs font-bold transition-all shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer"
+          >
+            <span class="material-symbols-outlined text-[16px] text-emerald-600">description</span>
+            <span>Buka Faktur Resmi A4</span>
+          </NuxtLink>
+          <button
+            type="button"
+            @click="handlePrintReceipt"
+            class="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 hover:text-slate-900 transition-all cursor-pointer"
+            title="Cetak Kuitansi Ringkas"
+          >
+            <span class="material-symbols-outlined text-[18px]">print</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 2. Integrated Cold Chain Status Strip (Bar Horizontal Rantai Dingin Terpadu) -->
+      <div class="p-3 sm:p-3.5 rounded-xl bg-blue-50/70 border border-blue-100 flex items-center justify-between gap-3 text-xs">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+          <div class="flex flex-col min-w-0">
+            <span class="font-bold text-[#103860] truncate">
+              Tahap 1: Cold Room Intake Pelabuhan Muncar (-20°C)
+            </span>
+            <span class="text-[11px] text-slate-600 truncate">
+              Ikan tangkapan hari ini siap dibekukan cepat untuk mengunci kesegaran alami daging.
             </span>
           </div>
-          <p class="text-[11px] text-slate-200 mt-0.5">
-            Nomor Faktur: <span class="font-mono font-bold text-white">{{ resolvedInvoiceCode }}</span>
-          </p>
         </div>
-      </div>
-      <div class="flex items-center gap-2 w-full sm:w-auto">
-        <NuxtLink
-          :to="`/invoice/${resolvedOrderCode}`"
-          class="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer"
-        >
-          <span class="material-symbols-outlined text-[16px]">print</span>
-          <span>Buka Faktur Resmi A4</span>
-        </NuxtLink>
-      </div>
-    </div>
-
-    <!-- Success Header Card with LUNAS Seal -->
-    <div class="bg-white border border-slate-200/90 rounded-2xl p-6 sm:p-8 shadow-xs flex flex-col items-center text-center gap-4 relative overflow-hidden">
-      <!-- Watermark Stamp Background -->
-      <div class="absolute -right-6 -bottom-6 pointer-events-none select-none opacity-5">
-        <span class="material-symbols-outlined text-[180px] text-emerald-700">verified</span>
-      </div>
-
-      <div class="w-16 h-16 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center text-[#059669]">
-        <span class="material-symbols-outlined text-[36px]">check_circle</span>
-      </div>
-
-      <div class="flex flex-col gap-1.5 max-w-md">
-        <div class="inline-flex items-center justify-center gap-1.5 mx-auto px-3 py-1 rounded-full bg-emerald-100/70 border border-emerald-300 text-emerald-900 text-xs font-bold uppercase tracking-wider mb-1">
-          <span class="material-symbols-outlined text-[16px] text-emerald-700">verified</span>
-          <span>Pembayaran Lunas Terverifikasi</span>
-        </div>
-        <h1 class="text-xl sm:text-2xl font-extrabold text-[#103860] tracking-tight">
-          Pesanan Hasil Laut Sedang Diproses
-        </h1>
-        <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
-          Dana telah diterima secara otomatis oleh sistem perbankan. Ikan tangkapan harian Anda segera dipindahkan ke ruang pembekuan Cold Hub Muncar.
-        </p>
-      </div>
-
-      <!-- Live Cold Chain Stage Pill -->
-      <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold">
-        <span class="w-2 h-2 rounded-full bg-[#059669] animate-pulse"></span>
-        <span>Tahap 1: Cold Room Intake Muncar (-20°C)</span>
-      </div>
-    </div>
-
-    <!-- Itemized Detailed Order Receipt Card -->
-    <div class="bg-white border border-slate-200/90 rounded-2xl p-5 sm:p-6 shadow-xs flex flex-col gap-5">
-      <!-- Header Meta & Stamp -->
-      <div class="flex items-start justify-between pb-4 border-b border-slate-100 flex-wrap gap-3">
-        <div class="flex flex-col gap-1">
-          <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Identitas Transaksi</span>
-          <div class="flex items-center gap-2">
-            <span class="text-base font-extrabold text-[#103860] font-mono">
-              #{{ resolvedOrderCode }}
-            </span>
-            <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200 uppercase">
-              LUNAS
-            </span>
-          </div>
-          <span class="text-[11px] text-slate-500">
-            Waktu Lunas: <span class="font-semibold text-slate-700">{{ formatDate(orderData?.paid_at) }}</span>
-          </span>
-        </div>
-
-        <div class="text-right">
-          <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Total Pembayaran Lunas</span>
-          <div class="text-lg sm:text-xl font-extrabold text-emerald-700">
-            {{ formatRupiah(orderData?.grand_total || orderData?.total_amount) }}
-          </div>
-          <span class="text-[10px] text-slate-500 font-medium">Bebas PPN Hasil Laut Segar</span>
+        <div class="hidden sm:flex items-center gap-1 text-[11px] font-semibold text-blue-900 bg-white/80 px-2.5 py-1 rounded-lg border border-blue-200/60 shrink-0">
+          <span class="material-symbols-outlined text-[13px] text-blue-700">ac_unit</span>
+          <span>Suhu Terkontrol</span>
         </div>
       </div>
 
-      <!-- Logistics & Delivery Detail Grid -->
+      <!-- 3. Key Logistics & Payment Detail Grid (2 Kolom) -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs">
-        <!-- Delivery Schedule -->
+        <!-- Jadwal Tiba Pengiriman -->
         <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex flex-col gap-1.5">
           <div class="flex items-center gap-1.5 text-slate-500">
             <span class="material-symbols-outlined text-[16px] text-[#103860]">schedule</span>
@@ -326,7 +302,7 @@ onMounted(() => {
           </span>
         </div>
 
-        <!-- Payment Method Details -->
+        <!-- Kanal Pembayaran -->
         <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex flex-col gap-1.5">
           <div class="flex items-center gap-1.5 text-slate-500">
             <span class="material-symbols-outlined text-[16px] text-[#103860]">payments</span>
@@ -342,7 +318,7 @@ onMounted(() => {
         </div>
       </div>
 
-      <!-- Recipient & Address Detail -->
+      <!-- 4. Recipient & GPS Coordinate Block -->
       <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex flex-col gap-2 text-xs">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-1.5 text-slate-600">
@@ -368,8 +344,8 @@ onMounted(() => {
         </div>
       </div>
 
-      <!-- Itemized Catch-Weight Product Breakdown -->
-      <div class="flex flex-col gap-3 pt-2">
+      <!-- 5. Itemized Catch-Weight Product Breakdown -->
+      <div class="flex flex-col gap-3 pt-1">
         <div class="flex items-center justify-between">
           <span class="text-xs font-bold text-[#103860] uppercase tracking-wider">
             Rincian Komoditas Laut (Catch-Weight)
@@ -422,7 +398,7 @@ onMounted(() => {
         </div>
       </div>
 
-      <!-- Financial Reconciliation Summary -->
+      <!-- 6. Financial Reconciliation Summary -->
       <div class="flex flex-col gap-2 pt-3 border-t border-slate-100 text-xs">
         <div class="flex items-center justify-between text-slate-600">
           <span>Subtotal Komoditas Tangkapan:</span>
@@ -459,7 +435,7 @@ onMounted(() => {
         </div>
       </div>
 
-      <!-- Cold Chain Assurance Box -->
+      <!-- 7. Cold Chain Assurance Box -->
       <div class="p-3.5 rounded-xl bg-emerald-50/60 border border-emerald-200/80 flex items-start gap-3">
         <span class="material-symbols-outlined text-[20px] text-[#059669] shrink-0 mt-0.5">ac_unit</span>
         <div class="flex flex-col gap-0.5 text-xs text-emerald-950">
@@ -471,33 +447,23 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Navigation & Action Buttons -->
+    <!-- Bilah 2 Tombol Aksi Bawah Seimbang (Primary Navy & Secondary Outline) -->
     <div class="flex flex-col sm:flex-row items-center gap-3 print:hidden">
       <NuxtLink
-        :to="`/invoice/${resolvedOrderCode}`"
-        class="w-full sm:flex-1 py-3.5 px-5 rounded-xl bg-white border border-[#103860] text-[#103860] hover:bg-blue-50/50 text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer"
+        :to="`/pesanan/${resolvedOrderCode}`"
+        class="w-full sm:flex-1 py-3.5 px-5 rounded-xl bg-[#103860] hover:bg-[#13446E] text-white text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer"
       >
-        <span class="material-symbols-outlined text-[18px]">description</span>
-        <span>Buka Faktur Resmi A4 (Cetak / PDF)</span>
+        <span class="material-symbols-outlined text-[18px]">local_shipping</span>
+        <span>Lacak Perjalanan Rantai Dingin</span>
       </NuxtLink>
 
       <NuxtLink
-        :to="`/pesanan/${resolvedOrderCode}`"
-        class="w-full sm:flex-1 py-3.5 px-5 rounded-xl bg-[#103860] text-white text-xs font-bold hover:bg-[#13446E] transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer"
+        to="/katalog"
+        class="w-full sm:w-auto py-3.5 px-6 rounded-xl bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-bold transition-all shadow-2xs flex items-center justify-center gap-2 cursor-pointer"
       >
-        <span class="material-symbols-outlined text-[18px]">local_shipping</span>
-        <span>Lacak Rantai Dingin</span>
+        <span class="material-symbols-outlined text-[18px]">storefront</span>
+        <span>Belanja Ikan Lainnya</span>
       </NuxtLink>
-
-      <button
-        type="button"
-        @click="handlePrintReceipt"
-        class="w-full sm:w-auto py-3.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-        title="Cetak Kuitansi Ringkas"
-      >
-        <span class="material-symbols-outlined text-[18px]">print</span>
-        <span class="hidden sm:inline">Cetak</span>
-      </button>
     </div>
   </div>
 </template>
