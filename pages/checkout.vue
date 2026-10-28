@@ -30,6 +30,59 @@ const isShippingFormOpen = ref(false)
 const isSubmitting = ref(false)
 const editingAddress = ref<UserAddress | null>(null)
 
+interface PaymentOption {
+  key: string
+  title: string
+  channels: string
+  logo: string
+  badge?: string
+}
+
+const availablePaymentMethods: PaymentOption[] = [
+  {
+    key: 'qris',
+    title: 'QRIS Dinamis',
+    channels: 'BCA, Mandiri, GoPay, OVO, ShopeePay',
+    logo: '/images/payments/qris.svg',
+    badge: 'Instan'
+  },
+  {
+    key: 'bca',
+    title: 'BCA Virtual Account',
+    channels: 'm-BCA, KlikBCA, myBCA, ATM BCA',
+    logo: '/images/payments/bca.svg',
+    badge: 'Otomatis'
+  },
+  {
+    key: 'bni',
+    title: 'BNI Virtual Account',
+    channels: 'BNI Mobile, ATM BNI, SMS Banking',
+    logo: '/images/payments/bni.svg',
+    badge: 'Otomatis'
+  },
+  {
+    key: 'bri',
+    title: 'BRI Virtual Account',
+    channels: 'BRImo, Internet Banking BRI, ATM BRI',
+    logo: '/images/payments/bri.svg',
+    badge: 'Otomatis'
+  },
+  {
+    key: 'mandiri',
+    title: 'Mandiri Bill / E-Channel',
+    channels: "Livin' by Mandiri & ATM Mandiri",
+    logo: '/images/payments/mandiri.svg',
+    badge: 'Otomatis'
+  },
+  {
+    key: 'permata',
+    title: 'Permata Virtual Account',
+    channels: 'PermataMobile X & ATM Permata',
+    logo: '/images/payments/permata.svg',
+    badge: 'Otomatis'
+  }
+]
+
 const handleSelectAddress = (addr: UserAddress) => {
   const lat = addr.latitude != null ? Number(addr.latitude) : null
   const lng = addr.longitude != null ? Number(addr.longitude) : null
@@ -470,114 +523,45 @@ const handleProceedToPayment = async () => {
         </div>
       </div>
 
-      <!-- Metode Pembayaran Pilihan -->
-      <div class="bg-white border border-slate-200/80 rounded-xl p-4 shadow-xs flex flex-col gap-2.5">
-        <span class="text-xs font-bold text-[#103860] uppercase tracking-wider pb-1 border-b border-slate-100 flex items-center gap-1.5">
-          <span class="material-symbols-outlined text-[16px]">account_balance_wallet</span>
-          Metode Pembayaran
-        </span>
+      <!-- Metode Pembayaran Pilihan (In-App Bank & QRIS Cards) -->
+      <div class="bg-white border border-slate-200/80 rounded-xl p-4 shadow-xs flex flex-col gap-3">
+        <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+          <span class="text-xs font-bold text-[#103860] uppercase tracking-wider flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-[16px]">account_balance_wallet</span>
+            Metode Pembayaran
+          </span>
+          <span class="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/80 flex items-center gap-1">
+            <span class="material-symbols-outlined text-[12px]">verified</span>
+            Verifikasi Otomatis
+          </span>
+        </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <!-- 1. QRIS Dinamis -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           <button
+            v-for="method in availablePaymentMethods"
+            :key="method.key"
             type="button"
-            @click="orderStore.setPaymentBank('qris')"
-            class="p-2.5 rounded-xl border text-left transition-all flex flex-col gap-1 cursor-pointer"
-            :class="orderStore.selectedPaymentBank === 'qris' ? 'border-[#103860] bg-blue-50/60 ring-2 ring-[#103860]/20' : 'border-slate-200 hover:border-slate-300 bg-white'"
+            @click="orderStore.setPaymentBank(method.key)"
+            class="p-2.5 sm:p-3 rounded-xl border text-left transition-all flex items-center justify-between gap-3 cursor-pointer group shadow-2xs"
+            :class="orderStore.selectedPaymentBank === method.key ? 'border-[#103860] bg-blue-50/60 ring-2 ring-[#103860]/20' : 'border-slate-200/90 hover:border-slate-300 bg-white'"
           >
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-bold text-[#103860] flex items-center gap-1.5">
-                <span class="material-symbols-outlined text-[16px] text-sky-700">qr_code_2</span>
-                QRIS Dinamis
-              </span>
-              <span v-if="orderStore.selectedPaymentBank === 'qris'" class="material-symbols-outlined text-[16px] text-[#059669]">check_circle</span>
+            <div class="flex items-center gap-3 min-w-0">
+              <!-- Official Logo Box -->
+              <div class="w-14 sm:w-16 h-9 sm:h-10 bg-white rounded-lg border border-slate-200/80 flex items-center justify-center p-1.5 shrink-0 shadow-3xs group-hover:border-slate-300">
+                <img :src="method.logo" :alt="method.title" class="max-h-6 sm:max-h-7 max-w-[48px] sm:max-w-[54px] object-contain" />
+              </div>
+              <div class="flex flex-col min-w-0">
+                <span class="text-xs font-bold text-slate-900 group-hover:text-[#103860] truncate">{{ method.title }}</span>
+                <span class="text-[10px] text-slate-500 truncate">{{ method.channels }}</span>
+              </div>
             </div>
-            <span class="text-[10px] text-slate-500">BCA, Mandiri, GoPay, OVO, ShopeePay</span>
-          </button>
-
-          <!-- 2. BCA Virtual Account -->
-          <button
-            type="button"
-            @click="orderStore.setPaymentBank('bca')"
-            class="p-2.5 rounded-xl border text-left transition-all flex flex-col gap-1 cursor-pointer"
-            :class="orderStore.selectedPaymentBank === 'bca' ? 'border-[#103860] bg-blue-50/60 ring-2 ring-[#103860]/20' : 'border-slate-200 hover:border-slate-300 bg-white'"
-          >
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-bold text-[#103860] flex items-center gap-1.5">
-                <span class="material-symbols-outlined text-[16px] text-blue-700">account_balance</span>
-                BCA Virtual Account
+            <!-- Checkmark Indicator -->
+            <div class="shrink-0">
+              <span v-if="orderStore.selectedPaymentBank === method.key" class="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold shadow-2xs">
+                <span class="material-symbols-outlined text-[14px]">check</span>
               </span>
-              <span v-if="orderStore.selectedPaymentBank === 'bca'" class="material-symbols-outlined text-[16px] text-[#059669]">check_circle</span>
+              <span v-else class="w-5 h-5 rounded-full border-2 border-slate-300 block group-hover:border-slate-400"></span>
             </div>
-            <span class="text-[10px] text-slate-500">Verifikasi Otomatis 24 Jam</span>
-          </button>
-
-          <!-- 3. BNI Virtual Account -->
-          <button
-            type="button"
-            @click="orderStore.setPaymentBank('bni')"
-            class="p-2.5 rounded-xl border text-left transition-all flex flex-col gap-1 cursor-pointer"
-            :class="orderStore.selectedPaymentBank === 'bni' ? 'border-[#103860] bg-blue-50/60 ring-2 ring-[#103860]/20' : 'border-slate-200 hover:border-slate-300 bg-white'"
-          >
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-bold text-[#103860] flex items-center gap-1.5">
-                <span class="material-symbols-outlined text-[16px] text-amber-700">account_balance</span>
-                BNI Virtual Account
-              </span>
-              <span v-if="orderStore.selectedPaymentBank === 'bni'" class="material-symbols-outlined text-[16px] text-[#059669]">check_circle</span>
-            </div>
-            <span class="text-[10px] text-slate-500">ATM, Mobile & SMS Banking</span>
-          </button>
-
-          <!-- 4. BRI Virtual Account -->
-          <button
-            type="button"
-            @click="orderStore.setPaymentBank('bri')"
-            class="p-2.5 rounded-xl border text-left transition-all flex flex-col gap-1 cursor-pointer"
-            :class="orderStore.selectedPaymentBank === 'bri' ? 'border-[#103860] bg-blue-50/60 ring-2 ring-[#103860]/20' : 'border-slate-200 hover:border-slate-300 bg-white'"
-          >
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-bold text-[#103860] flex items-center gap-1.5">
-                <span class="material-symbols-outlined text-[16px] text-blue-800">account_balance</span>
-                BRI Virtual Account
-              </span>
-              <span v-if="orderStore.selectedPaymentBank === 'bri'" class="material-symbols-outlined text-[16px] text-[#059669]">check_circle</span>
-            </div>
-            <span class="text-[10px] text-slate-500">BRImo & ATM BRI</span>
-          </button>
-
-          <!-- 5. Mandiri Bill -->
-          <button
-            type="button"
-            @click="orderStore.setPaymentBank('mandiri')"
-            class="p-2.5 rounded-xl border text-left transition-all flex flex-col gap-1 cursor-pointer"
-            :class="orderStore.selectedPaymentBank === 'mandiri' ? 'border-[#103860] bg-blue-50/60 ring-2 ring-[#103860]/20' : 'border-slate-200 hover:border-slate-300 bg-white'"
-          >
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-bold text-[#103860] flex items-center gap-1.5">
-                <span class="material-symbols-outlined text-[16px] text-yellow-700">receipt_long</span>
-                Mandiri Bill / E-Channel
-              </span>
-              <span v-if="orderStore.selectedPaymentBank === 'mandiri'" class="material-symbols-outlined text-[16px] text-[#059669]">check_circle</span>
-            </div>
-            <span class="text-[10px] text-slate-500">Livin' by Mandiri & ATM</span>
-          </button>
-
-          <!-- 6. Permata Virtual Account -->
-          <button
-            type="button"
-            @click="orderStore.setPaymentBank('permata')"
-            class="p-2.5 rounded-xl border text-left transition-all flex flex-col gap-1 cursor-pointer"
-            :class="orderStore.selectedPaymentBank === 'permata' ? 'border-[#103860] bg-blue-50/60 ring-2 ring-[#103860]/20' : 'border-slate-200 hover:border-slate-300 bg-white'"
-          >
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-bold text-[#103860] flex items-center gap-1.5">
-                <span class="material-symbols-outlined text-[16px] text-emerald-700">account_balance</span>
-                Permata Virtual Account
-              </span>
-              <span v-if="orderStore.selectedPaymentBank === 'permata'" class="material-symbols-outlined text-[16px] text-[#059669]">check_circle</span>
-            </div>
-            <span class="text-[10px] text-slate-500">PermataMobile X & ATM</span>
           </button>
         </div>
       </div>

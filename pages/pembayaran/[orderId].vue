@@ -102,6 +102,107 @@ const bankDisplayTitle = computed(() => {
   return 'Virtual Account Bank'
 })
 
+interface SwitchPaymentOption {
+  key: string
+  title: string
+  channels: string
+  logo: string
+}
+
+const switchPaymentMethods: SwitchPaymentOption[] = [
+  {
+    key: 'qris',
+    title: 'QRIS Dinamis',
+    channels: 'BCA, Mandiri, GoPay, OVO, ShopeePay',
+    logo: '/images/payments/qris.svg',
+  },
+  {
+    key: 'bca',
+    title: 'BCA Virtual Account',
+    channels: 'm-BCA, KlikBCA, myBCA, ATM BCA',
+    logo: '/images/payments/bca.svg',
+  },
+  {
+    key: 'bni',
+    title: 'BNI Virtual Account',
+    channels: 'BNI Mobile, ATM BNI, SMS Banking',
+    logo: '/images/payments/bni.svg',
+  },
+  {
+    key: 'bri',
+    title: 'BRI Virtual Account',
+    channels: 'BRImo, Internet Banking BRI, ATM BRI',
+    logo: '/images/payments/bri.svg',
+  },
+  {
+    key: 'mandiri',
+    title: 'Mandiri Bill / E-Channel',
+    channels: "Livin' by Mandiri & ATM Mandiri",
+    logo: '/images/payments/mandiri.svg',
+  },
+  {
+    key: 'permata',
+    title: 'Permata Virtual Account',
+    channels: 'PermataMobile X & ATM Permata',
+    logo: '/images/payments/permata.svg',
+  },
+]
+
+const isSwitchModalOpen = ref(false)
+const selectedSwitchBank = ref<string>('qris')
+const isSwitching = ref(false)
+
+const currentPaymentLogo = computed(() => {
+  const b = (paymentBank.value || '').toLowerCase()
+  if (b === 'bca') return '/images/payments/bca.svg'
+  if (b === 'bni') return '/images/payments/bni.svg'
+  if (b === 'bri') return '/images/payments/bri.svg'
+  if (b === 'mandiri') return '/images/payments/mandiri.svg'
+  if (b === 'permata') return '/images/payments/permata.svg'
+  return '/images/payments/qris.svg'
+})
+
+const openSwitchModal = () => {
+  selectedSwitchBank.value = paymentBank.value || 'qris'
+  isSwitchModalOpen.value = true
+}
+
+const closeSwitchModal = () => {
+  if (isSwitching.value) return
+  isSwitchModalOpen.value = false
+}
+
+const handleApplySwitchPayment = async () => {
+  if (!selectedSwitchBank.value || selectedSwitchBank.value === paymentBank.value) {
+    isSwitchModalOpen.value = false
+    return
+  }
+  isSwitching.value = true
+  try {
+    const api = useApi()
+    const target = orderNumber.value || orderId.value
+    const res = await api.post<any>(`/orders/${target}/switch-payment-method`, {
+      payment_bank: selectedSwitchBank.value,
+    })
+    if (res && res.success) {
+      paymentBank.value = res.payment_bank
+      paymentMethod.value = res.payment_method
+      paymentPayload.value = res.payment_payload
+      if (res.expires_in_seconds) {
+        remainingSeconds.value = res.expires_in_seconds
+      }
+      isSwitchModalOpen.value = false
+      showToast(`Metode pembayaran berhasil diubah ke ${bankDisplayTitle.value}!`)
+    } else {
+      showToast('Gagal mengubah metode pembayaran. Silakan coba kembali.')
+    }
+  } catch (err: any) {
+    showToast(err?.detail || err?.message || 'Gagal mengubah metode pembayaran.')
+  } finally {
+    isSwitching.value = false
+  }
+}
+
 const fallbackCopy = (text: string) => {
   try {
     const el = document.createElement('textarea')
@@ -439,7 +540,28 @@ onUnmounted(() => {
 
       <!-- SUB-VIEW 1: METODE QRIS DINAMIS -->
       <div v-if="isQris" class="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs flex flex-col items-center gap-4 text-center">
-        <!-- Brand Header QRIS -->
+        <!-- Brand Header QRIS with Switch Button -->
+        <div class="w-full flex items-center justify-between pb-3 border-b border-slate-100">
+          <div class="flex items-center gap-2.5">
+            <div class="w-12 sm:w-14 h-8 bg-white rounded-lg border border-slate-200/90 flex items-center justify-center p-1 shrink-0 shadow-3xs">
+              <img src="/images/payments/qris.svg" alt="QRIS Dinamis" class="max-h-5 max-w-[42px] object-contain" />
+            </div>
+            <div class="flex flex-col text-left">
+              <span class="text-xs font-bold text-slate-900">QRIS Dinamis Resmi</span>
+              <span class="text-[10px] text-slate-500">Scan via m-Banking & E-Wallet</span>
+            </div>
+          </div>
+          <button
+            type="button"
+            @click="openSwitchModal"
+            class="px-2.5 py-1.5 rounded-lg border border-slate-200 hover:border-[#103860] hover:text-[#103860] bg-slate-50 hover:bg-white text-[11px] font-bold text-slate-700 transition-colors flex items-center gap-1 cursor-pointer shadow-3xs shrink-0"
+          >
+            <span class="material-symbols-outlined text-[15px] text-[#103860]">swap_horiz</span>
+            <span>Ubah Metode</span>
+          </button>
+        </div>
+
+        <!-- Brand Sub-Header QRIS -->
         <div class="flex flex-col items-center gap-1">
           <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-bold">
             <span class="material-symbols-outlined text-[16px] text-emerald-600">verified</span>
@@ -505,15 +627,22 @@ onUnmounted(() => {
       <div v-else-if="isMandiri" class="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs flex flex-col gap-4">
         <div class="flex items-center justify-between pb-3 border-b border-slate-100">
           <div class="flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-lg bg-yellow-50 border border-yellow-200 flex items-center justify-center text-yellow-800">
-              <span class="material-symbols-outlined text-[18px]">receipt_long</span>
+            <div class="w-12 sm:w-14 h-8 bg-white rounded-lg border border-slate-200/90 flex items-center justify-center p-1 shrink-0 shadow-3xs">
+              <img src="/images/payments/mandiri.svg" alt="Mandiri Bill" class="max-h-5 max-w-[42px] object-contain" />
             </div>
-            <div class="flex flex-col">
+            <div class="flex flex-col text-left">
               <span class="text-xs font-bold text-slate-900">Mandiri Bill Payment (E-Channel)</span>
-              <span class="text-[11px] text-slate-500">Pembayaran tagihan otomatis 24 jam</span>
+              <span class="text-[10px] text-slate-500">Pembayaran tagihan otomatis 24 jam</span>
             </div>
           </div>
-          <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-700">Bank Mandiri</span>
+          <button
+            type="button"
+            @click="openSwitchModal"
+            class="px-2.5 py-1.5 rounded-lg border border-slate-200 hover:border-[#103860] hover:text-[#103860] bg-slate-50 hover:bg-white text-[11px] font-bold text-slate-700 transition-colors flex items-center gap-1 cursor-pointer shadow-3xs shrink-0"
+          >
+            <span class="material-symbols-outlined text-[15px] text-[#103860]">swap_horiz</span>
+            <span>Ubah Metode</span>
+          </button>
         </div>
 
         <!-- Kode Perusahaan & Nomor Tagihan -->
@@ -572,17 +701,22 @@ onUnmounted(() => {
       <div v-else class="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs flex flex-col gap-4">
         <div class="flex items-center justify-between pb-3 border-b border-slate-100">
           <div class="flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-lg bg-blue-50 border border-blue-200 flex items-center justify-center text-[#103860]">
-              <span class="material-symbols-outlined text-[18px]">account_balance</span>
+            <div class="w-12 sm:w-14 h-8 bg-white rounded-lg border border-slate-200/90 flex items-center justify-center p-1 shrink-0 shadow-3xs">
+              <img :src="currentPaymentLogo" :alt="bankDisplayTitle" class="max-h-5 max-w-[42px] object-contain" />
             </div>
-            <div class="flex flex-col">
+            <div class="flex flex-col text-left">
               <span class="text-xs font-bold text-slate-900">{{ bankDisplayTitle }}</span>
-              <span class="text-[11px] text-slate-500">Transfer otomatis tanpa konfirmasi manual</span>
+              <span class="text-[10px] text-slate-500">Transfer otomatis tanpa konfirmasi manual</span>
             </div>
           </div>
-          <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 text-[#103860] uppercase">
-            {{ paymentBank || 'Bank' }}
-          </span>
+          <button
+            type="button"
+            @click="openSwitchModal"
+            class="px-2.5 py-1.5 rounded-lg border border-slate-200 hover:border-[#103860] hover:text-[#103860] bg-slate-50 hover:bg-white text-[11px] font-bold text-slate-700 transition-colors flex items-center gap-1 cursor-pointer shadow-3xs shrink-0"
+          >
+            <span class="material-symbols-outlined text-[15px] text-[#103860]">swap_horiz</span>
+            <span>Ubah Metode</span>
+          </button>
         </div>
 
         <!-- Card Nomor Virtual Account -->
@@ -742,6 +876,88 @@ onUnmounted(() => {
         </NuxtLink>
       </div>
     </div>
+
+    <!-- Switch Payment Method Modal / Bottom Sheet -->
+    <Teleport to="body">
+      <div v-if="isSwitchModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <!-- Backdrop -->
+        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity" @click="closeSwitchModal"></div>
+        
+        <!-- Dialog Container -->
+        <div class="relative bg-white rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-2xl z-10 flex flex-col gap-4 border border-slate-100 max-h-[90vh] overflow-y-auto">
+          <!-- Header -->
+          <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-lg bg-blue-50 text-[#103860] flex items-center justify-center">
+                <span class="material-symbols-outlined text-[20px]">account_balance_wallet</span>
+              </div>
+              <div class="flex flex-col">
+                <h3 class="text-sm font-bold text-slate-900">Ubah Metode Pembayaran</h3>
+                <p class="text-[11px] text-slate-500">Pilih Virtual Account Bank atau QRIS Dinamis</p>
+              </div>
+            </div>
+            <button 
+              type="button" 
+              @click="closeSwitchModal" 
+              class="w-7 h-7 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center cursor-pointer"
+              aria-label="Tutup Dialog"
+            >
+              <span class="material-symbols-outlined text-[18px]">close</span>
+            </button>
+          </div>
+
+          <!-- 6 Official Bank & QRIS Cards Grid -->
+          <div class="grid grid-cols-1 gap-2.5">
+            <button
+              v-for="method in switchPaymentMethods"
+              :key="method.key"
+              type="button"
+              @click="selectedSwitchBank = method.key"
+              class="p-3 rounded-xl border text-left transition-all flex items-center justify-between gap-3 cursor-pointer group shadow-2xs"
+              :class="selectedSwitchBank === method.key ? 'border-[#103860] bg-blue-50/60 ring-2 ring-[#103860]/20' : 'border-slate-200/90 hover:border-slate-300 bg-white'"
+            >
+              <div class="flex items-center gap-3 min-w-0">
+                <!-- Official Logo Box -->
+                <div class="w-14 sm:w-16 h-9 sm:h-10 bg-white rounded-lg border border-slate-200/80 flex items-center justify-center p-1.5 shrink-0 shadow-3xs group-hover:border-slate-300">
+                  <img :src="method.logo" :alt="method.title" class="max-h-6 sm:max-h-7 max-w-[48px] sm:max-w-[54px] object-contain" />
+                </div>
+                <div class="flex flex-col min-w-0">
+                  <span class="text-xs font-bold text-slate-900 group-hover:text-[#103860] truncate">{{ method.title }}</span>
+                  <span class="text-[10px] text-slate-500 truncate">{{ method.channels }}</span>
+                </div>
+              </div>
+              <!-- Selection Radio / Checkmark Indicator -->
+              <div class="shrink-0">
+                <span v-if="selectedSwitchBank === method.key" class="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold shadow-2xs">
+                  <span class="material-symbols-outlined text-[14px]">check</span>
+                </span>
+                <span v-else class="w-5 h-5 rounded-full border-2 border-slate-300 block group-hover:border-slate-400"></span>
+              </div>
+            </button>
+          </div>
+
+          <!-- Footer Actions -->
+          <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+            <button
+              type="button"
+              @click="closeSwitchModal"
+              class="px-4 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-xs font-bold text-slate-600 transition-colors cursor-pointer"
+            >
+              Batal
+            </button>
+            <button
+              type="button"
+              @click="handleApplySwitchPayment"
+              :disabled="isSwitching || selectedSwitchBank === paymentBank"
+              class="px-5 py-2.5 rounded-xl bg-[#103860] hover:bg-[#13446E] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span v-if="isSwitching" class="material-symbols-outlined text-[16px] animate-spin">sync</span>
+              <span>{{ isSwitching ? 'Memproses...' : 'Terapkan Metode Pembayaran' }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
 
     <!-- Toast Notification Floating (Teleport style at bottom of page) -->
     <Transition name="fade">
