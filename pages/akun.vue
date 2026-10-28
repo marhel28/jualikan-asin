@@ -139,9 +139,63 @@ const deleteAddress = async (id: string) => {
 }
 
 
+type OrderFilterType = 'all' | 'active' | 'completed' | 'cancelled'
+const orderFilter = ref<OrderFilterType>('all')
+
 const activeOrdersCount = computed(() => {
   return orderStore.ordersHistory.filter(o => o.status !== 'DELIVERED' && o.status !== 'EXPIRED' && o.status !== 'CANCELLED').length
 })
+
+const completedOrdersCount = computed(() => {
+  return orderStore.ordersHistory.filter(o => o.status === 'DELIVERED').length
+})
+
+const cancelledOrdersCount = computed(() => {
+  return orderStore.ordersHistory.filter(o => o.status === 'CANCELLED' || o.status === 'EXPIRED').length
+})
+
+const filteredOrders = computed(() => {
+  const history = orderStore.ordersHistory || []
+  if (orderFilter.value === 'active') {
+    return history.filter(o => o.status !== 'DELIVERED' && o.status !== 'EXPIRED' && o.status !== 'CANCELLED')
+  }
+  if (orderFilter.value === 'completed') {
+    return history.filter(o => o.status === 'DELIVERED')
+  }
+  if (orderFilter.value === 'cancelled') {
+    return history.filter(o => o.status === 'CANCELLED' || o.status === 'EXPIRED')
+  }
+  return history
+})
+
+const getOrderActionButton = (ord: any) => {
+  if (ord.status === 'CANCELLED' || ord.status === 'EXPIRED') {
+    return {
+      label: 'Detail',
+      to: `/pesanan/${ord.orderNumber || ord.id}`,
+      class: 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200'
+    }
+  }
+  if (ord.status === 'PENDING_PAYMENT') {
+    return {
+      label: 'Bayar',
+      to: `/pembayaran/${ord.orderNumber || ord.id}`,
+      class: 'bg-amber-600 hover:bg-amber-700 text-white'
+    }
+  }
+  if (ord.status === 'DELIVERED') {
+    return {
+      label: 'Detail',
+      to: `/pesanan/${ord.orderNumber || ord.id}`,
+      class: 'bg-blue-50 hover:bg-blue-100 text-[#103860] border border-blue-200'
+    }
+  }
+  return {
+    label: 'Lacak',
+    to: `/pesanan/${ord.orderNumber || ord.id}`,
+    class: 'bg-[#103860] hover:bg-[#13446E] text-white'
+  }
+}
 
 const getStatusBadge = (status: string) => {
   switch (status) {
@@ -593,6 +647,93 @@ const handleLogout = () => {
               </button>
             </div>
 
+            <!-- Status Filter Pills -->
+            <div v-if="orderStore.ordersHistory.length > 0" class="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+              <button
+                type="button"
+                @click="orderFilter = 'all'"
+                class="px-3 py-1.5 rounded-lg font-semibold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5"
+                :class="orderFilter === 'all'
+                  ? 'bg-[#103860] text-white shadow-2xs'
+                  : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'"
+              >
+                <span>Semua</span>
+                <span
+                  class="px-1.5 py-0.2 rounded-full text-[10px] font-mono"
+                  :class="orderFilter === 'all' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'"
+                >
+                  {{ orderStore.ordersHistory.length }}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                @click="orderFilter = 'active'"
+                class="px-3 py-1.5 rounded-lg font-semibold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5"
+                :class="orderFilter === 'active'
+                  ? 'bg-[#103860] text-white shadow-2xs'
+                  : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'"
+              >
+                <span>Berjalan</span>
+                <span
+                  v-if="activeOrdersCount > 0"
+                  class="px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold"
+                  :class="orderFilter === 'active' ? 'bg-emerald-500 text-white' : 'bg-emerald-100 text-emerald-800'"
+                >
+                  {{ activeOrdersCount }}
+                </span>
+                <span
+                  v-else
+                  class="px-1.5 py-0.2 rounded-full text-[10px] font-mono"
+                  :class="orderFilter === 'active' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'"
+                >
+                  0
+                </span>
+              </button>
+
+              <button
+                type="button"
+                @click="orderFilter = 'completed'"
+                class="px-3 py-1.5 rounded-lg font-semibold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5"
+                :class="orderFilter === 'completed'
+                  ? 'bg-[#103860] text-white shadow-2xs'
+                  : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'"
+              >
+                <span>Selesai</span>
+                <span
+                  class="px-1.5 py-0.2 rounded-full text-[10px] font-mono"
+                  :class="orderFilter === 'completed' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'"
+                >
+                  {{ completedOrdersCount }}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                @click="orderFilter = 'cancelled'"
+                class="px-3 py-1.5 rounded-lg font-semibold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5"
+                :class="orderFilter === 'cancelled'
+                  ? 'bg-[#103860] text-white shadow-2xs'
+                  : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'"
+              >
+                <span>Dibatalkan</span>
+                <span
+                  v-if="cancelledOrdersCount > 0"
+                  class="px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold"
+                  :class="orderFilter === 'cancelled' ? 'bg-rose-500 text-white' : 'bg-rose-100 text-rose-800'"
+                >
+                  {{ cancelledOrdersCount }}
+                </span>
+                <span
+                  v-else
+                  class="px-1.5 py-0.2 rounded-full text-[10px] font-mono"
+                  :class="orderFilter === 'cancelled' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'"
+                >
+                  0
+                </span>
+              </button>
+            </div>
+
             <!-- Loading State -->
             <div v-if="isLoadingOrders" class="flex flex-col gap-3">
               <div v-for="i in 2" :key="i" class="bg-white border border-slate-200/90 rounded-xl p-4 shadow-2xs flex flex-col gap-2.5 animate-pulse">
@@ -602,7 +743,7 @@ const handleLogout = () => {
               </div>
             </div>
 
-            <!-- Empty State -->
+            <!-- Global Empty State -->
             <div
               v-else-if="orderStore.ordersHistory.length === 0"
               class="flex flex-col items-center justify-center w-full p-10 text-center bg-white border border-slate-200/90 rounded-xl shadow-2xs"
@@ -622,10 +763,31 @@ const handleLogout = () => {
               </NuxtLink>
             </div>
 
+            <!-- Filtered Empty State -->
+            <div
+              v-else-if="filteredOrders.length === 0"
+              class="flex flex-col items-center justify-center w-full p-8 text-center bg-white border border-slate-200/90 rounded-xl shadow-2xs"
+            >
+              <div class="flex items-center justify-center w-10 h-10 mb-2 rounded-full bg-slate-100 text-slate-400">
+                <span class="material-symbols-outlined text-[20px]">filter_list_off</span>
+              </div>
+              <h4 class="mb-1 text-xs font-bold text-slate-800">Tidak Ada Pesanan</h4>
+              <p class="text-[11px] text-slate-500 max-w-xs mb-3">
+                Tidak ditemukan pesanan pada filter kategori ini.
+              </p>
+              <button
+                type="button"
+                @click="orderFilter = 'all'"
+                class="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+              >
+                Lihat Semua Pesanan
+              </button>
+            </div>
+
             <!-- Orders List -->
             <div v-else class="flex flex-col gap-3">
               <div
-                v-for="ord in orderStore.ordersHistory"
+                v-for="ord in filteredOrders"
                 :key="ord.id"
                 class="flex flex-col gap-3 p-4 transition-colors bg-white border border-slate-200/90 rounded-xl shadow-2xs hover:border-slate-300"
               >
@@ -674,10 +836,11 @@ const handleLogout = () => {
                   <div class="flex items-center gap-2 shrink-0">
                     <span class="font-bold text-slate-900">Rp {{ (ord.totalAmount || 0).toLocaleString('id-ID') }}</span>
                     <NuxtLink
-                      :to="`/pesanan/${ord.orderNumber || ord.id}`"
-                      class="px-2.5 py-1.5 rounded-lg bg-[#103860] hover:bg-[#13446E] text-white font-semibold text-[11px] transition-colors"
+                      :to="getOrderActionButton(ord).to"
+                      class="px-2.5 py-1.5 rounded-lg font-semibold text-[11px] transition-colors"
+                      :class="getOrderActionButton(ord).class"
                     >
-                      Lacak
+                      {{ getOrderActionButton(ord).label }}
                     </NuxtLink>
                   </div>
                 </div>
