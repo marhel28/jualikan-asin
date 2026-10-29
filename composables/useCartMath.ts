@@ -8,6 +8,7 @@ export interface DeliveryPackagingOption {
   note: string
   fee: number
   isActive: boolean
+  isHidden?: boolean
   isDefault?: boolean
   sortOrder?: number
 }
@@ -20,6 +21,7 @@ export const DEFAULT_PACKAGING_OPTIONS: DeliveryPackagingOption[] = [
     note: 'Rute lokal & kota terdekat',
     fee: 7500,
     isActive: true,
+    isHidden: false,
     isDefault: true,
     sortOrder: 1
   },
@@ -30,6 +32,7 @@ export const DEFAULT_PACKAGING_OPTIONS: DeliveryPackagingOption[] = [
     note: 'Rute luar kota & provinsi',
     fee: 18000,
     isActive: true,
+    isHidden: false,
     isDefault: false,
     sortOrder: 2
   },
@@ -40,6 +43,7 @@ export const DEFAULT_PACKAGING_OPTIONS: DeliveryPackagingOption[] = [
     note: 'Khusus rute instan radius 10 km',
     fee: 4000,
     isActive: true,
+    isHidden: false,
     isDefault: false,
     sortOrder: 3
   }

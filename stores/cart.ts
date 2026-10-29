@@ -95,8 +95,11 @@ export const useCartStore = defineStore('cart', {
     totalNetWeightKg: (state): number => Number(state.items.reduce((sum, item) => sum + item.estimatedNetWeightKg, 0).toFixed(2)),
     productsSubtotal: (state): number => state.items.reduce((sum, item) => sum + item.itemSubtotal, 0),
     availablePackagingOptions: (state): DeliveryPackagingOption[] => {
-      const active = state.packagingOptions.filter(p => p.isActive !== false)
-      return active.length > 0 ? active : DEFAULT_PACKAGING_OPTIONS
+      // Exclude hidden options; keep inactive ones so frontend displays them as disabled
+      const visible = state.packagingOptions.filter(p => !p.isHidden)
+      const list = visible.length > 0 ? visible : DEFAULT_PACKAGING_OPTIONS.filter(p => !p.isHidden)
+      // Sort ascending by price (tarif terendah ke tertinggi)
+      return [...list].sort((a, b) => (Number(a.fee) || 0) - (Number(b.fee) || 0))
     },
     packagingFee: (state): number => {
       const found = state.packagingOptions.find(p => p.id === state.packagingType)
@@ -456,7 +459,23 @@ export const useCartStore = defineStore('cart', {
           }
         } catch {}
       }
+      this.resolveSelectedPackaging()
       this.fetchDeliveryConfig()
+    },
+
+    resolveSelectedPackaging() {
+      const visible = this.availablePackagingOptions
+      const activeOptions = visible.filter(p => p.isActive !== false)
+      if (activeOptions.length === 0) return
+
+      const currentValid = activeOptions.some(p => p.id === this.packagingType)
+      if (!currentValid) {
+        const def = activeOptions.find(p => p.isDefault) || activeOptions[0]
+        if (def) {
+          this.packagingType = def.id
+          this.persist()
+        }
+      }
     },
 
     async fetchDeliveryConfig() {
@@ -477,14 +496,7 @@ export const useCartStore = defineStore('cart', {
         }
         if (data?.packagingOptions && Array.isArray(data.packagingOptions) && data.packagingOptions.length > 0) {
           this.packagingOptions = data.packagingOptions
-          const isCurrentActive = this.packagingOptions.some(p => p.id === this.packagingType && p.isActive !== false)
-          if (!isCurrentActive) {
-            const def = this.packagingOptions.find(p => p.isDefault && p.isActive !== false) || this.packagingOptions.find(p => p.isActive !== false)
-            if (def) {
-              this.packagingType = def.id
-              this.persist()
-            }
-          }
+          this.resolveSelectedPackaging()
         }
       } catch (err) {
         // Fallback gracefully

@@ -59,3 +59,35 @@ test('Cart Math: Free shipping threshold is Rp 300,000', () => {
   const isFreeOver = subtotalOver >= FREE_SHIPPING_THRESHOLD
   assert.equal(isFreeOver, true)
 })
+
+test('Cart Packaging Logic: filters hidden items and sorts by price ascending', () => {
+  const mockOptions = [
+    { id: 'box', name: 'Box Styrofoam', fee: 18000, isActive: true, isHidden: false, isDefault: false },
+    { id: 'bag', name: 'Thermal Bag', fee: 7500, isActive: false, isHidden: false, isDefault: true },
+    { id: 'secret', name: 'Promo Pouch', fee: 1000, isActive: true, isHidden: true, isDefault: false },
+    { id: 'free_pouch', name: 'Free Pouch', fee: 0, isActive: true, isHidden: false, isDefault: false }
+  ]
+
+  // Filter hidden: false
+  const visible = mockOptions.filter(p => !p.isHidden)
+  assert.equal(visible.length, 3, 'Hidden item must be completely excluded')
+  assert.ok(visible.some(p => p.id === 'bag' && !p.isActive), 'Inactive item must be preserved so UI displays it disabled')
+
+  // Sort ascending by fee
+  const sorted = [...visible].sort((a, b) => a.fee - b.fee)
+  assert.equal(sorted[0].id, 'free_pouch', 'Lowest price (Rp 0) must be first')
+  assert.equal(sorted[1].id, 'bag', 'Middle price (Rp 7.500) must be second')
+  assert.equal(sorted[2].id, 'box', 'Highest price (Rp 18.000) must be last')
+})
+
+test('Cart Packaging Logic: auto-selects active default option', () => {
+  const mockOptions = [
+    { id: 'free', name: 'Free', fee: 0, isActive: true, isHidden: false, isDefault: false },
+    { id: 'bag', name: 'Bag', fee: 7500, isActive: true, isHidden: false, isDefault: true },
+    { id: 'box', name: 'Box', fee: 18000, isActive: true, isHidden: false, isDefault: false }
+  ]
+
+  const activeOptions = mockOptions.filter(p => !p.isHidden && p.isActive !== false)
+  const defaultOpt = activeOptions.find(p => p.isDefault) || activeOptions[0]
+  assert.equal(defaultOpt.id, 'bag', 'Must auto-select the option marked as default')
+})
