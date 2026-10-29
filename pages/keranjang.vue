@@ -302,8 +302,8 @@ onMounted(async () => {
         <section class="bg-white border border-slate-200/90 rounded-xl p-4 shadow-xs space-y-3">
           <div class="flex items-center justify-between">
             <h2 class="text-xs font-bold text-[#103860] flex items-center gap-1.5">
-              <span class="material-symbols-outlined text-[16px] text-[#059669]">mode_heat</span>
-              <span>Pengaman Rantai Dingin</span>
+              <span class="material-symbols-outlined text-[16px] text-[#059669]">local_shipping</span>
+              <span>Pengiriman</span>
             </h2>
             <span class="text-[11px] text-[#059669] font-semibold">
               Wajib Standar Mutu
@@ -311,60 +311,36 @@ onMounted(async () => {
           </div>
 
           <div class="grid grid-cols-1 gap-2">
-            <!-- Option 1: Thermal Bag -->
             <label
-              @click="handleSelectPackaging('thermal_bag')"
+              v-for="opt in cartStore.availablePackagingOptions"
+              :key="opt.id"
+              @click="handleSelectPackaging(opt.id)"
               class="flex items-center justify-between gap-3 p-3 rounded-xl border cursor-pointer transition-all"
-              :class="cartStore.packagingType === 'thermal_bag' ? 'border-[#103860] bg-blue-50/40 shadow-xs' : 'border-slate-200 hover:bg-slate-50'"
+              :class="cartStore.packagingType === opt.id ? 'border-[#103860] bg-blue-50/40 shadow-xs' : 'border-slate-200 hover:bg-slate-50'"
             >
               <div class="flex items-center gap-3 min-w-0 flex-1">
                 <input
                   type="radio"
                   name="thermal_protection"
-                  value="thermal_bag"
+                  :value="opt.id"
                   class="sr-only"
-                  :checked="cartStore.packagingType === 'thermal_bag'"
+                  :checked="cartStore.packagingType === opt.id"
                 />
                 <div
                   class="w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors"
-                  :class="cartStore.packagingType === 'thermal_bag' ? 'border-[#103860] bg-[#103860]' : 'border-slate-300 bg-white'"
+                  :class="cartStore.packagingType === opt.id ? 'border-[#103860] bg-[#103860]' : 'border-slate-300 bg-white'"
                 >
-                  <div v-if="cartStore.packagingType === 'thermal_bag'" class="w-1.5 h-1.5 rounded-full bg-white"></div>
+                  <div v-if="cartStore.packagingType === opt.id" class="w-1.5 h-1.5 rounded-full bg-white"></div>
                 </div>
                 <div class="flex flex-col min-w-0">
-                  <span class="text-xs font-bold text-[#0F172A] truncate">Thermal Bag + 2 Ice Gel</span>
-                  <span class="text-[11px] text-slate-500">Tahan 8 Jam: Rute lokal & kota terdekat</span>
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-xs font-bold text-[#0F172A] truncate">{{ opt.name }}</span>
+                    <span v-if="opt.isDefault" class="text-[9px] font-bold px-1.5 py-0.2 bg-emerald-100 text-emerald-800 rounded">Default</span>
+                  </div>
+                  <span class="text-[11px] text-slate-500">{{ opt.duration }}: {{ opt.note }}</span>
                 </div>
               </div>
-              <span class="text-xs font-extrabold text-[#103860] shrink-0 whitespace-nowrap">Rp 7.500</span>
-            </label>
-
-            <!-- Option 2: Box Styrofoam -->
-            <label
-              @click="handleSelectPackaging('styrofoam_box')"
-              class="flex items-center justify-between gap-3 p-3 rounded-xl border cursor-pointer transition-all"
-              :class="cartStore.packagingType === 'styrofoam_box' ? 'border-[#103860] bg-blue-50/40 shadow-xs' : 'border-slate-200 hover:bg-slate-50'"
-            >
-              <div class="flex items-center gap-3 min-w-0 flex-1">
-                <input
-                  type="radio"
-                  name="thermal_protection"
-                  value="styrofoam_box"
-                  class="sr-only"
-                  :checked="cartStore.packagingType === 'styrofoam_box'"
-                />
-                <div
-                  class="w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors"
-                  :class="cartStore.packagingType === 'styrofoam_box' ? 'border-[#103860] bg-[#103860]' : 'border-slate-300 bg-white'"
-                >
-                  <div v-if="cartStore.packagingType === 'styrofoam_box'" class="w-1.5 h-1.5 rounded-full bg-white"></div>
-                </div>
-                <div class="flex flex-col min-w-0">
-                  <span class="text-xs font-bold text-[#0F172A] truncate">Box Styrofoam + Ice Gel</span>
-                  <span class="text-[11px] text-slate-500">Tahan 24 Jam: Rute luar kota & provinsi</span>
-                </div>
-              </div>
-              <span class="text-xs font-extrabold text-[#103860] shrink-0 whitespace-nowrap">Rp 18.000</span>
+              <span class="text-xs font-extrabold text-[#103860] shrink-0 whitespace-nowrap">Rp {{ opt.fee.toLocaleString('id-ID') }}</span>
             </label>
           </div>
         </section>
@@ -409,9 +385,9 @@ onMounted(async () => {
               </span>
             </div>
 
-            <!-- Cold Chain Packaging Fee -->
+            <!-- Packaging Fee -->
             <div class="flex justify-between text-slate-600">
-              <span>Proteksi Rantai Dingin ({{ cartStore.packagingType === 'thermal_bag' ? 'Thermal Bag' : 'Box Styrofoam' }})</span>
+              <span>Biaya Pengiriman ({{ cartStore.packagingDetails?.name || 'Paket Pengiriman' }})</span>
               <span class="font-bold text-slate-800">
                 Rp {{ cartStore.packagingFee.toLocaleString('id-ID') }}
               </span>

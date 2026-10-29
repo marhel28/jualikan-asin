@@ -509,7 +509,7 @@ const handleProceedToPayment = async () => {
           <span class="font-mono font-semibold text-slate-800">Rp {{ cartStore.productsSubtotal.toLocaleString('id-ID') }}</span>
         </div>
         <div class="flex justify-between text-xs text-slate-600">
-          <span>Proteksi Rantai Dingin</span>
+          <span>Biaya Pengiriman ({{ cartStore.packagingDetails?.name || 'Paket Pengiriman' }})</span>
           <span class="font-mono font-semibold text-slate-800">Rp {{ cartStore.packagingFee.toLocaleString('id-ID') }}</span>
         </div>
         <div class="flex justify-between text-xs text-slate-600">

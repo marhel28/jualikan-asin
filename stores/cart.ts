@@ -1,61 +1,26 @@
 import { defineStore } from 'pinia'
-import { useApi } from '~/composables/useApi'
+import { useApi } from '../composables/useApi'
 import { useAuthStore } from './auth'
+import {
+  type CutType,
+  type PackagingType,
+  type DeliveryPackagingOption,
+  DEFAULT_PACKAGING_OPTIONS,
+  YIELD_RATIOS,
+  CUT_LABELS,
+  PACKAGING_FEES,
+  FREE_SHIPPING_THRESHOLD,
+  calcNetWeight
+} from '../composables/useCartMath'
 
-export type CutType = 'utuh_bersih' | 'fillet_tanpa_kulit' | 'steak_melintang'
-export type PackagingType = 'thermal_bag' | 'styrofoam_box'
-
-export const YIELD_RATIOS: Record<CutType, number> = {
-  utuh_bersih: 0.85,
-  fillet_tanpa_kulit: 0.52,
-  steak_melintang: 0.80
-}
-
-export const CUT_LABELS: Record<CutType, { label: string; desc: string; yieldBadge: string }> = {
-  utuh_bersih: {
-    label: 'Utuh Bersih',
-    desc: 'Kerok sisik, buang insang & isi perut',
-    yieldBadge: '~850g/kg (Rendemen 85%)'
-  },
-  fillet_tanpa_kulit: {
-    label: 'Fillet Tanpa Kulit',
-    desc: 'Daging murni tanpa tulang & duri',
-    yieldBadge: '~520g/kg (Rendemen 52%)'
-  },
-  steak_melintang: {
-    label: 'Steak Melintang',
-    desc: 'Potong bulat tebal 2.5 cm siap masak',
-    yieldBadge: '~800g/kg (Rendemen 80%)'
-  }
-}
-
-export const PACKAGING_FEES: Record<PackagingType, { name: string; fee: number; duration: string; note: string }> = {
-  thermal_bag: {
-    name: 'Thermal Bag Insulasi Tebal + 2 Ice Gel',
-    fee: 7500,
-    duration: 'Tahan 8 Jam',
-    note: 'Pengiriman Lokal / Kota Terdekat'
-  },
-  styrofoam_box: {
-    name: 'Box Styrofoam Segel + 4 Ice Gel + Flake Ice',
-    fee: 18000,
-    duration: 'Tahan 24 Jam',
-    note: 'Luar Kota / Antar Provinsi'
-  }
-}
-
-export const FREE_SHIPPING_THRESHOLD = 300000
-
-/**
- * Calculates net edible weight from gross weight and cut type.
- * Required interface contract from PROJECT.md:
- * calcNetWeight(grossKg: number, cutType: string): number
- */
-export function calcNetWeight(grossKg: number, cutType: CutType | string): number {
-  const ratio = (cutType in YIELD_RATIOS ? YIELD_RATIOS[cutType as CutType] : 0.85) || 0.85
-  const parsedGross = typeof grossKg === 'number' ? grossKg : Number(grossKg)
-  if (isNaN(parsedGross) || parsedGross <= 0) return 0
-  return Number((parsedGross * ratio).toFixed(2))
+export type { CutType, PackagingType, DeliveryPackagingOption }
+export {
+  DEFAULT_PACKAGING_OPTIONS,
+  YIELD_RATIOS,
+  CUT_LABELS,
+  PACKAGING_FEES,
+  FREE_SHIPPING_THRESHOLD,
+  calcNetWeight
 }
 
 export interface CartItem {
@@ -91,6 +56,7 @@ export interface ShippingPolicy {
 export interface CartState {
   items: CartItem[]
   packagingType: PackagingType
+  packagingOptions: DeliveryPackagingOption[]
   kitchenNotes: string
   shippingPolicy: ShippingPolicy
   isLoadingPolicy: boolean
@@ -104,6 +70,7 @@ export const useCartStore = defineStore('cart', {
   state: (): CartState => ({
     items: [],
     packagingType: 'thermal_bag',
+    packagingOptions: DEFAULT_PACKAGING_OPTIONS,
     kitchenNotes: '',
     shippingPolicy: {
       freeShippingBanyuwangi: true,
@@ -127,8 +94,20 @@ export const useCartStore = defineStore('cart', {
     totalGrossWeightKg: (state): number => Number(state.items.reduce((sum, item) => sum + item.quantityKg, 0).toFixed(2)),
     totalNetWeightKg: (state): number => Number(state.items.reduce((sum, item) => sum + item.estimatedNetWeightKg, 0).toFixed(2)),
     productsSubtotal: (state): number => state.items.reduce((sum, item) => sum + item.itemSubtotal, 0),
-    packagingFee: (state): number => PACKAGING_FEES[state.packagingType].fee,
-    packagingDetails: (state) => PACKAGING_FEES[state.packagingType],
+    availablePackagingOptions: (state): DeliveryPackagingOption[] => {
+      const active = state.packagingOptions.filter(p => p.isActive !== false)
+      return active.length > 0 ? active : DEFAULT_PACKAGING_OPTIONS
+    },
+    packagingFee: (state): number => {
+      const found = state.packagingOptions.find(p => p.id === state.packagingType)
+      if (found) return found.fee
+      return PACKAGING_FEES[state.packagingType]?.fee ?? 7500
+    },
+    packagingDetails: (state) => {
+      const found = state.packagingOptions.find(p => p.id === state.packagingType)
+      if (found) return found
+      return PACKAGING_FEES[state.packagingType] || DEFAULT_PACKAGING_OPTIONS[0]
+    },
     freeShippingThreshold: (state): number => {
       return state.shippingPolicy?.freeShippingThreshold || FREE_SHIPPING_THRESHOLD
     },
@@ -172,7 +151,8 @@ export const useCartStore = defineStore('cart', {
     },
     totalEstimatedBill: (state): number => {
       const subtotal = state.items.reduce((sum, item) => sum + item.itemSubtotal, 0)
-      const packFee = PACKAGING_FEES[state.packagingType].fee
+      const found = state.packagingOptions.find(p => p.id === state.packagingType)
+      const packFee = found ? found.fee : (PACKAGING_FEES[state.packagingType]?.fee ?? 7500)
       const isFree = state.shippingPolicy?.freeShippingBanyuwangi || (subtotal >= (state.shippingPolicy?.freeShippingThreshold || FREE_SHIPPING_THRESHOLD))
       const shipFee = isFree ? 0 : (state.shippingPolicy?.standardFee ?? (state.shippingPolicy?.localFee || 12000))
       return subtotal + packFee + shipFee
@@ -486,12 +466,24 @@ export const useCartStore = defineStore('cart', {
         const data = await api.get<{
           deliverySlots?: any[]
           shippingPolicy?: ShippingPolicy
+          packagingOptions?: DeliveryPackagingOption[]
         }>('/settings/delivery-config')
 
         if (data?.shippingPolicy) {
           this.shippingPolicy = {
             ...this.shippingPolicy,
             ...data.shippingPolicy
+          }
+        }
+        if (data?.packagingOptions && Array.isArray(data.packagingOptions) && data.packagingOptions.length > 0) {
+          this.packagingOptions = data.packagingOptions
+          const isCurrentActive = this.packagingOptions.some(p => p.id === this.packagingType && p.isActive !== false)
+          if (!isCurrentActive) {
+            const def = this.packagingOptions.find(p => p.isDefault && p.isActive !== false) || this.packagingOptions.find(p => p.isActive !== false)
+            if (def) {
+              this.packagingType = def.id
+              this.persist()
+            }
           }
         }
       } catch (err) {

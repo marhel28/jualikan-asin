@@ -280,6 +280,7 @@ export const useCheckoutStore = defineStore('checkout', {
         const data = await api.get<{
           deliverySlots?: DeliverySlotOption[]
           shippingPolicy?: ShippingPolicy
+          packagingOptions?: any[]
         }>('/settings/delivery-config')
 
         if (data) {
@@ -295,6 +296,10 @@ export const useCheckoutStore = defineStore('checkout', {
           }
           if (data.shippingPolicy) {
             this.shippingPolicy = data.shippingPolicy
+          }
+          if (data.packagingOptions && Array.isArray(data.packagingOptions) && data.packagingOptions.length > 0) {
+            const cartStore = useCartStore()
+            cartStore.packagingOptions = data.packagingOptions
           }
         }
       } catch (err) {

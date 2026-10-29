@@ -10,9 +10,10 @@ import assert from 'node:assert/strict'
 import { 
   calcNetWeight, 
   YIELD_RATIOS, 
-  PACKAGING_FEES, 
+  PACKAGING_FEES,
+  DEFAULT_PACKAGING_OPTIONS,
   FREE_SHIPPING_THRESHOLD 
-} from '../stores/cart.ts'
+} from '../composables/useCartMath.ts'
 
 test('Cart Math: calcNetWeight respects butcher cut yield ratios', () => {
   // Fillet: 52% of 2 kg -> 1.04 kg
@@ -37,7 +38,14 @@ test('Cart Math: calcNetWeight respects butcher cut yield ratios', () => {
 test('Cart Math: Cold-chain packaging fees are accurate and tiered', () => {
   assert.equal(PACKAGING_FEES.thermal_bag.fee, 7500)
   assert.equal(PACKAGING_FEES.styrofoam_box.fee, 18000)
+  assert.equal(PACKAGING_FEES.insulated_pouch.fee, 4000)
   assert.ok(PACKAGING_FEES.styrofoam_box.fee > PACKAGING_FEES.thermal_bag.fee)
+  assert.ok(PACKAGING_FEES.thermal_bag.fee > PACKAGING_FEES.insulated_pouch.fee)
+
+  assert.equal(DEFAULT_PACKAGING_OPTIONS.length, 3)
+  const def = DEFAULT_PACKAGING_OPTIONS.find(p => p.isDefault)
+  assert.ok(def, 'Default packaging option must be present')
+  assert.equal(def.id, 'thermal_bag')
 })
 
 test('Cart Math: Free shipping threshold is Rp 300,000', () => {
