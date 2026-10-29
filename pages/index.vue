@@ -26,6 +26,11 @@ useHead({
         'Fresh fish from Muncar Port Banyuwangi delivered to your kitchen with precision -20°C cold chain.'
       ))
     },
+    // Geo-Location Meta Tags: Pelabuhan Muncar Banyuwangi
+    { name: 'geo.position', content: '-8.4328;114.3361' },
+    { name: 'geo.placename', content: 'Pelabuhan Muncar, Kabupaten Banyuwangi, Jawa Timur, Indonesia' },
+    { name: 'geo.region', content: 'ID-JI' },
+    { name: 'ICBM', content: '-8.4328, 114.3361' },
     { property: 'og:title', content: computed(() => t('Laut Berkah Abadi | D2C Cold Chain Seafood Muncar Banyuwangi', 'Laut Berkah Abadi | Direct Fresh Seafood Muncar Banyuwangi Cold Chain')) },
     { property: 'og:description', content: computed(() => t('Distribusi ikan segar Pelabuhan Muncar Banyuwangi langsung ke dapur Anda dengan rantai dingin presisi -20°C.', 'Fresh fish from Muncar Port Banyuwangi delivered to your kitchen with precision -20°C cold chain.')) },
     { property: 'og:type', content: 'website' },
@@ -64,11 +69,13 @@ useHead({
             name: 'Laut Berkah Abadi Banyuwangi',
             image: `${siteUrl}/brand/logo.webp`,
             url: siteUrl,
-            telephone: '+6281234567890',
+            telephone: '+62-812-3456-7890',
             priceRange: 'Rp 25.000 - Rp 150.000',
+            areaServed: ['Banyuwangi', 'Jember', 'Malang', 'Surabaya', 'Bali'],
+            hasMap: 'https://maps.google.com/?q=-8.4328,114.3361',
             address: {
               '@type': 'PostalAddress',
-              streetAddress: 'Kawasan Pelabuhan Perikanan Muncar',
+              streetAddress: 'Kawasan Pelabuhan Perikanan Pantai Muncar',
               addressLocality: 'Banyuwangi',
               addressRegion: 'Jawa Timur',
               postalCode: '68472',
@@ -76,8 +83,8 @@ useHead({
             },
             geo: {
               '@type': 'GeoCoordinates',
-              latitude: -8.4333,
-              longitude: 114.3333
+              latitude: -8.4328,
+              longitude: 114.3361
             },
             openingHoursSpecification: [
               {
@@ -637,6 +644,7 @@ onUnmounted(() => {
 
 <template>
   <div class="flex flex-col gap-5">
+    <h1 class="sr-only">Laut Berkah Abadi | D2C Cold Chain Seafood Muncar Banyuwangi</h1>
     <!-- Toast Notification -->
     <div v-if="showToast"
       class="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-[#002242] text-white text-xs py-2 px-4 rounded-full shadow-lg flex items-center gap-2 animate-bounce">

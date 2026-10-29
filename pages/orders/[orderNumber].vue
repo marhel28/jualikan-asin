@@ -6,6 +6,12 @@ definePageMeta({
   layout: 'clean'
 })
 
+useHead({
+  meta: [
+    { name: 'robots', content: 'noindex, nofollow' }
+  ]
+})
+
 const route = useRoute()
 const router = useRouter()
 const orderNumber = String(route.params.orderNumber || '')

@@ -5,7 +5,10 @@ import { useOrderStore, type Order } from '~/stores/order'
 import { useAuthStore } from '~/stores/auth'
 
 useHead({
-  title: 'Pesanan Saya | Laut Berkah Abadi'
+  title: 'Pesanan Saya | Laut Berkah Abadi',
+  meta: [
+    { name: 'robots', content: 'noindex, nofollow' }
+  ]
 })
 
 const router = useRouter()

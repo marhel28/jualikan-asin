@@ -13,7 +13,8 @@ useHead({
     {
       name: 'description',
       content: 'Daftar dan masuk akun pelanggan Laut Berkah Abadi Banyuwangi dengan email, username, atau WhatsApp untuk pemesanan hasil laut segar.'
-    }
+    },
+    { name: 'robots', content: 'noindex, nofollow' }
   ]
 })
 

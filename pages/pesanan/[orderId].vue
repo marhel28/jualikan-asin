@@ -8,7 +8,10 @@ definePageMeta({
 })
 
 useHead({
-  title: 'Detail & Riwayat Pesanan | Laut Berkah Abadi'
+  title: 'Detail & Riwayat Pesanan | Laut Berkah Abadi',
+  meta: [
+    { name: 'robots', content: 'noindex, nofollow' }
+  ]
 })
 
 const route = useRoute()

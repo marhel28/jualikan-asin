@@ -17,7 +17,15 @@ useHead({
     {
       name: 'description',
       content: 'Kebijakan perlindungan data dan privasi pelanggan Laut Berkah Abadi Banyuwangi.'
-    }
+    },
+    { property: 'og:title', content: 'Kebijakan Privasi | Laut Berkah Abadi Banyuwangi' },
+    { property: 'og:description', content: 'Kebijakan perlindungan data dan privasi pelanggan Laut Berkah Abadi Banyuwangi.' },
+    { property: 'og:image', content: 'https://lautberkahabadi.com/brand/logo.webp' },
+    { property: 'og:url', content: 'https://lautberkahabadi.com/kebijakan-privasi' },
+    { name: 'twitter:card', content: 'summary_large_image' }
+  ],
+  link: [
+    { rel: 'canonical', href: 'https://lautberkahabadi.com/kebijakan-privasi' }
   ]
 })
 </script>

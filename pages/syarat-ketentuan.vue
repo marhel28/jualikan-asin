@@ -16,7 +16,15 @@ useHead({
     {
       name: 'description',
       content: 'Syarat dan ketentuan pembelian hasil laut segar, standar penimbangan catch-weight, pengemasan rantai dingin, dan garansi kesegaran di Laut Berkah Abadi.'
-    }
+    },
+    { property: 'og:title', content: 'Syarat & Ketentuan | Laut Berkah Abadi Banyuwangi' },
+    { property: 'og:description', content: 'Syarat dan ketentuan pembelian hasil laut segar, standar penimbangan catch-weight, pengemasan rantai dingin, dan garansi kesegaran di Laut Berkah Abadi.' },
+    { property: 'og:image', content: 'https://lautberkahabadi.com/brand/logo.webp' },
+    { property: 'og:url', content: 'https://lautberkahabadi.com/syarat-ketentuan' },
+    { name: 'twitter:card', content: 'summary_large_image' }
+  ],
+  link: [
+    { rel: 'canonical', href: 'https://lautberkahabadi.com/syarat-ketentuan' }
   ]
 })
 </script>

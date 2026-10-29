@@ -9,7 +9,21 @@ const goBack = () => {
 
 useHead({
   title: 'Tentang Kami: Perjalanan Laut Berkah Abadi | Muncar, Banyuwangi',
-  meta: [{ name: 'description', content: 'Perjalanan Laut Berkah Abadi dari dermaga Muncar Banyuwangi, rantai dingin 0-4\u00B0C, timbangan jujur, tanpa pengawet. Foto dan cerita lapangan langsung dari nelayan.' }]
+  meta: [
+    { name: 'description', content: 'Perjalanan Laut Berkah Abadi dari dermaga Muncar Banyuwangi, rantai dingin 0-4\u00B0C, timbangan jujur, tanpa pengawet. Foto dan cerita lapangan langsung dari nelayan.' },
+    { name: 'geo.position', content: '-8.4328;114.3361' },
+    { name: 'geo.placename', content: 'Pelabuhan Muncar, Kabupaten Banyuwangi, Jawa Timur, Indonesia' },
+    { name: 'geo.region', content: 'ID-JI' },
+    { name: 'ICBM', content: '-8.4328, 114.3361' },
+    { property: 'og:title', content: 'Tentang Kami: Perjalanan Laut Berkah Abadi | Muncar, Banyuwangi' },
+    { property: 'og:description', content: 'Perjalanan Laut Berkah Abadi dari dermaga Muncar Banyuwangi, rantai dingin 0-4\u00B0C, timbangan jujur, tanpa pengawet.' },
+    { property: 'og:image', content: 'https://lautberkahabadi.com/brand/logo.webp' },
+    { property: 'og:url', content: 'https://lautberkahabadi.com/tentang' },
+    { name: 'twitter:card', content: 'summary_large_image' }
+  ],
+  link: [
+    { rel: 'canonical', href: 'https://lautberkahabadi.com/tentang' }
+  ]
 })
 </script>
 
@@ -28,7 +42,7 @@ useHead({
         <button type="button" aria-label="Kembali" class="w-9 h-9 rounded-full flex items-center justify-center hover:bg-slate-100 text-[#002242] active:scale-95 cursor-pointer" @click="goBack">
           <span class="material-symbols-outlined text-[22px]">arrow_back</span>
         </button>
-        <h1 class="text-base font-semibold text-[#002242]">Tentang Kami</h1>
+        <span class="text-base font-semibold text-[#002242]">Tentang Kami</span>
       </header>
 
       <main class="flex flex-col gap-8 md:gap-10 p-4 md:p-0">
@@ -43,9 +57,9 @@ useHead({
                   <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Rantai dingin terjaga
                 </span>
               </div>
-              <h2 class="font-display text-[22px] md:text-[28px] font-bold leading-tight text-[#0b1e35]">
+              <h1 class="font-display text-[22px] md:text-[28px] font-bold leading-tight text-[#0b1e35]">
                 Dari dermaga Muncar,<br>langsung ke dapur Anda.
-              </h2>
+              </h1>
               <p class="text-sm text-slate-600 leading-relaxed">
                 Laut Berkah Abadi lahir dari jarak yang terlalu jauh antara harga di pelelangan dan mutu ikan yang sampai di kota. Kami memotong rantai itu, menjemput ikan pagi hari di dermaga Muncar, menjaga suhu 0–4°C tanpa putus, dan menimbang jujur di cold hub sebelum kirim.
               </p>

@@ -4,7 +4,10 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '~/stores/auth'
 
 useHead({
-  title: 'Operasional Hub Cold Chain | Laut Berkah Abadi'
+  title: 'Operasional Hub Cold Chain | Laut Berkah Abadi',
+  meta: [
+    { name: 'robots', content: 'noindex, nofollow' }
+  ]
 })
 
 const router = useRouter()

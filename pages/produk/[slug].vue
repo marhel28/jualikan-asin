@@ -24,9 +24,11 @@ const apiBase = (runtimeConfig.public?.apiBase as string) || 'https://api-muncar
 
 const slug = computed(() => String(route.params.slug || ''))
 
-// State: Product starts strictly EMPTY (null) with loading true to prevent mock pre-fill flashing
-const liveProduct = ref<Product | null>(null)
-const isLoading = ref<boolean>(true)
+// ponytail: synchronous catalog lookup powers SSR metadata and prevents accidental noindex crawling
+const findCatalogProduct = (s: string) => PRODUCTS.find(p => p.slug === s || p.id === s) || null
+const initialProduct = findCatalogProduct(slug.value)
+const liveProduct = ref<Product | null>(initialProduct)
+const isLoading = ref<boolean>(!initialProduct)
 const hasError = ref<boolean>(false)
 
 // Hero image loading & error state
@@ -716,7 +718,9 @@ useHead(() => {
                   '@type': 'FishStore',
                   name: 'Laut Berkah Abadi Banyuwangi',
                   url: siteUrl,
-                  telephone: '+6281234567890',
+                  telephone: '+62-812-3456-7890',
+                  areaServed: ['Banyuwangi', 'Jember', 'Malang', 'Surabaya', 'Bali'],
+                  hasMap: 'https://maps.google.com/?q=-8.4328,114.3361',
                   address: {
                     '@type': 'PostalAddress',
                     streetAddress: 'Kawasan Pelabuhan Perikanan Pantai Muncar',
@@ -812,7 +816,7 @@ useHead(() => {
             class="w-9 h-9 rounded-full flex items-center justify-center hover:bg-slate-100 transition-colors text-[#002242] active:scale-95 cursor-pointer">
             <span class="material-symbols-outlined text-[22px]">arrow_back</span>
           </button>
-          <h1 class="text-base font-semibold text-[#002242]">Detail Produk</h1>
+          <span class="text-base font-semibold text-[#002242]">Detail Produk</span>
         </div>
 
         <div class="flex items-center gap-1">

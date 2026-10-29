@@ -79,6 +79,11 @@ export default defineNuxtConfig({
         },
         { name: 'theme-color', content: '#103860' },
         { name: 'robots', content: 'index, follow' },
+        // Geo-Location Global Meta
+        { name: 'geo.position', content: '-8.4328;114.3361' },
+        { name: 'geo.placename', content: 'Pelabuhan Muncar, Kabupaten Banyuwangi, Jawa Timur, Indonesia' },
+        { name: 'geo.region', content: 'ID-JI' },
+        { name: 'ICBM', content: '-8.4328, 114.3361' },
         // OpenGraph
         { property: 'og:site_name', content: 'Laut Berkah Abadi' },
         { property: 'og:type', content: 'website' },
@@ -87,7 +92,7 @@ export default defineNuxtConfig({
           property: 'og:description',
           content: 'Pesan ikan segar Muncar dengan standar rantai dingin -20°C ke dapur Anda. Garansi kesegaran 100%.',
         },
-        { property: 'og:image', content: '/brand/logo.webp' },
+        { property: 'og:image', content: 'https://lautberkahabadi.com/brand/logo.webp' },
         // Twitter Card
         { name: 'twitter:card', content: 'summary_large_image' },
         { name: 'twitter:title', content: 'Laut Berkah Abadi | D2C Cold Chain Seafood Muncar' },
@@ -95,7 +100,7 @@ export default defineNuxtConfig({
           name: 'twitter:description',
           content: 'Pesan ikan segar Muncar dengan standar rantai dingin -20°C ke dapur Anda. Garansi kesegaran 100%.',
         },
-        { name: 'twitter:image', content: '/brand/logo.webp' },
+        { name: 'twitter:image', content: 'https://lautberkahabadi.com/brand/logo.webp' },
       ],
       link: [
         { rel: 'icon', type: 'image/webp', href: '/brand/logo.webp' },

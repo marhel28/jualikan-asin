@@ -9,7 +9,10 @@ definePageMeta({
 })
 
 useHead({
-  title: 'Pembayaran Berhasil & Bukti Lunas | Laut Berkah Abadi'
+  title: 'Pembayaran Berhasil & Bukti Lunas | Laut Berkah Abadi',
+  meta: [
+    { name: 'robots', content: 'noindex, nofollow' }
+  ]
 })
 
 const route = useRoute()

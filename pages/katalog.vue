@@ -445,13 +445,19 @@ useHead(() => {
     title: 'Katalog Hasil Laut & Ikan Segar Muncar | Laut Berkah Abadi Banyuwangi',
     meta: [
       { name: 'description', content: 'Katalog lengkap ikan laut segar, fillet sashimi, udang vaname, cumi sero tangkapan pancing Selat Bali dan cold storage Muncar.' },
+      // Geo-Location Meta Tags: Pelabuhan Muncar Banyuwangi
+      { name: 'geo.position', content: '-8.4328;114.3361' },
+      { name: 'geo.placename', content: 'Pelabuhan Muncar, Kabupaten Banyuwangi, Jawa Timur, Indonesia' },
+      { name: 'geo.region', content: 'ID-JI' },
+      { name: 'ICBM', content: '-8.4328, 114.3361' },
       { property: 'og:title', content: 'Katalog Hasil Laut & Ikan Segar Muncar | Laut Berkah Abadi' },
       { property: 'og:description', content: 'Beli ikan segar dengan garansi rantai dingin 0°C s/d -18°C langsung dari Pelabuhan Muncar Banyuwangi.' },
-      { property: 'og:image', content: `${siteUrl}/brand/logo.png` },
+      { property: 'og:image', content: `${siteUrl}/brand/logo.webp` },
       { property: 'og:url', content: `${siteUrl}/katalog` },
       { name: 'twitter:card', content: 'summary_large_image' },
       { name: 'twitter:title', content: 'Katalog Hasil Laut & Ikan Segar Muncar | Laut Berkah Abadi' },
-      { name: 'twitter:description', content: 'Beli ikan segar dengan garansi rantai dingin 0°C s/d -18°C langsung dari Pelabuhan Muncar Banyuwangi.' }
+      { name: 'twitter:description', content: 'Beli ikan segar dengan garansi rantai dingin 0°C s/d -18°C langsung dari Pelabuhan Muncar Banyuwangi.' },
+      { name: 'twitter:image', content: `${siteUrl}/brand/logo.webp` }
     ],
     link: [
       { rel: 'canonical', href: `${siteUrl}/katalog` }

@@ -8,7 +8,10 @@ definePageMeta({
 })
 
 useHead({
-  title: 'Invoice Resmi Bukti Pembayaran | Laut Berkah Abadi Banyuwangi'
+  title: 'Invoice Resmi Bukti Pembayaran | Laut Berkah Abadi Banyuwangi',
+  meta: [
+    { name: 'robots', content: 'noindex, nofollow' }
+  ]
 })
 
 const route = useRoute()

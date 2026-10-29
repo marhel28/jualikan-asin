@@ -15,7 +15,10 @@ definePageMeta({
 })
 
 useHead({
-  title: 'Checkout Pengiriman Hasil Laut | Laut Berkah Abadi'
+  title: 'Checkout Pengiriman Hasil Laut | Laut Berkah Abadi',
+  meta: [
+    { name: 'robots', content: 'noindex, nofollow' }
+  ]
 })
 
 const router = useRouter()

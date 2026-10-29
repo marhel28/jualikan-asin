@@ -17,7 +17,10 @@ import {
 } from '~/data/wilayah'
 
 useHead({
-  title: 'Akun Pelanggan | Laut Berkah Abadi'
+  title: 'Akun Pelanggan | Laut Berkah Abadi',
+  meta: [
+    { name: 'robots', content: 'noindex, nofollow' }
+  ]
 })
 
 const router = useRouter()

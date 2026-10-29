@@ -14,7 +14,8 @@ useHead({
     {
       name: 'description',
       content: 'Keranjang belanja dingin hasil laut segar tangkapan Muncar dengan proteksi rantai dingin bersubsidi dan perhitungan rendemen netto transparan.'
-    }
+    },
+    { name: 'robots', content: 'noindex, nofollow' }
   ]
 })
 
