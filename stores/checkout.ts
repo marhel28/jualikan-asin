@@ -43,19 +43,7 @@ export interface AddressInfo {
   }
 }
 
-export interface ShippingPolicy {
-  freeShippingBanyuwangi: boolean
-  onlyBanyuwangi?: boolean
-  standardFee: number
-  localFee?: number
-  longDistanceFee?: number
-  freeShippingThreshold?: number
-  warehouseLat: number
-  warehouseLng: number
-  warehouseAddress: string
-  distancePricingEnabled: boolean
-  pricePerKm: number
-}
+import type { ShippingPolicy } from './cart'
 
 export interface CheckoutState {
   address: AddressInfo

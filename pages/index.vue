@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { PRODUCTS, type Product } from '~/data/products'
+import { PRODUCTS, normalizeProduct, type Product } from '~/data/products'
 import CatalogProductCard from '~/components/catalog/ProductCard.vue'
 import { useLocale } from '~/composables/useLocale'
 import { useApi } from '~/composables/useApi'
@@ -222,6 +222,20 @@ const { data: fetchedBanners } = await useAsyncData<BannerItem[]>('home-banners'
   default: () => DEFAULT_BANNERS,
 })
 
+const { data: fetchedProducts } = await useAsyncData<Product[]>('home-products', async () => {
+  try {
+    const res = await api.get<any[]>('/products')
+    if (res && Array.isArray(res) && res.length > 0) {
+      return res.map(normalizeProduct)
+    }
+  } catch {
+    // Graceful offline fallback
+  }
+  return PRODUCTS
+}, {
+  default: () => PRODUCTS,
+})
+
 const banners = computed<BannerItem[]>(() => {
   const list = fetchedBanners.value && fetchedBanners.value.length > 0 ? fetchedBanners.value : DEFAULT_BANNERS
   return [...list].sort((a, b) => (a.order || 0) - (b.order || 0))
@@ -369,10 +383,13 @@ const CATEGORIES = computed<CategoryOption[]>(() => [
   { id: 'udang_cumi', label: t('Udang & Cumi', 'Shrimp & Squid') }
 ])
 
-const products = ref<Product[]>([])
+const products = ref<Product[]>(fetchedProducts.value && fetchedProducts.value.length > 0 ? fetchedProducts.value : PRODUCTS)
+watch(fetchedProducts, (val) => {
+  if (val && val.length > 0) products.value = val
+})
 const searchQuery = ref('')
 const selectedCategory = ref('semua')
-const isLoading = ref(true)
+const isLoading = ref(false)
 const hasError = ref(false)
 const searchInputRef = ref<HTMLInputElement | null>(null)
 
@@ -494,59 +511,19 @@ const clearSearch = () => {
   fetchSearchSuggestions('')
 }
 
+// ponytail: SSR hydration via useAsyncData renders instantly (0ms LCP); only re-fetch client-side if empty
 onMounted(async () => {
-  try {
-    const api = useApi()
-    const backendProducts = await api.get<any[]>('/products')
-    if (backendProducts && Array.isArray(backendProducts) && backendProducts.length > 0) {
-      products.value = backendProducts.map(bp => {
-        const local = PRODUCTS.find(p => p.id === bp.id || p.slug === bp.slug)
-        const heroImg = bp.images?.hero || bp.image_url || local?.images?.hero || ''
-        const rawStock = bp.stockKg ?? bp.stock_kg
-        const parsedStock = (rawStock !== undefined && rawStock !== null && !isNaN(Number(rawStock)))
-          ? Number(rawStock)
-          : (local?.stockKg ?? 0)
-        return {
-          id: bp.id,
-          name: bp.name,
-          fishType: bp.fishType || bp.fish_type || bp.category || local?.fishType || 'Ikan Laut Segar',
-          scientificName: bp.scientificName || bp.latin_name || local?.scientificName || '',
-          slug: bp.slug,
-          category: bp.category || local?.category || 'utuh',
-          pricePerKg: Number(bp.pricePerKg ?? bp.price_per_kg) || local?.pricePerKg || 0,
-          originalPricePerKg: bp.originalPricePerKg ?? local?.originalPricePerKg,
-          rating: Number(bp.rating) || local?.rating || 4.9,
-          reviewCount: bp.reviewCount ?? bp.review_count ?? local?.reviewCount ?? 100,
-          freshnessScore: bp.freshnessScore ?? bp.freshness_score ?? local?.freshnessScore ?? 98,
-          catchMethod: bp.catchMethod ?? bp.catch_method ?? local?.catchMethod ?? 'Pancing Ulur Tradisional Muncar',
-          landingTime: bp.landingTime ?? bp.landing_time ?? local?.landingTime ?? '05:30 WIB Subuh',
-          storageTemp: bp.storageTemp ?? bp.storage_temp ?? local?.storageTemp ?? 'Chilled 1.5 C',
-          images: bp.images || local?.images || { hero: heroImg, gallery: [heroImg] },
-          stockKg: parsedStock,
-          minOrderKg: Number(bp.minOrderKg ?? bp.min_order_kg) || local?.minOrderKg || 1,
-          description: bp.description || local?.description || '',
-          isFeatured: bp.isFeatured ?? bp.is_featured ?? local?.isFeatured ?? false,
-          availableCuts: bp.availableCuts || local?.availableCuts || [
-            { type: 'utuh_bersih', label: 'Utuh Bersih', yieldRatio: 0.85, description: 'Insang & jeroan dibuang' },
-            { type: 'fillet_tanpa_kulit', label: 'Fillet Tanpa Kulit', yieldRatio: 0.52, description: 'Daging murni tanpa tulang' },
-            { type: 'steak_melintang', label: 'Steak Melintang', yieldRatio: 0.80, description: 'Potong bulat melintang' },
-          ],
-          tags: bp.tags || local?.tags || ['Segar Muncar', 'Cold Chain'],
-          unit: bp.unit || local?.unit || 'kg',
-          soldCount: Number(bp.soldCount ?? bp.sold_count ?? local?.soldCount ?? 0),
-          wishlistCount: Number(bp.wishlistCount ?? bp.wishlist_count ?? local?.wishlistCount ?? 0),
-          qualityBadges: bp.qualityBadges || local?.qualityBadges || ['Tangkapan Hari Ini', 'Bebas Formalin'],
-          supportsSoupBones: bp.supportsSoupBones ?? local?.supportsSoupBones ?? false,
-          customVariants: bp.customVariants || bp.custom_variants || local?.customVariants || null
-        } as Product
-      })
-    } else {
+  if (!products.value || products.value.length === 0) {
+    try {
+      const backendProducts = await api.get<any[]>('/products')
+      if (backendProducts && Array.isArray(backendProducts) && backendProducts.length > 0) {
+        products.value = backendProducts.map(normalizeProduct)
+      } else {
+        products.value = PRODUCTS
+      }
+    } catch {
       products.value = PRODUCTS
     }
-  } catch (err) {
-    products.value = PRODUCTS
-  } finally {
-    isLoading.value = false
   }
 })
 

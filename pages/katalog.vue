@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { PRODUCTS, type Product } from '~/data/products'
+import { PRODUCTS, normalizeProduct, type Product } from '~/data/products'
 import { useCartStore } from '~/stores/cart'
 import { useWishlistStore } from '~/stores/wishlist'
 import { useAuthStore } from '~/stores/auth'
@@ -30,6 +30,21 @@ const runtimeConfig = useRuntimeConfig()
 const siteUrl = (runtimeConfig.public?.siteUrl as string) || 'https://lautberkahabadi.com'
 const apiBase = (runtimeConfig.public?.apiBase as string) || 'https://api-muncar.ammarabufadhel.my.id'
 
+const api = useApi()
+const { data: serverProducts } = await useAsyncData<Product[]>('catalog-products', async () => {
+  try {
+    const res = await api.get<any[]>('/products')
+    if (res && Array.isArray(res) && res.length > 0) {
+      return res.map(normalizeProduct)
+    }
+  } catch {
+    // Graceful offline fallback
+  }
+  return PRODUCTS
+}, {
+  default: () => PRODUCTS,
+})
+
 // State Management
 const searchQueryInput = ref('')
 const searchQuery = ref('')
@@ -51,12 +66,15 @@ const scrollSentinel = ref<HTMLElement | null>(null)
 let scrollObserver: IntersectionObserver | null = null
 
 const isFilterOpen = ref(false)
-const isLoading = ref(true)
+const isLoading = ref(false)
 const hasError = ref(false)
 const addedToast = ref(false)
 const toastProductName = ref('')
 
-const productsList = ref<Product[]>([])
+const productsList = ref<Product[]>(serverProducts.value && serverProducts.value.length > 0 ? serverProducts.value : PRODUCTS)
+watch(serverProducts, (val) => {
+  if (val && val.length > 0) productsList.value = val
+})
 
 // Typesense Instant Search & Synonyms Integration
 const typesenseMatchedSlugs = ref<string[]>([])
@@ -177,48 +195,16 @@ const clearSearch = () => {
 
 // Fetch products directly from backend
 const fetchProducts = async () => {
-  isLoading.value = true
+  if (!productsList.value || productsList.value.length === 0) {
+    isLoading.value = true
+  }
   hasError.value = false
   try {
-    const api = useApi()
     const backendProducts = await api.get<any[]>('/products')
     if (backendProducts && Array.isArray(backendProducts) && backendProducts.length > 0) {
-      productsList.value = backendProducts.map(bp => {
-        const local = PRODUCTS.find(p => p.id === bp.id || p.slug === bp.slug)
-        const bpHero = bp.images?.hero || bp.image_url || local?.images?.hero || ''
-        const rawStock = bp.stockKg ?? bp.stock_kg
-        const parsedStock = (rawStock !== undefined && rawStock !== null && !isNaN(Number(rawStock)))
-          ? Number(rawStock)
-          : (local?.stockKg ?? 0)
-        return {
-          id: bp.id,
-          name: bp.name,
-          fishType: bp.fishType || bp.fish_type || bp.category || local?.fishType || 'Hasil Laut Muncar',
-          scientificName: bp.scientificName || bp.latin_name || local?.scientificName || '',
-          slug: bp.slug,
-          category: bp.category || local?.category || 'utuh',
-          pricePerKg: Number(bp.pricePerKg ?? bp.price_per_kg) || local?.pricePerKg || 0,
-          originalPricePerKg: local?.originalPricePerKg,
-          rating: Number(bp.rating) || local?.rating || 4.9,
-          reviewCount: bp.reviewCount || bp.review_count || local?.reviewCount || 100,
-          freshnessScore: bp.freshnessScore || bp.freshness_score || local?.freshnessScore || 98,
-          catchMethod: bp.catchMethod || bp.catch_method || local?.catchMethod || 'Pancing Nelayan Muncar',
-          landingTime: bp.landingTime || bp.landing_time || local?.landingTime || '05:30 WIB Subuh',
-          storageTemp: bp.storageTemp || bp.storage_temp || local?.storageTemp || 'Chilled 1.5 C',
-          images: { hero: bpHero, gallery: [bpHero] },
-          stockKg: parsedStock,
-          minOrderKg: Number(bp.minOrderKg ?? bp.min_order_kg) || local?.minOrderKg || 1,
-          description: bp.description || local?.description || '',
-          isFeatured: bp.isFeatured ?? bp.is_featured ?? local?.isFeatured ?? false,
-          availableCuts: bp.availableCuts || bp.available_cuts || local?.availableCuts || [],
-          qualityBadges: bp.qualityBadges || bp.quality_badges || local?.qualityBadges || ['Tangkapan Segar Subuh', 'Cold Chain'],
-          tags: local?.tags || ['Segar Muncar', 'Cold Chain'],
-          unit: bp.unit || local?.unit || 'kg',
-          soldCount: Number(bp.soldCount ?? bp.sold_count ?? local?.soldCount ?? 0),
-          wishlistCount: Number(bp.wishlistCount ?? bp.wishlist_count ?? local?.wishlistCount ?? 0),
-          customVariants: bp.customVariants || bp.custom_variants || local?.customVariants || null
-        } as Product
-      })
+      productsList.value = backendProducts.map(normalizeProduct)
+    } else if (!productsList.value || productsList.value.length === 0) {
+      productsList.value = PRODUCTS
     }
   } catch (err) {
     if (!productsList.value || productsList.value.length === 0) {
@@ -241,7 +227,13 @@ onMounted(() => {
   if (route.query.kategori) {
     selectedCategory.value = String(route.query.kategori)
   }
-  fetchProducts()
+  if (!productsList.value || productsList.value.length === 0) {
+    fetchProducts()
+  } else {
+    nextTick(() => {
+      setupScrollObserver()
+    })
+  }
 })
 
 // Category options mapping (5 Standar Komoditas Hasil Laut Konsumen)

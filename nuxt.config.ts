@@ -37,10 +37,11 @@ export default defineNuxtConfig({
   },
 
   $production: {
+    // ponytail: short 10s-15s SWR guarantees instant sub-second SSR while ensuring admin product edits propagate within 15s
     routeRules: {
-      '/': { swr: 300 },
-      '/katalog': { swr: 300 },
-      '/produk/**': { swr: 600 },
+      '/': { swr: 10 },
+      '/katalog': { swr: 10 },
+      '/produk/**': { swr: 15 },
     },
   },
 
@@ -117,21 +118,8 @@ export default defineNuxtConfig({
           media: 'print',
           onload: "this.media='all'",
         },
-        {
-          rel: 'preload',
-          as: 'font',
-          type: 'font/woff2',
-          href: '/fonts/material-symbols-outlined.woff2',
-          crossorigin: '',
-        },
       ],
-      script: [
-        {
-          src: 'https://app.sandbox.midtrans.com/snap/snap.js',
-          'data-client-key': 'Mid-client-vE8vECZNYD2RyXbI',
-          async: true,
-        },
-      ],
+      script: [],
     },
   },
 
