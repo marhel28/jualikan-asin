@@ -285,9 +285,9 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="w-full max-w-md mx-auto py-4 sm:py-8 px-4">
-    <!-- Breadcrumb Flat -->
-    <nav class="flex items-center justify-center gap-2 text-xs text-slate-500 mb-4">
+  <div class="w-full flex-1 flex flex-col justify-center items-center py-4 sm:py-8 lg:py-12 px-4">
+    <!-- Breadcrumb Flat (Centered on all viewports) -->
+    <nav class="flex items-center justify-center gap-2 text-xs text-slate-500 mb-4 select-none">
       <NuxtLink to="/" class="hover:text-[#103860] transition-colors">Beranda</NuxtLink>
       <span class="material-symbols-outlined text-[14px]">chevron_right</span>
       <span class="font-semibold text-[#103860]">
@@ -295,12 +295,13 @@ onBeforeUnmount(() => {
       </span>
     </nav>
 
-    <!-- Main Clean Flat Card -->
-    <div class="bg-white rounded-3xl border border-slate-200/90 shadow-sm overflow-hidden">
-      <!-- Flat Marine Wave Header Cap (No text explanations, pure flat visual element) -->
-      <div class="relative bg-[#103860] pt-7 pb-8 px-6 flex flex-col items-center justify-center">
-        <!-- Floating Flat Circular Logo Badge -->
-        <div class="relative z-10 w-16 h-16 rounded-full bg-white p-2.5 shadow-sm border border-slate-100 flex items-center justify-center">
+    <!-- Main Clean Flat Card (Optimized for Mobile, Tablet, & Desktop) -->
+    <div class="w-full max-w-[420px] bg-white rounded-3xl border border-slate-200/90 shadow-sm sm:shadow-md overflow-hidden transition-all">
+      
+      <!-- Flat Marine Wave Header Cap -->
+      <div class="relative bg-[#103860] pt-8 pb-10 px-6 flex flex-col items-center justify-center overflow-hidden">
+        <!-- Floating Clean Squircle Logo Badge (Modern Rounded-2xl Framing Circular Seal) -->
+        <div class="relative z-10 w-16 h-16 rounded-2xl bg-white p-2.5 shadow-sm border border-slate-100 flex items-center justify-center transition-transform hover:scale-105">
           <img 
             src="/brand/logo.webp" 
             alt="Laut Berkah Abadi" 
@@ -309,10 +310,10 @@ onBeforeUnmount(() => {
           />
         </div>
 
-        <!-- SVG Flat Ocean Wave (Smooth Cut-out into White Form Surface) -->
-        <div class="absolute -bottom-[1px] left-0 right-0 h-6 pointer-events-none overflow-hidden">
-          <svg class="w-full h-full" viewBox="0 0 400 30" preserveAspectRatio="none">
-            <path d="M0,15 C100,32 200,-5 300,18 C350,28 380,10 400,15 L400,30 L0,30 Z" fill="#FFFFFF"></path>
+        <!-- SVG Flat Ocean Wave (Smooth Double Crest Cut-out into White Form Surface) -->
+        <div class="absolute -bottom-[1px] left-0 right-0 h-8 pointer-events-none overflow-hidden">
+          <svg class="w-full h-full" viewBox="0 0 500 36" preserveAspectRatio="none">
+            <path d="M0,16 C120,36 200,2 320,24 C400,38 460,10 500,20 L500,36 L0,36 Z" fill="#FFFFFF"></path>
           </svg>
         </div>
       </div>
@@ -373,14 +374,14 @@ onBeforeUnmount(() => {
             <label for="reg-username" class="block text-xs font-semibold text-slate-700">
               Nama Lengkap <span class="text-red-500">*</span>
             </label>
-            <div class="relative flex items-center border border-slate-300 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#103860] focus-within:border-transparent bg-white">
+            <div class="relative flex items-center border border-slate-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#103860]/15 focus-within:border-[#103860] bg-slate-50/60 hover:bg-white focus-within:bg-white transition-all">
               <span class="material-symbols-outlined text-slate-400 text-[18px] ml-3 shrink-0">badge</span>
               <input
                 id="reg-username"
                 v-model="regUsername"
                 type="text"
                 placeholder="cth: Ratna Dewi"
-                class="flex-1 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none bg-white font-medium"
+                class="flex-1 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none bg-transparent font-medium"
                 autocomplete="name"
                 required
               />
@@ -392,8 +393,8 @@ onBeforeUnmount(() => {
             <label for="reg-phone" class="block text-xs font-semibold text-slate-700">
               Nomor WhatsApp <span class="text-red-500">*</span>
             </label>
-            <div class="flex items-center border border-slate-300 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#103860] focus-within:border-transparent bg-white">
-              <span class="inline-flex items-center px-3 py-2 bg-slate-50 text-[#103860] text-xs font-bold border-r border-slate-200 select-none">
+            <div class="flex items-center border border-slate-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#103860]/15 focus-within:border-[#103860] bg-slate-50/60 hover:bg-white focus-within:bg-white transition-all">
+              <span class="inline-flex items-center px-3 py-2 bg-slate-100 text-[#103860] text-xs font-bold border-r border-slate-200 select-none">
                 +62
               </span>
               <input
@@ -401,7 +402,7 @@ onBeforeUnmount(() => {
                 v-model="regPhone"
                 type="tel"
                 placeholder="812-3456-7890"
-                class="flex-1 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none bg-white font-medium"
+                class="flex-1 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none bg-transparent font-medium"
                 autocomplete="tel"
                 required
               />
@@ -413,14 +414,14 @@ onBeforeUnmount(() => {
             <label for="reg-email" class="block text-xs font-semibold text-slate-700">
               Alamat Email <span class="text-slate-400 font-normal text-[11px]">(opsional)</span>
             </label>
-            <div class="relative flex items-center border border-slate-300 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#103860] focus-within:border-transparent bg-white">
+            <div class="relative flex items-center border border-slate-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#103860]/15 focus-within:border-[#103860] bg-slate-50/60 hover:bg-white focus-within:bg-white transition-all">
               <span class="material-symbols-outlined text-slate-400 text-[18px] ml-3 shrink-0">mail</span>
               <input
                 id="reg-email"
                 v-model="regEmail"
                 type="email"
                 placeholder="cth: ratna@gmail.com"
-                class="flex-1 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none bg-white font-medium"
+                class="flex-1 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none bg-transparent font-medium"
                 autocomplete="email"
               />
             </div>
@@ -431,14 +432,14 @@ onBeforeUnmount(() => {
             <label for="reg-password" class="block text-xs font-semibold text-slate-700">
               Kata Sandi <span class="text-red-500">*</span>
             </label>
-            <div class="relative flex items-center border border-slate-300 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#103860] focus-within:border-transparent bg-white">
+            <div class="relative flex items-center border border-slate-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#103860]/15 focus-within:border-[#103860] bg-slate-50/60 hover:bg-white focus-within:bg-white transition-all">
               <span class="material-symbols-outlined text-slate-400 text-[18px] ml-3 shrink-0">lock</span>
               <input
                 id="reg-password"
                 v-model="regPassword"
                 :type="showRegPassword ? 'text' : 'password'"
                 placeholder="Minimal 6 karakter"
-                class="flex-1 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none bg-white font-medium"
+                class="flex-1 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none bg-transparent font-medium"
                 autocomplete="new-password"
                 required
               />
@@ -474,7 +475,7 @@ onBeforeUnmount(() => {
           <button
             type="submit"
             :disabled="isSubmitting"
-            class="w-full py-2.5 px-4 bg-[#103860] hover:bg-[#13446E] text-white text-xs font-bold rounded-xl shadow-xs transition-all active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer mt-2"
+            class="w-full py-2.5 sm:py-3 px-4 bg-[#103860] hover:bg-[#13446E] text-white text-xs font-bold rounded-xl shadow-xs transition-all active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer mt-2"
           >
             <span 
               class="material-symbols-outlined text-[18px]"
@@ -495,14 +496,14 @@ onBeforeUnmount(() => {
               <label for="login-id" class="block text-xs font-semibold text-slate-700">
                 Nomor WhatsApp atau Email
               </label>
-              <div class="relative flex items-center border border-slate-300 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#103860] focus-within:border-transparent bg-white">
+              <div class="relative flex items-center border border-slate-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#103860]/15 focus-within:border-[#103860] bg-slate-50/60 hover:bg-white focus-within:bg-white transition-all">
                 <span class="material-symbols-outlined text-slate-400 text-[18px] ml-3 shrink-0">account_circle</span>
                 <input
                   id="login-id"
                   v-model="loginIdentifier"
                   type="text"
                   placeholder="081234567890 atau email@domain.com"
-                  class="flex-1 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none bg-white font-medium"
+                  class="flex-1 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none bg-transparent font-medium"
                   autocomplete="username"
                   required
                 />
@@ -523,14 +524,14 @@ onBeforeUnmount(() => {
                   Lupa sandi? Masuk via OTP
                 </button>
               </div>
-              <div class="relative flex items-center border border-slate-300 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#103860] focus-within:border-transparent bg-white">
+              <div class="relative flex items-center border border-slate-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#103860]/15 focus-within:border-[#103860] bg-slate-50/60 hover:bg-white focus-within:bg-white transition-all">
                 <span class="material-symbols-outlined text-slate-400 text-[18px] ml-3 shrink-0">lock</span>
                 <input
                   id="login-password"
                   v-model="loginPassword"
                   :type="showLoginPassword ? 'text' : 'password'"
                   placeholder="Masukkan password"
-                  class="flex-1 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none bg-white font-medium"
+                  class="flex-1 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none bg-transparent font-medium"
                   autocomplete="current-password"
                   required
                 />
@@ -561,7 +562,7 @@ onBeforeUnmount(() => {
             <button
               type="submit"
               :disabled="isSubmitting"
-              class="w-full py-2.5 px-4 bg-[#103860] hover:bg-[#13446E] text-white text-xs font-bold rounded-xl shadow-xs transition-all active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer mt-2"
+              class="w-full py-2.5 sm:py-3 px-4 bg-[#103860] hover:bg-[#13446E] text-white text-xs font-bold rounded-xl shadow-xs transition-all active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer mt-2"
             >
               <span 
                 class="material-symbols-outlined text-[18px]"
@@ -580,8 +581,8 @@ onBeforeUnmount(() => {
                 <label for="phone-otp-input" class="block text-xs font-semibold text-slate-700">
                   Nomor WhatsApp Terdaftar
                 </label>
-                <div class="flex items-center border border-slate-300 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#103860] focus-within:border-transparent bg-white">
-                  <span class="inline-flex items-center px-3 py-2 bg-slate-50 text-[#103860] text-xs font-bold border-r border-slate-200 select-none">
+                <div class="flex items-center border border-slate-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#103860]/15 focus-within:border-[#103860] bg-slate-50/60 hover:bg-white focus-within:bg-white transition-all">
+                  <span class="inline-flex items-center px-3 py-2 bg-slate-100 text-[#103860] text-xs font-bold border-r border-slate-200 select-none">
                     +62
                   </span>
                   <input
@@ -591,7 +592,7 @@ onBeforeUnmount(() => {
                     @input="handlePhoneInput(($event.target as HTMLInputElement).value)"
                     @keyup.enter="handleSendOtp"
                     placeholder="812-3456-7890"
-                    class="flex-1 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none bg-white font-medium"
+                    class="flex-1 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none bg-transparent font-medium"
                     autocomplete="tel"
                   />
                 </div>
@@ -601,7 +602,7 @@ onBeforeUnmount(() => {
                 type="button"
                 @click="handleSendOtp"
                 :disabled="isSubmitting || authStore.isLoading"
-                class="w-full py-2.5 px-4 bg-[#103860] hover:bg-[#13446E] text-white text-xs font-bold rounded-xl shadow-xs transition-all active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
+                class="w-full py-2.5 sm:py-3 px-4 bg-[#103860] hover:bg-[#13446E] text-white text-xs font-bold rounded-xl shadow-xs transition-all active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
               >
                 <span 
                   class="material-symbols-outlined text-[18px]"
@@ -650,7 +651,7 @@ onBeforeUnmount(() => {
                 type="button"
                 @click="handleVerifyOtp"
                 :disabled="isSubmitting || fullOtp.length < 4"
-                class="w-full py-2.5 px-4 bg-[#059669] hover:bg-[#047857] text-white text-xs font-bold rounded-xl shadow-xs transition-all active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
+                class="w-full py-2.5 sm:py-3 px-4 bg-[#059669] hover:bg-[#047857] text-white text-xs font-bold rounded-xl shadow-xs transition-all active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
               >
                 <span>Verifikasi OTP</span>
               </button>
@@ -686,7 +687,7 @@ onBeforeUnmount(() => {
           type="button"
           @click="handleGoogleAuth"
           :disabled="isSubmitting"
-          class="w-full py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 font-semibold text-xs rounded-xl transition-all shadow-2xs flex items-center justify-center gap-2.5 active:scale-98 cursor-pointer disabled:opacity-60"
+          class="w-full py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-semibold text-xs rounded-xl transition-all shadow-2xs flex items-center justify-center gap-2.5 active:scale-[0.99] cursor-pointer disabled:opacity-60"
         >
           <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
