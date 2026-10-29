@@ -158,64 +158,8 @@ const displayName = computed(() => {
   return `${product.value.name} - Laut Berkah Abadi`
 })
 
-// 2-Tier Customizable Variants
-const customVariants = computed(() => {
-  return product.value?.customVariants || null
-})
-
-const tier1Config = computed(() => {
-  const masterStockKg = product.value?.stockKg ?? 0
-  const isPack = product.value?.unit === 'pack'
-
-  if (customVariants.value?.tier1 && customVariants.value.tier1.options && customVariants.value.tier1.options.length > 0) {
-    const rawOptions = customVariants.value.tier1.options
-    return {
-      ...customVariants.value.tier1,
-      options: rawOptions.map(opt => {
-        let optStock = 0
-        if (masterStockKg <= 0) {
-          optStock = 0
-        } else if (isPack) {
-          optStock = Math.floor(masterStockKg)
-        } else {
-          const weightKg = opt.weightValue || 0.1
-          optStock = Math.floor(masterStockKg / weightKg)
-        }
-        return {
-          ...opt,
-          stock: optStock,
-          inStock: optStock > 0
-        }
-      })
-    }
-  }
-
-  const baseKgPrice = product.value?.pricePerKg || 0
-  const defaultGrams = [100, 150, 200, 250]
-  return {
-    name: 'Pilihan Berat',
-    unit: 'gram' as const,
-    options: defaultGrams.map(g => {
-      const weightKg = g / 1000
-      let optStock = 0
-      if (masterStockKg <= 0) {
-        optStock = 0
-      } else if (isPack) {
-        optStock = Math.floor(masterStockKg)
-      } else {
-        optStock = Math.floor(masterStockKg / weightKg)
-      }
-      return {
-        id: `opt-${g}`,
-        label: String(g),
-        weightValue: weightKg,
-        price: Math.max(5000, Math.round((baseKgPrice * weightKg) / 500) * 500),
-        stock: optStock,
-        inStock: optStock > 0
-      }
-    })
-  }
-})
+// ponytail: unified variant resolution from useProductPrice ensures 100% parity with catalog cards
+const { tier1Config, tier2Config, priceInfo } = useProductPrice(product)
 
 const tier1Unit = computed(() => tier1Config.value.unit || 'gram')
 const tier1Name = computed(() => tier1Config.value.name || 'Pilihan Berat')
@@ -237,29 +181,9 @@ const selectedTier1 = computed(() => {
   return tier1Options.value.find(o => o.id === selectedTier1Id.value) || tier1Options.value[0] || null
 })
 
-// Tier 2: Custom Variant (Default Disabled/Empty)
-const tier2Config = computed(() => {
-  const t2 = customVariants.value?.tier2
-  if (!t2) return null
-  const masterStockKg = product.value?.stockKg ?? 0
-  if (masterStockKg <= 0 && t2.options) {
-    return {
-      ...t2,
-      options: t2.options.map(opt => ({
-        ...opt,
-        inStock: false
-      }))
-    }
-  }
-  return t2
-})
-
-const tier2Enabled = computed(() => {
-  return Boolean(tier2Config.value?.enabled && tier2Config.value?.options && tier2Config.value.options.length > 0)
-})
-
-const tier2Name = computed(() => tier2Config.value?.name || 'Pilihan Olahan')
-const tier2Options = computed(() => tier2Config.value?.options || [])
+const tier2Enabled = computed(() => tier2Config.value.enabled)
+const tier2Name = computed(() => tier2Config.value.name || 'Pilihan Olahan')
+const tier2Options = computed(() => tier2Config.value.options || [])
 
 const selectedTier2Id = ref<string>('')
 
@@ -287,23 +211,14 @@ const currentUnitPrice = computed(() => {
 
 const currentVariantPrice = computed(() => currentUnitPrice.value)
 
-const minVariantPrice = computed(() => {
-  if (tier1Options.value.length === 0) return product.value?.pricePerKg || 0
-  const prices = tier1Options.value.map(o => o.price)
-  return Math.min(...prices)
-})
-
-const maxVariantPrice = computed(() => {
-  if (tier1Options.value.length === 0) return product.value?.pricePerKg || 0
-  const baseMax = Math.max(...tier1Options.value.map(o => o.price))
-  const maxDelta = tier2Enabled.value && tier2Options.value.length > 0
-    ? Math.max(...tier2Options.value.map(o => o.priceDelta || 0))
-    : 0
-  return baseMax + maxDelta
-})
+const minVariantPrice = computed(() => priceInfo.value.minPrice)
+const maxVariantPrice = computed(() => priceInfo.value.maxPrice)
 
 const selectedGrams = computed(() => {
   if (!selectedTier1.value) return 150
+  if (tier1Unit.value === 'pack') {
+    return product.value?.packWeightGrams || Math.round(Number(selectedTier1.value.weightValue || 0.2) * 1000)
+  }
   return tier1Unit.value === 'kg'
     ? Math.round(Number(selectedTier1.value.weightValue || selectedTier1.value.label) * 1000)
     : Math.round(Number(selectedTier1.value.label) || 150)
@@ -1028,23 +943,23 @@ useHead(() => {
                     Rp{{ currentUnitPrice.toLocaleString('id-ID') }}
                   </span>
                   <span class="text-xs font-medium text-slate-500">
-                    / Pack ({{ selectedTier1?.label }}{{ tier1Unit === 'kg' ? ' kg' : 'g' }})
+                    / Pack ({{ selectedTier1?.label }}{{ tier1Unit === 'kg' ? ' kg' : tier1Unit === 'gram' ? 'g' : '' }})
                   </span>
                 </div>
-                <div class="text-[11px] text-slate-500 mt-1 font-medium">
-                  Rentang harga: <strong class="text-slate-700">Rp{{ minVariantPrice.toLocaleString('id-ID') }} - Rp{{ maxVariantPrice.toLocaleString('id-ID') }}</strong>
+                <div v-if="minVariantPrice !== maxVariantPrice" class="text-[11px] text-slate-500 mt-1 font-medium">
+                  Rentang varian: <strong class="text-slate-700">Rp{{ minVariantPrice.toLocaleString('id-ID') }} - Rp{{ maxVariantPrice.toLocaleString('id-ID') }}</strong>
                 </div>
               </div>
 
               <div class="my-4 border-b border-slate-200/80"></div>
             </div>
 
-            <!-- Tier 1: Pilihan Berat (Gram / Kg) -->
+            <!-- Tier 1: Pilihan Berat (Gram / Kg / Pack) -->
             <div class="pb-4">
               <div class="text-xs text-slate-700 mb-2.5">
-                {{ tier1Name }} ({{ tier1Unit === 'kg' ? 'kg' : 'Gram' }}):
+                {{ tier1Name }} ({{ tier1Unit === 'kg' ? 'kg' : tier1Unit === 'pack' ? 'Kemasan' : 'Gram' }}):
                 <strong class="text-[#103860] font-bold" id="selected-weight-label">
-                  [{{ selectedTier1?.label }}{{ tier1Unit === 'kg' ? ' kg' : 'g' }}]
+                  [{{ selectedTier1?.label }}{{ tier1Unit === 'kg' ? ' kg' : tier1Unit === 'gram' ? 'g' : '' }}]
                 </strong>
               </div>
 
@@ -1055,13 +970,13 @@ useHead(() => {
                     :class="selectedTier1Id === opt.id
                       ? 'border-[#103860] bg-[#103860] text-white shadow-xs'
                       : 'border-slate-200 bg-white text-slate-800 hover:border-slate-300 hover:bg-slate-50'"
-                    :aria-label="`Pilih ukuran ${opt.label} ${tier1Unit === 'kg' ? 'kg' : 'gram'}`">
-                    {{ opt.label }}{{ tier1Unit === 'kg' ? ' kg' : '' }}
+                    :aria-label="`Pilih ukuran ${opt.label} ${tier1Unit === 'kg' ? 'kg' : tier1Unit === 'pack' ? 'kemasan' : 'gram'}`">
+                    {{ opt.label }}{{ tier1Unit === 'kg' ? ' kg' : tier1Unit === 'gram' ? 'g' : '' }}
                   </button>
                   <div v-else
                     class="diagonal-cross h-10 sm:h-11 px-3.5 sm:px-4 rounded-lg sm:rounded-xl border border-slate-200 bg-slate-50/70 text-slate-400 select-none cursor-not-allowed text-xs sm:text-sm flex items-center justify-center font-mono font-normal"
-                    :title="`Ukuran ${opt.label}${tier1Unit === 'kg' ? 'kg' : 'g'} sedang habis`">
-                    {{ opt.label }}{{ tier1Unit === 'kg' ? ' kg' : '' }}
+                    :title="`Ukuran ${opt.label}${tier1Unit === 'kg' ? 'kg' : tier1Unit === 'gram' ? 'g' : ''} sedang habis`">
+                    {{ opt.label }}{{ tier1Unit === 'kg' ? ' kg' : tier1Unit === 'gram' ? 'g' : '' }}
                   </div>
                 </template>
               </div>

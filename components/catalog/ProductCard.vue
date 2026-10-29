@@ -31,82 +31,8 @@ const formatPrice = (price: number): string => {
   return price.toLocaleString('id-ID')
 }
 
-// Dynamic Price Calculation (Rentang Penuh vs Per Pack vs Per Kg with Tier 1 & Tier 2 support)
-const priceInfo = computed(() => {
-  const p = props.product
-  const cv = p.customVariants
-  const tier1 = cv?.tier1
-  const tier1Opts = (tier1?.options || []).filter(o => o.inStock !== false)
-  const effectiveTier1 = tier1Opts.length > 0 ? tier1Opts : (tier1?.options || [])
-
-  // Check if Tier 2 (e.g. Pilihan Kulit, Potongan) is enabled
-  const tier2 = cv?.tier2
-  const tier2Enabled = Boolean(tier2?.enabled && tier2.options && tier2.options.length > 0)
-  const tier2Opts = tier2Enabled ? (tier2.options || []).filter(o => o.inStock !== false) : []
-  const effectiveTier2 = tier2Opts.length > 0 ? tier2Opts : (tier2?.options || [])
-
-  let minDelta = 0
-  let maxDelta = 0
-  if (tier2Enabled && effectiveTier2.length > 0) {
-    const deltas = effectiveTier2.map(o => Number(o.priceDelta) || 0)
-    minDelta = Math.min(0, ...deltas)
-    maxDelta = Math.max(0, ...deltas)
-  }
-
-  // Case 1: Has multiple Tier 1 weight options (or Tier 2 additions)
-  if (effectiveTier1.length > 0) {
-    const tier1Prices = effectiveTier1.map(o => Number(o.price) || 0)
-    const minTier1 = Math.min(...tier1Prices)
-    const maxTier1 = Math.max(...tier1Prices)
-    const minTotal = Math.max(1000, minTier1 + minDelta)
-    const maxTotal = Math.max(1000, maxTier1 + maxDelta)
-
-    if (minTotal !== maxTotal) {
-      const unitName = tier1?.unit === 'kg' ? 'kg' : 'g'
-      const firstLabel = effectiveTier1[0]?.label || ''
-      const lastLabel = effectiveTier1[effectiveTier1.length - 1]?.label || ''
-      const rangeLabel = firstLabel && lastLabel && firstLabel !== lastLabel
-        ? `Pilihan ${firstLabel}${unitName} - ${lastLabel}${unitName}`
-        : `${effectiveTier1.length} Pilihan Ukuran`
-
-      return {
-        isRange: true,
-        displayPrice: `Rp ${minTotal.toLocaleString('id-ID')} - Rp ${maxTotal.toLocaleString('id-ID')}`,
-        unitLabel: '',
-        subtext: rangeLabel,
-        hasVariants: true
-      }
-    } else {
-      return {
-        isRange: false,
-        displayPrice: `Rp ${minTotal.toLocaleString('id-ID')}`,
-        unitLabel: p.unit === 'pack' ? '/ pack' : '/ kg',
-        subtext: tier2Enabled ? 'Pilihan Varian Tersedia' : undefined,
-        hasVariants: tier2Enabled || effectiveTier1.length > 1
-      }
-    }
-  }
-
-  // Case 2: Fixed Price per Pack
-  if (p.unit === 'pack') {
-    return {
-      isRange: false,
-      displayPrice: `Rp ${formatPrice(p.pricePerKg)}`,
-      unitLabel: '/ pack',
-      subtext: p.packWeightGrams ? `${p.packWeightGrams}g per pack` : undefined,
-      hasVariants: false
-    }
-  }
-
-  // Case 3: Standard Catch-Weight per Kg
-  return {
-    isRange: false,
-    displayPrice: `Rp ${formatPrice(p.pricePerKg)}`,
-    unitLabel: '/ kg',
-    subtext: undefined,
-    hasVariants: false
-  }
-})
+// ponytail: synchronized with product detail through useProductPrice
+const { priceInfo } = useProductPrice(computed(() => props.product))
 
 const goToDetail = () => {
   router.push('/produk/' + props.product.slug)

@@ -124,6 +124,26 @@ export const PRODUCTS: Product[] = [
         yieldBadge: '~800g/kg (Rendemen 80%)'
       }
     ],
+    customVariants: {
+      tier1: {
+        name: 'Pilihan Berat',
+        unit: 'gram',
+        options: [
+          { id: 'opt-100', label: '100', weightValue: 0.1, price: 9500, stock: 20, inStock: true },
+          { id: 'opt-150', label: '150', weightValue: 0.15, price: 14000, stock: 20, inStock: true },
+          { id: 'opt-200', label: '200', weightValue: 0.2, price: 18500, stock: 20, inStock: true },
+          { id: 'opt-250', label: '250', weightValue: 0.25, price: 23000, stock: 20, inStock: true }
+        ]
+      },
+      tier2: {
+        enabled: true,
+        name: 'Jenis Potongan',
+        options: [
+          { id: 'cut-1', label: 'Fillet Tanpa Kulit', priceDelta: 0, inStock: true },
+          { id: 'cut-2', label: 'Steak Melintang', priceDelta: 0, inStock: true }
+        ]
+      }
+    },
     supportsSoupBones: true,
     isFeatured: true,
     soldCount: 342,
@@ -169,6 +189,26 @@ export const PRODUCTS: Product[] = [
         yieldBadge: '~520g/kg (Rendemen 52%)'
       }
     ],
+    customVariants: {
+      tier1: {
+        name: 'Pilihan Berat',
+        unit: 'gram',
+        options: [
+          { id: 'opt-100', label: '100', weightValue: 0.1, price: 8500, stock: 15, inStock: true },
+          { id: 'opt-150', label: '150', weightValue: 0.15, price: 13000, stock: 15, inStock: true },
+          { id: 'opt-200', label: '200', weightValue: 0.2, price: 17000, stock: 15, inStock: true },
+          { id: 'opt-250', label: '250', weightValue: 0.25, price: 21500, stock: 15, inStock: true }
+        ]
+      },
+      tier2: {
+        enabled: true,
+        name: 'Pilihan Olahan',
+        options: [
+          { id: 'cut-1', label: 'Utuh Bersih', priceDelta: 0, inStock: true },
+          { id: 'cut-2', label: 'Fillet Bersih', priceDelta: 2000, inStock: true }
+        ]
+      }
+    },
     supportsSoupBones: true,
     isFeatured: true,
     soldCount: 185,
@@ -214,6 +254,25 @@ export const PRODUCTS: Product[] = [
         yieldBadge: '~800g/kg (Rendemen 80%)'
       }
     ],
+    customVariants: {
+      tier1: {
+        name: 'Pilihan Berat',
+        unit: 'gram',
+        options: [
+          { id: 'opt-100', label: '100', weightValue: 0.1, price: 5000, stock: 30, inStock: true },
+          { id: 'opt-150', label: '150', weightValue: 0.15, price: 5500, stock: 30, inStock: true },
+          { id: 'opt-200', label: '200', weightValue: 0.2, price: 7500, stock: 30, inStock: true },
+          { id: 'opt-250', label: '250', weightValue: 0.25, price: 9000, stock: 30, inStock: true }
+        ]
+      },
+      tier2: {
+        enabled: false,
+        name: 'Pilihan Potongan',
+        options: [
+          { id: 'cut-1', label: 'Potong Bulat Melintang', priceDelta: 0, inStock: true }
+        ]
+      }
+    },
     supportsSoupBones: true,
     isFeatured: false,
     soldCount: 520,
@@ -252,6 +311,24 @@ export const PRODUCTS: Product[] = [
         yieldBadge: '~850g/kg (Rendemen 85%)'
       }
     ],
+    customVariants: {
+      tier1: {
+        name: 'Pilihan Berat',
+        unit: 'gram',
+        options: [
+          { id: 'opt-250', label: '250', weightValue: 0.25, price: 6000, stock: 50, inStock: true },
+          { id: 'opt-500', label: '500', weightValue: 0.5, price: 12000, stock: 50, inStock: true },
+          { id: 'opt-1000', label: '1000', weightValue: 1.0, price: 24000, stock: 50, inStock: true }
+        ]
+      },
+      tier2: {
+        enabled: false,
+        name: 'Pilihan Olahan',
+        options: [
+          { id: 'cut-1', label: 'Utuh Bersih Siang', priceDelta: 0, inStock: true }
+        ]
+      }
+    },
     supportsSoupBones: false,
     isFeatured: true,
     soldCount: 890,
@@ -304,6 +381,26 @@ export const PRODUCTS: Product[] = [
         yieldBadge: '~800g/kg (Rendemen 80%)'
       }
     ],
+    customVariants: {
+      tier1: {
+        name: 'Pilihan Berat',
+        unit: 'gram',
+        options: [
+          { id: 'opt-100', label: '100', weightValue: 0.1, price: 10000, stock: 15, inStock: true },
+          { id: 'opt-150', label: '150', weightValue: 0.15, price: 15000, stock: 15, inStock: true },
+          { id: 'opt-200', label: '200', weightValue: 0.2, price: 19500, stock: 15, inStock: true },
+          { id: 'opt-250', label: '250', weightValue: 0.25, price: 24500, stock: 15, inStock: true }
+        ]
+      },
+      tier2: {
+        enabled: true,
+        name: 'Pilihan Olahan',
+        options: [
+          { id: 'cut-1', label: 'Utuh Bersih', priceDelta: 0, inStock: true },
+          { id: 'cut-2', label: 'Fillet Bersih', priceDelta: 2500, inStock: true }
+        ]
+      }
+    },
     supportsSoupBones: true,
     isFeatured: true,
     soldCount: 215,
@@ -400,6 +497,23 @@ export const PRODUCTS: Product[] = [
         yieldBadge: '100% Bagian Sup'
       }
     ],
+    customVariants: {
+      tier1: {
+        name: 'Pilihan Berat',
+        unit: 'gram',
+        options: [
+          { id: 'opt-500', label: '500', weightValue: 0.5, price: 19000, stock: 20, inStock: true },
+          { id: 'opt-1000', label: '1000', weightValue: 1.0, price: 38000, stock: 20, inStock: true }
+        ]
+      },
+      tier2: {
+        enabled: false,
+        name: 'Pilihan Olahan',
+        options: [
+          { id: 'cut-1', label: 'Belah Dua Bersih', priceDelta: 0, inStock: true }
+        ]
+      }
+    },
     supportsSoupBones: false,
     isFeatured: false,
     soldCount: 140,
@@ -439,6 +553,22 @@ export const PRODUCTS: Product[] = [
         yieldBadge: 'Netto 200g Vakum'
       }
     ],
+    customVariants: {
+      tier1: {
+        name: 'Pilihan Kemasan',
+        unit: 'pack',
+        options: [
+          { id: 'opt-200g', label: '200g (1 Pack)', weightValue: 0.2, price: 34000, stock: 40, inStock: true }
+        ]
+      },
+      tier2: {
+        enabled: false,
+        name: 'Pilihan Olahan',
+        options: [
+          { id: 'cut-1', label: 'Vakum Chilled', priceDelta: 0, inStock: true }
+        ]
+      }
+    },
     supportsSoupBones: false,
     isFeatured: true,
     soldCount: 410,
@@ -478,6 +608,22 @@ export const PRODUCTS: Product[] = [
         yieldBadge: 'Netto Siap Masak'
       }
     ],
+    customVariants: {
+      tier1: {
+        name: 'Pilihan Kemasan',
+        unit: 'pack',
+        options: [
+          { id: 'opt-120g', label: '120g (1 Pack)', weightValue: 0.12, price: 162090, stock: 13, inStock: true }
+        ]
+      },
+      tier2: {
+        enabled: false,
+        name: 'Pilihan Olahan',
+        options: [
+          { id: 'cut-1', label: 'Skin-On Fillet', priceDelta: 0, inStock: true }
+        ]
+      }
+    },
     supportsSoupBones: false,
     isFeatured: true,
     soldCount: 98,
