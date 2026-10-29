@@ -12,7 +12,7 @@ useHead({
   meta: [
     {
       name: 'description',
-      content: 'Daftar dan masuk akun pelanggan Laut Berkah Abadi Banyuwangi dengan email, username, atau WhatsApp untuk pemesanan hasil laut segar.'
+      content: 'Daftar dan masuk akun pelanggan Laut Berkah Abadi Banyuwangi dengan WhatsApp, email, atau Google.'
     },
     { name: 'robots', content: 'noindex, nofollow' }
   ]
@@ -22,7 +22,7 @@ const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 
-// Active Mode: 'login' | 'register' (default to login unless explicitly requested)
+// Active Mode: 'login' | 'register'
 const activeMode = ref<'login' | 'register'>((route.query.mode as any) || 'login')
 
 // In login mode: 'password' | 'whatsapp'
@@ -34,11 +34,13 @@ const regEmail = ref('')
 const regPassword = ref('')
 const regPhone = ref('')
 const showRegPassword = ref(false)
+const agreeTerms = ref(true)
 
-// Form State: Login Password (clean empty inputs by default)
+// Form State: Login Password
 const loginIdentifier = ref('')
 const loginPassword = ref('')
 const showLoginPassword = ref(false)
+const rememberMe = ref(true)
 
 // Form State: WhatsApp OTP
 const otpDigits = ref<string[]>(['', '', '', '', '', ''])
@@ -70,12 +72,12 @@ const handleRegister = async () => {
   authStore.errorMessage = null
 
   if (!regUsername.value.trim() || regUsername.value.trim().length < 2) {
-    localErrorMessage.value = 'Nama lengkap / Username wajib diisi minimal 2 karakter.'
+    localErrorMessage.value = 'Nama lengkap wajib diisi minimal 2 karakter.'
     return
   }
   const cleanPhone = regPhone.value.trim().replace(/\D/g, '')
   if (!cleanPhone || cleanPhone.length < 8) {
-    localErrorMessage.value = 'Nomor WhatsApp wajib diisi minimal 8 digit untuk konfirmasi kurir subuh.'
+    localErrorMessage.value = 'Nomor WhatsApp wajib diisi minimal 8 digit.'
     return
   }
   if (regEmail.value.trim() && (!regEmail.value.includes('@') || !regEmail.value.includes('.'))) {
@@ -84,6 +86,10 @@ const handleRegister = async () => {
   }
   if (!regPassword.value || regPassword.value.length < 6) {
     localErrorMessage.value = 'Kata sandi wajib diisi minimal 6 karakter.'
+    return
+  }
+  if (!agreeTerms.value) {
+    localErrorMessage.value = 'Harap setujui Syarat & Ketentuan serta Kebijakan Privasi.'
     return
   }
 
@@ -279,49 +285,58 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="w-full max-w-4xl mx-auto py-2 sm:py-4">
-    <!-- Desktop Breadcrumb -->
-    <nav class="hidden md:flex items-center gap-2 text-xs text-slate-500 mb-4">
+  <div class="w-full max-w-md mx-auto py-4 sm:py-8 px-4">
+    <!-- Breadcrumb Flat -->
+    <nav class="flex items-center justify-center gap-2 text-xs text-slate-500 mb-4">
       <NuxtLink to="/" class="hover:text-[#103860] transition-colors">Beranda</NuxtLink>
       <span class="material-symbols-outlined text-[14px]">chevron_right</span>
       <span class="font-semibold text-[#103860]">
-        {{ activeMode === 'register' ? 'Daftar Akun Pelanggan' : 'Masuk ke Akun' }}
+        {{ activeMode === 'register' ? 'Daftar Akun' : 'Masuk Akun' }}
       </span>
     </nav>
-    <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
-      <!-- Main Auth Card -->
-      <div class="md:col-span-7 bg-white rounded-2xl border border-slate-200 p-5 sm:p-7 shadow-xs space-y-5">
-        <!-- Segmented Tab Header -->
+
+    <!-- Main Clean Flat Card -->
+    <div class="bg-white rounded-3xl border border-slate-200/90 shadow-sm overflow-hidden">
+      <!-- Flat Marine Wave Header Cap (No text explanations, pure flat visual element) -->
+      <div class="relative bg-[#103860] pt-7 pb-8 px-6 flex flex-col items-center justify-center">
+        <!-- Floating Flat Circular Logo Badge -->
+        <div class="relative z-10 w-16 h-16 rounded-full bg-white p-2.5 shadow-sm border border-slate-100 flex items-center justify-center">
+          <img 
+            src="/brand/logo.webp" 
+            alt="Laut Berkah Abadi" 
+            class="w-full h-full object-contain"
+            loading="eager"
+          />
+        </div>
+
+        <!-- SVG Flat Ocean Wave (Smooth Cut-out into White Form Surface) -->
+        <div class="absolute -bottom-[1px] left-0 right-0 h-6 pointer-events-none overflow-hidden">
+          <svg class="w-full h-full" viewBox="0 0 400 30" preserveAspectRatio="none">
+            <path d="M0,15 C100,32 200,-5 300,18 C350,28 380,10 400,15 L400,30 L0,30 Z" fill="#FFFFFF"></path>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Form Body -->
+      <div class="p-6 sm:p-7 space-y-5">
+        <!-- Segmented Tab Header Flat -->
         <div class="grid grid-cols-2 p-1 bg-slate-100 rounded-xl">
           <button
             type="button"
-            @click="switchMode('register')"
-            class="py-2 text-xs font-bold rounded-lg transition-all cursor-pointer"
-            :class="activeMode === 'register' ? 'bg-white text-[#103860] shadow-xs' : 'text-slate-600 hover:text-slate-900'"
-          >
-            Daftar Akun
-          </button>
-          <button
-            type="button"
             @click="switchMode('login')"
-            class="py-2 text-xs font-bold rounded-lg transition-all cursor-pointer"
+            class="py-2 text-xs font-bold rounded-lg transition-all cursor-pointer text-center"
             :class="activeMode === 'login' ? 'bg-white text-[#103860] shadow-xs' : 'text-slate-600 hover:text-slate-900'"
           >
             Masuk
           </button>
-        </div>
-
-        <!-- Section Title -->
-        <div>
-          <h2 class="text-base sm:text-lg font-bold text-[#103860]">
-            {{ activeMode === 'register' ? 'Daftar Akun Pelanggan' : (loginMethod === 'password' ? 'Masuk ke Akun Anda' : 'Masuk via WhatsApp') }}
-          </h2>
-          <p class="text-xs text-slate-500 mt-1">
-            {{ activeMode === 'register'
-              ? 'Daftar mudah dengan WhatsApp dan password. Email opsional (Yahoo, Outlook, Gmail, dll) untuk e-invoice.'
-              : (loginMethod === 'password' ? 'Gunakan nomor WhatsApp atau email terdaftar beserta kata sandi Anda.' : 'Masukkan nomor WhatsApp terdaftar untuk menerima kode OTP.')
-            }}
-          </p>
+          <button
+            type="button"
+            @click="switchMode('register')"
+            class="py-2 text-xs font-bold rounded-lg transition-all cursor-pointer text-center"
+            :class="activeMode === 'register' ? 'bg-white text-[#103860] shadow-xs' : 'text-slate-600 hover:text-slate-900'"
+          >
+            Daftar Akun
+          </button>
         </div>
 
         <!-- Error Alert -->
@@ -351,10 +366,10 @@ onBeforeUnmount(() => {
           <span>{{ authStore.successMessage }}</span>
         </div>
 
-        <!-- MODE 1: DAFTAR AKUN (Nama, WhatsApp, Email Bebas, Password) -->
-        <form v-if="activeMode === 'register'" @submit.prevent="handleRegister" class="space-y-4">
-          <!-- Full Name / Username Input -->
-          <div class="space-y-1.5">
+        <!-- MODE 1: DAFTAR AKUN (REGISTER) -->
+        <form v-if="activeMode === 'register'" @submit.prevent="handleRegister" class="space-y-3.5">
+          <!-- Full Name -->
+          <div class="space-y-1">
             <label for="reg-username" class="block text-xs font-semibold text-slate-700">
               Nama Lengkap <span class="text-red-500">*</span>
             </label>
@@ -365,21 +380,20 @@ onBeforeUnmount(() => {
                 v-model="regUsername"
                 type="text"
                 placeholder="cth: Ratna Dewi"
-                class="flex-1 px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none bg-white font-medium"
+                class="flex-1 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none bg-white font-medium"
                 autocomplete="name"
                 required
               />
             </div>
-            <p class="text-[11px] text-slate-500">Nama penerima paket hasil laut dingin.</p>
           </div>
 
-          <!-- Phone WhatsApp (Required) -->
-          <div class="space-y-1.5">
+          <!-- Phone WhatsApp -->
+          <div class="space-y-1">
             <label for="reg-phone" class="block text-xs font-semibold text-slate-700">
               Nomor WhatsApp <span class="text-red-500">*</span>
             </label>
             <div class="flex items-center border border-slate-300 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#103860] focus-within:border-transparent bg-white">
-              <span class="inline-flex items-center px-3 py-2.5 bg-slate-50 text-[#103860] text-xs font-bold border-r border-slate-200 select-none">
+              <span class="inline-flex items-center px-3 py-2 bg-slate-50 text-[#103860] text-xs font-bold border-r border-slate-200 select-none">
                 +62
               </span>
               <input
@@ -387,18 +401,17 @@ onBeforeUnmount(() => {
                 v-model="regPhone"
                 type="tel"
                 placeholder="812-3456-7890"
-                class="flex-1 px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none bg-white font-medium"
+                class="flex-1 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none bg-white font-medium"
                 autocomplete="tel"
                 required
               />
             </div>
-            <p class="text-[11px] text-slate-500">Wajib untuk koordinasi kurir rantai dingin pengiriman subuh LBA.</p>
           </div>
 
-          <!-- Email Input (Optional, Any Email Provider) -->
-          <div class="space-y-1.5">
+          <!-- Email (Optional) -->
+          <div class="space-y-1">
             <label for="reg-email" class="block text-xs font-semibold text-slate-700">
-              Alamat Email <span class="text-slate-400 font-normal">(opsional, Yahoo / Outlook / Gmail / dll)</span>
+              Alamat Email <span class="text-slate-400 font-normal text-[11px]">(opsional)</span>
             </label>
             <div class="relative flex items-center border border-slate-300 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#103860] focus-within:border-transparent bg-white">
               <span class="material-symbols-outlined text-slate-400 text-[18px] ml-3 shrink-0">mail</span>
@@ -406,16 +419,15 @@ onBeforeUnmount(() => {
                 id="reg-email"
                 v-model="regEmail"
                 type="email"
-                placeholder="cth: ratna@yahoo.com atau ratna@gmail.com"
-                class="flex-1 px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none bg-white font-medium"
+                placeholder="cth: ratna@gmail.com"
+                class="flex-1 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none bg-white font-medium"
                 autocomplete="email"
               />
             </div>
-            <p class="text-[11px] text-slate-500">Mendukung semua penyedia email untuk penerimaan e-invoice & resi.</p>
           </div>
 
-          <!-- Password Input -->
-          <div class="space-y-1.5">
+          <!-- Password -->
+          <div class="space-y-1">
             <label for="reg-password" class="block text-xs font-semibold text-slate-700">
               Kata Sandi <span class="text-red-500">*</span>
             </label>
@@ -426,7 +438,7 @@ onBeforeUnmount(() => {
                 v-model="regPassword"
                 :type="showRegPassword ? 'text' : 'password'"
                 placeholder="Minimal 6 karakter"
-                class="flex-1 px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none bg-white font-medium"
+                class="flex-1 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none bg-white font-medium"
                 autocomplete="new-password"
                 required
               />
@@ -441,11 +453,28 @@ onBeforeUnmount(() => {
             </div>
           </div>
 
+          <!-- Terms Checkbox Flat -->
+          <div class="pt-1">
+            <label class="flex items-start gap-2 cursor-pointer select-none text-xs text-slate-600">
+              <input 
+                type="checkbox" 
+                v-model="agreeTerms" 
+                class="w-4 h-4 rounded border-slate-300 text-[#103860] focus:ring-[#103860] mt-0.5 cursor-pointer" 
+              />
+              <span class="leading-relaxed text-[11px]">
+                Saya menyetujui 
+                <NuxtLink to="/syarat-ketentuan" target="_blank" class="text-[#103860] font-semibold underline">Syarat & Ketentuan</NuxtLink> 
+                serta 
+                <NuxtLink to="/kebijakan-privasi" target="_blank" class="text-[#103860] font-semibold underline">Kebijakan Privasi</NuxtLink>.
+              </span>
+            </label>
+          </div>
+
           <!-- Submit Button -->
           <button
             type="submit"
             :disabled="isSubmitting"
-            class="w-full py-3 px-4 bg-[#103860] hover:bg-[#13446E] text-white text-xs font-bold rounded-xl shadow-xs transition-all active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer mt-2"
+            class="w-full py-2.5 px-4 bg-[#103860] hover:bg-[#13446E] text-white text-xs font-bold rounded-xl shadow-xs transition-all active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer mt-2"
           >
             <span 
               class="material-symbols-outlined text-[18px]"
@@ -457,11 +486,12 @@ onBeforeUnmount(() => {
           </button>
         </form>
 
-        <!-- MODE 2: MASUK (Login Email/Username + Password ATAU WhatsApp OTP) -->
+        <!-- MODE 2: MASUK (LOGIN) -->
         <div v-else class="space-y-4">
-          <!-- SUB-MODE: Email / Username & Password -->
-          <form v-if="loginMethod === 'password'" @submit.prevent="handleLoginPassword" class="space-y-4">
-            <div class="space-y-1.5">
+          <!-- SUB-MODE: Password -->
+          <form v-if="loginMethod === 'password'" @submit.prevent="handleLoginPassword" class="space-y-3.5">
+            <!-- Identifier -->
+            <div class="space-y-1">
               <label for="login-id" class="block text-xs font-semibold text-slate-700">
                 Nomor WhatsApp atau Email
               </label>
@@ -472,17 +502,27 @@ onBeforeUnmount(() => {
                   v-model="loginIdentifier"
                   type="text"
                   placeholder="081234567890 atau email@domain.com"
-                  class="flex-1 px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none bg-white font-medium"
+                  class="flex-1 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none bg-white font-medium"
                   autocomplete="username"
                   required
                 />
               </div>
             </div>
 
-            <div class="space-y-1.5">
-              <label for="login-password" class="block text-xs font-semibold text-slate-700">
-                Password
-              </label>
+            <!-- Password -->
+            <div class="space-y-1">
+              <div class="flex items-center justify-between">
+                <label for="login-password" class="block text-xs font-semibold text-slate-700">
+                  Password
+                </label>
+                <button
+                  type="button"
+                  @click="loginMethod = 'whatsapp'"
+                  class="text-[11px] font-semibold text-[#103860] hover:underline cursor-pointer"
+                >
+                  Lupa sandi? Masuk via OTP
+                </button>
+              </div>
               <div class="relative flex items-center border border-slate-300 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#103860] focus-within:border-transparent bg-white">
                 <span class="material-symbols-outlined text-slate-400 text-[18px] ml-3 shrink-0">lock</span>
                 <input
@@ -490,7 +530,7 @@ onBeforeUnmount(() => {
                   v-model="loginPassword"
                   :type="showLoginPassword ? 'text' : 'password'"
                   placeholder="Masukkan password"
-                  class="flex-1 px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none bg-white font-medium"
+                  class="flex-1 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none bg-white font-medium"
                   autocomplete="current-password"
                   required
                 />
@@ -505,10 +545,23 @@ onBeforeUnmount(() => {
               </div>
             </div>
 
+            <!-- Remember Me -->
+            <div class="flex items-center justify-between text-xs text-slate-600 pt-0.5">
+              <label class="flex items-center gap-2 cursor-pointer select-none">
+                <input 
+                  type="checkbox" 
+                  v-model="rememberMe" 
+                  class="w-4 h-4 rounded border-slate-300 text-[#103860] focus:ring-[#103860] cursor-pointer" 
+                />
+                <span class="text-[11px]">Ingat saya di perangkat ini</span>
+              </label>
+            </div>
+
+            <!-- Submit Button -->
             <button
               type="submit"
               :disabled="isSubmitting"
-              class="w-full py-3 px-4 bg-[#103860] hover:bg-[#13446E] text-white text-xs font-bold rounded-xl shadow-xs transition-all active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
+              class="w-full py-2.5 px-4 bg-[#103860] hover:bg-[#13446E] text-white text-xs font-bold rounded-xl shadow-xs transition-all active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer mt-2"
             >
               <span 
                 class="material-symbols-outlined text-[18px]"
@@ -523,12 +576,12 @@ onBeforeUnmount(() => {
           <!-- SUB-MODE: WhatsApp OTP Login -->
           <div v-else class="space-y-4">
             <div v-if="!authStore.otpSent" class="space-y-3">
-              <div class="space-y-1.5">
+              <div class="space-y-1">
                 <label for="phone-otp-input" class="block text-xs font-semibold text-slate-700">
                   Nomor WhatsApp Terdaftar
                 </label>
                 <div class="flex items-center border border-slate-300 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#103860] focus-within:border-transparent bg-white">
-                  <span class="inline-flex items-center px-3 py-2.5 bg-slate-50 text-[#103860] text-xs font-bold border-r border-slate-200 select-none">
+                  <span class="inline-flex items-center px-3 py-2 bg-slate-50 text-[#103860] text-xs font-bold border-r border-slate-200 select-none">
                     +62
                   </span>
                   <input
@@ -538,7 +591,7 @@ onBeforeUnmount(() => {
                     @input="handlePhoneInput(($event.target as HTMLInputElement).value)"
                     @keyup.enter="handleSendOtp"
                     placeholder="812-3456-7890"
-                    class="flex-1 px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none bg-white font-medium"
+                    class="flex-1 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none bg-white font-medium"
                     autocomplete="tel"
                   />
                 </div>
@@ -548,7 +601,7 @@ onBeforeUnmount(() => {
                 type="button"
                 @click="handleSendOtp"
                 :disabled="isSubmitting || authStore.isLoading"
-                class="w-full py-3 px-4 bg-[#103860] hover:bg-[#13446E] text-white text-xs font-bold rounded-xl shadow-xs transition-all active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
+                class="w-full py-2.5 px-4 bg-[#103860] hover:bg-[#13446E] text-white text-xs font-bold rounded-xl shadow-xs transition-all active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
               >
                 <span 
                   class="material-symbols-outlined text-[18px]"
@@ -575,7 +628,7 @@ onBeforeUnmount(() => {
                 </button>
               </div>
 
-              <div class="flex justify-center gap-1.5 sm:gap-2.5 py-1" @paste="handlePaste">
+              <div class="flex justify-center gap-1.5 sm:gap-2 py-1" @paste="handlePaste">
                 <input
                   v-for="(digit, index) in otpDigits"
                   :key="index"
@@ -587,7 +640,7 @@ onBeforeUnmount(() => {
                   :value="digit"
                   @input="handleDigitInput(index, $event)"
                   @keydown="handleKeyDown(index, $event)"
-                  class="w-10 h-11 sm:w-12 sm:h-12 text-center text-lg font-bold text-[#103860] border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#103860] bg-white transition-all"
+                  class="w-10 h-11 sm:w-11 sm:h-11 text-center text-lg font-bold text-[#103860] border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#103860] bg-white transition-all shadow-xs"
                   :aria-label="`Digit ke ${index + 1}`"
                   :autocomplete="index === 0 ? 'one-time-code' : 'off'"
                 />
@@ -597,14 +650,14 @@ onBeforeUnmount(() => {
                 type="button"
                 @click="handleVerifyOtp"
                 :disabled="isSubmitting || fullOtp.length < 4"
-                class="w-full py-3 px-4 bg-[#059669] hover:bg-[#047857] text-white text-xs font-bold rounded-xl shadow-xs transition-all active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
+                class="w-full py-2.5 px-4 bg-[#059669] hover:bg-[#047857] text-white text-xs font-bold rounded-xl shadow-xs transition-all active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
               >
                 <span>Verifikasi OTP</span>
               </button>
             </div>
           </div>
 
-          <!-- Switch Login Method: Password vs WhatsApp -->
+          <!-- Switcher: OTP vs Password -->
           <div class="text-center pt-1">
             <button
               type="button"
@@ -621,14 +674,14 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-        <!-- Divider -->
+        <!-- Divider Flat -->
         <div class="relative flex py-1 items-center">
           <div class="flex-grow border-t border-slate-200"></div>
           <span class="flex-shrink mx-3 text-[11px] uppercase tracking-wider text-slate-400 font-medium">atau</span>
           <div class="flex-grow border-t border-slate-200"></div>
         </div>
 
-        <!-- Google Login -->
+        <!-- Google SSO Flat Button -->
         <button
           type="button"
           @click="handleGoogleAuth"
@@ -644,7 +697,7 @@ onBeforeUnmount(() => {
           <span>Lanjut dengan Google</span>
         </button>
 
-        <!-- Secondary Exit / Return to Home Link -->
+        <!-- Exit Link -->
         <div class="text-center pt-2">
           <NuxtLink
             to="/"
@@ -653,60 +706,6 @@ onBeforeUnmount(() => {
             <span class="material-symbols-outlined text-[16px]">arrow_back</span>
             <span>Kembali ke Beranda Belanja</span>
           </NuxtLink>
-        </div>
-      </div>
-
-      <!-- Right Column on Desktop / Bottom on Mobile: Value & Assistance -->
-      <div class="md:col-span-5 space-y-4">
-        <!-- Cold Chain Trust Card -->
-        <div class="bg-slate-50 rounded-2xl border border-slate-200 p-5 space-y-3.5">
-          <div class="flex items-center gap-2 text-xs font-bold text-[#103860]">
-            <span class="material-symbols-outlined text-[18px] text-[#059669]">ac_unit</span>
-            <span>Standar Kesegaran Muncar</span>
-          </div>
-
-          <div class="space-y-3 text-xs">
-            <div class="flex items-start gap-2.5">
-              <span class="material-symbols-outlined text-[16px] text-[#059669] shrink-0 mt-0.5">verified</span>
-              <div>
-                <strong class="font-semibold text-slate-800">Suhu Dingin 0-2°C</strong>
-                <p class="text-slate-500 text-[11px] mt-0.5">Ikan langsung diamankan es aktif begitu sandar di dermaga.</p>
-              </div>
-            </div>
-
-            <div class="flex items-start gap-2.5">
-              <span class="material-symbols-outlined text-[16px] text-[#059669] shrink-0 mt-0.5">verified</span>
-              <div>
-                <strong class="font-semibold text-slate-800">Kemas Higienis</strong>
-                <p class="text-slate-500 text-[11px] mt-0.5">Dibersihkan, disiangi, dan disegel vakum tanpa bahan pengawet.</p>
-              </div>
-            </div>
-
-            <div class="flex items-start gap-2.5">
-              <span class="material-symbols-outlined text-[16px] text-[#059669] shrink-0 mt-0.5">verified</span>
-              <div>
-                <strong class="font-semibold text-slate-800">Garansi Segar</strong>
-                <p class="text-slate-500 text-[11px] mt-0.5">Jika kualitas saat sampai tidak segar, kami ganti baru.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Quick Help Note -->
-        <div class="p-4 bg-white rounded-2xl border border-slate-200 text-xs text-slate-500 flex items-center gap-3">
-          <span class="material-symbols-outlined text-[20px] text-[#103860] shrink-0">support_agent</span>
-          <div>
-            <p class="text-slate-700 font-medium">Butuh bantuan pesanan partai / resto?</p>
-            <a 
-              href="https://wa.me/6281234567890" 
-              target="_blank" 
-              rel="noopener"
-              class="text-[#103860] font-bold hover:underline inline-flex items-center gap-1 mt-0.5"
-            >
-              <span>Hubungi Admin Muncar</span>
-              <span class="material-symbols-outlined text-[12px]">open_in_new</span>
-            </a>
-          </div>
         </div>
       </div>
     </div>
