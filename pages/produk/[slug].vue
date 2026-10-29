@@ -6,6 +6,7 @@ import { useCartStore } from '~/stores/cart'
 import { useWishlistStore } from '~/stores/wishlist'
 import { useAuthStore } from '~/stores/auth'
 import { useLocale } from '~/composables/useLocale'
+import CatalogProductCard from '~/components/catalog/ProductCard.vue'
 
 definePageMeta({
   hideMainHeader: true,
@@ -145,6 +146,9 @@ watch(() => route.params.slug, () => {
   quantity.value = 1
   isDescExpanded.value = false
   loadProductData()
+  if (typeof window !== 'undefined') {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 })
 
 // Current product (strictly null when loading or not found)
@@ -495,30 +499,6 @@ const fetchRecommendations = async () => {
 const recommendedProducts = computed(() => {
   return liveRecommendations.value
 })
-
-const goToProduct = (recSlug: string) => {
-  if (recSlug === slug.value) return
-  router.push(`/produk/${recSlug}`)
-}
-
-const handleQuickAdd = (recProduct: Product, event: Event) => {
-  event.stopPropagation()
-  const defaultCut = recProduct.availableCuts?.[0]?.type || 'utuh_bersih'
-  cartStore.addItem(
-    {
-      id: recProduct.id,
-      name: recProduct.name,
-      slug: recProduct.slug,
-      imageUrl: recProduct.images?.hero || '',
-      pricePerKg: recProduct.pricePerKg,
-      unit: recProduct.unit || 'kg'
-    },
-    defaultCut,
-    false,
-    1
-  )
-  triggerToast(`${recProduct.name} masuk keranjang`, 'shopping_cart', 'text-emerald-400')
-}
 
 onUnmounted(() => {
   if (toastTimer) clearTimeout(toastTimer)
@@ -1177,52 +1157,13 @@ useHead(() => {
             </NuxtLink>
           </div>
 
-          <div class="flex md:grid md:grid-cols-4 gap-3 overflow-x-auto no-scrollbar snap-x pb-2 pt-0.5">
-            <div v-for="rec in recommendedProducts" :key="rec.id" @click="goToProduct(rec.slug)"
-              class="w-[170px] md:w-auto flex-shrink-0 snap-start bg-white rounded-xl border border-slate-200/90 hover:border-[#103860]/40 transition-all shadow-xs hover:shadow-md cursor-pointer flex flex-col justify-between p-2.5 group">
-              <div>
-                <!-- Image & Badge -->
-                <div class="relative w-full mb-2 overflow-hidden rounded-lg aspect-square bg-slate-100">
-                  <NuxtImg
-                    v-if="rec.images?.hero || (rec as any).imageUrl"
-                    :src="rec.images?.hero || (rec as any).imageUrl"
-                    :alt="rec.name"
-                    class="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
-                    width="200" height="200" format="webp" loading="lazy" />
-                  <div v-else class="w-full h-full flex items-center justify-center bg-slate-100 text-slate-300">
-                    <span class="material-symbols-outlined text-3xl">set_meal</span>
-                  </div>
-                  <span
-                    class="absolute top-1.5 left-1.5 bg-[#103860]/90 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md">
-                    {{ rec.unit === 'pack' ? `${(rec as any).packWeightGrams || 200}g` : 'Per Kg' }}
-                  </span>
-                </div>
-
-                <!-- Info -->
-                <h3 class="text-xs font-bold text-slate-800 line-clamp-1 group-hover:text-[#103860] transition-colors">
-                  {{ rec.name }}
-                </h3>
-                <p class="text-[10px] text-slate-400 line-clamp-1 mb-1">
-                  {{ rec.category || rec.fishType || 'Hasil Laut Muncar' }}
-                </p>
-
-                <!-- Terjual (ringan) -->
-                <div class="flex items-center gap-1 text-[10px] text-slate-500 mb-1">
-                  <span class="font-medium text-slate-700">{{ rec.soldCount || 0 }} terjual</span>
-                </div>
-
-                <div class="text-xs font-extrabold text-[#006c4a]">
-                  Rp {{ rec.pricePerKg.toLocaleString('id-ID') }}
-                </div>
-              </div>
-
-              <!-- Quick Add Button -->
-              <button type="button" @click="handleQuickAdd(rec, $event)"
-                class="mt-2.5 w-full h-8 bg-slate-100 hover:bg-[#103860] text-[#103860] hover:text-white rounded-lg text-[11px] font-bold flex items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer"
-                title="Tambah ke keranjang">
-                <span class="material-symbols-outlined text-[15px]">add_shopping_cart</span>
-                <span>+ Keranjang</span>
-              </button>
+          <div class="flex md:grid md:grid-cols-4 gap-3 sm:gap-4 overflow-x-auto no-scrollbar snap-x pb-2 pt-0.5">
+            <div
+              v-for="rec in recommendedProducts"
+              :key="rec.id"
+              class="w-[185px] sm:w-[220px] md:w-auto flex-shrink-0 snap-start flex flex-col"
+            >
+              <CatalogProductCard :product="rec" class="h-full" />
             </div>
           </div>
         </section>

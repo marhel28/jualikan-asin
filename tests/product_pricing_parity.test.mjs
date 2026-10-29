@@ -65,3 +65,16 @@ test('Pricing Parity: All catalog products have consistent pricing info', () => 
     assert.ok(pricing.tier1Config.options.length > 0, `tier1 options must exist for ${p.slug}`)
   }
 })
+
+test('Pricing Parity: Recommendation items resolve identically to catalog cards', () => {
+  // Simulating recommendation candidate (e.g. Lemuru recommended on Tenggiri page)
+  const lemuru = PRODUCTS.find(p => p.id === 'lemuru-segar')
+  assert.ok(lemuru, 'Lemuru segar must exist')
+
+  const pricing = resolveProductPricing(lemuru)
+  // Ensures raw pricePerKg (24000) is NOT displayed directly as single price without range/pack unit
+  assert.equal(pricing.priceInfo.minPrice, 6000)
+  assert.equal(pricing.priceInfo.maxPrice, 24000)
+  assert.equal(pricing.priceInfo.displayPrice, 'Rp 6.000 - Rp 24.000')
+  assert.equal(pricing.priceInfo.hasVariants, true)
+})
