@@ -495,6 +495,10 @@ onMounted(async () => {
       products.value = backendProducts.map(bp => {
         const local = PRODUCTS.find(p => p.id === bp.id || p.slug === bp.slug)
         const heroImg = bp.images?.hero || bp.image_url || local?.images?.hero || ''
+        const rawStock = bp.stockKg ?? bp.stock_kg
+        const parsedStock = (rawStock !== undefined && rawStock !== null && !isNaN(Number(rawStock)))
+          ? Number(rawStock)
+          : (local?.stockKg ?? 0)
         return {
           id: bp.id,
           name: bp.name,
@@ -511,7 +515,7 @@ onMounted(async () => {
           landingTime: bp.landingTime ?? bp.landing_time ?? local?.landingTime ?? '05:30 WIB Subuh',
           storageTemp: bp.storageTemp ?? bp.storage_temp ?? local?.storageTemp ?? 'Chilled 1.5 C',
           images: bp.images || local?.images || { hero: heroImg, gallery: [heroImg] },
-          stockKg: Number(bp.stockKg ?? bp.stock_kg) ?? local?.stockKg ?? 50,
+          stockKg: parsedStock,
           minOrderKg: Number(bp.minOrderKg ?? bp.min_order_kg) || local?.minOrderKg || 1,
           description: bp.description || local?.description || '',
           isFeatured: bp.isFeatured ?? bp.is_featured ?? local?.isFeatured ?? false,
@@ -843,7 +847,9 @@ onUnmounted(() => {
                       <span class="px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 font-medium">{{ p.category
                         }}</span>
                       <span>•</span>
-                      <span class="font-semibold text-emerald-700">Stok {{ p.stockKg }} kg</span>
+                      <span class="font-semibold" :class="(p.stockKg ?? 0) <= 0 ? 'text-rose-600' : 'text-emerald-700'">
+                        {{ (p.stockKg ?? 0) <= 0 ? 'Stok Habis' : `Stok ${p.stockKg} ${p.unit || 'kg'}` }}
+                      </span>
                     </div>
                   </div>
                 </div>

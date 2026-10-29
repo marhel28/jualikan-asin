@@ -132,7 +132,7 @@ const handleImageError = () => {
 }
 
 const handleQuickAdd = () => {
-  if (isAdding.value) return
+  if (isAdding.value || (props.product.stockKg ?? 0) <= 0) return
   isAdding.value = true
 
   // Default cut to first available cut option or standard 'utuh_bersih'
@@ -239,11 +239,13 @@ const handleQuickAdd = () => {
         </div>
 
         <div class="flex items-center gap-1.5 mt-1">
-          <span class="inline-block w-1.5 h-1.5 rounded-full bg-[#006c4a]"></span>
-          <span class="text-[11px] text-[#006c4a] font-medium">
-            {{ product.unit === 'pack' 
-              ? t(`Sisa ${product.stockKg} pack`, `${product.stockKg} packs left`) 
-              : t(`Stok: ${product.stockKg} kg`, `Stock: ${product.stockKg} kg`) 
+          <span class="inline-block w-1.5 h-1.5 rounded-full" :class="(product.stockKg || 0) <= 0 ? 'bg-rose-500' : 'bg-[#006c4a]'"></span>
+          <span class="text-[11px] font-medium" :class="(product.stockKg || 0) <= 0 ? 'text-rose-600' : 'text-[#006c4a]'">
+            {{ (product.stockKg || 0) <= 0
+              ? t('Stok Habis', 'Out of Stock')
+              : (product.unit === 'pack' 
+                ? t(`Sisa ${product.stockKg} pack`, `${product.stockKg} packs left`) 
+                : t(`Stok: ${product.stockKg} kg`, `Stock: ${product.stockKg} kg`))
             }}
           </span>
         </div>
@@ -266,23 +268,29 @@ const handleQuickAdd = () => {
         v-if="priceInfo.hasVariants"
         type="button" 
         @click.stop="goToDetail"
-        class="w-full flex items-center justify-center gap-1.5 bg-blue-50 hover:bg-[#103860] text-[#103860] hover:text-white active:scale-95 transition py-1.5 px-2 rounded-lg text-xs font-bold cursor-pointer shadow-2xs"
+        class="w-full flex items-center justify-center gap-1.5 transition py-1.5 px-2 rounded-lg text-xs font-bold cursor-pointer shadow-2xs"
+        :class="(product.stockKg || 0) <= 0
+          ? 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+          : 'bg-blue-50 hover:bg-[#103860] text-[#103860] hover:text-white active:scale-95'"
       >
-        <span class="material-symbols-outlined text-[15px]">tune</span>
-        <span>{{ t('Pilih Ukuran', 'Select Size') }}</span>
+        <span class="material-symbols-outlined text-[15px]">{{ (product.stockKg || 0) <= 0 ? 'visibility' : 'tune' }}</span>
+        <span>{{ (product.stockKg || 0) <= 0 ? t('Lihat Detail', 'View Detail') : t('Pilih Ukuran', 'Select Size') }}</span>
       </button>
 
       <button 
         v-else
         type="button" 
-        :disabled="isAdding"
+        :disabled="isAdding || (product.stockKg || 0) <= 0"
         @click.stop="handleQuickAdd"
-        class="w-full flex items-center justify-center gap-1.5 bg-slate-100 hover:bg-[#103860] text-[#103860] hover:text-white active:scale-95 transition py-1.5 px-2 rounded-lg text-xs font-bold cursor-pointer disabled:opacity-60 shadow-2xs"
+        class="w-full flex items-center justify-center gap-1.5 transition py-1.5 px-2 rounded-lg text-xs font-bold shadow-2xs"
+        :class="(product.stockKg || 0) <= 0
+          ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+          : 'bg-slate-100 hover:bg-[#103860] text-[#103860] hover:text-white active:scale-95 cursor-pointer disabled:opacity-60'"
       >
         <span class="material-symbols-outlined text-[16px]">
-          {{ justAdded ? 'check' : 'add_shopping_cart' }}
+          {{ justAdded ? 'check' : ((product.stockKg || 0) <= 0 ? 'block' : 'add_shopping_cart') }}
         </span>
-        <span>{{ justAdded ? t('Ditambahkan', 'Added') : t('+ Keranjang', '+ Cart') }}</span>
+        <span>{{ justAdded ? t('Ditambahkan', 'Added') : ((product.stockKg || 0) <= 0 ? t('Stok Habis', 'Out of Stock') : t('+ Keranjang', '+ Cart')) }}</span>
       </button>
     </div>
   </article>

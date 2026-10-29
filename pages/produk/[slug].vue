@@ -63,6 +63,10 @@ const loadProductData = async () => {
 
       // Normalize images
       const bpImages = bp.images || (bp.image_url ? { hero: bp.image_url, texture: bp.image_url, scaleSlip: bp.image_url } : null)
+      const rawStock = bp.stockKg ?? bp.stock_kg
+      const parsedStock = (rawStock !== undefined && rawStock !== null && !isNaN(Number(rawStock)))
+        ? Number(rawStock)
+        : (local?.stockKg ?? 0)
 
       liveProduct.value = {
         id: bp.id,
@@ -85,7 +89,7 @@ const loadProductData = async () => {
         storageTemp: bp.storageTemp || bp.storage_temp || local?.storageTemp || 'Chilled 1.5 C',
         exportGrade: bp.exportGrade || bp.export_grade || local?.exportGrade || undefined,
         images: bpImages || local?.images || { hero: '', texture: '', scaleSlip: '' },
-        stockKg: Number(bp.stockKg ?? bp.stock_kg) ?? local?.stockKg ?? 0,
+        stockKg: parsedStock,
         minOrderKg: Number(bp.minOrderKg ?? bp.min_order_kg) || local?.minOrderKg || 1,
         description: bp.description || local?.description || '',
         qualityBadges: bp.qualityBadges || bp.quality_badges || local?.qualityBadges || ['Tangkapan Segar Subuh', 'Pancing Ulur', 'Bebas Formalin'],
@@ -158,22 +162,56 @@ const customVariants = computed(() => {
 })
 
 const tier1Config = computed(() => {
+  const masterStockKg = product.value?.stockKg ?? 0
+  const isPack = product.value?.unit === 'pack'
+
   if (customVariants.value?.tier1 && customVariants.value.tier1.options && customVariants.value.tier1.options.length > 0) {
-    return customVariants.value.tier1
+    const rawOptions = customVariants.value.tier1.options
+    return {
+      ...customVariants.value.tier1,
+      options: rawOptions.map(opt => {
+        let optStock = 0
+        if (masterStockKg <= 0) {
+          optStock = 0
+        } else if (isPack) {
+          optStock = Math.floor(masterStockKg)
+        } else {
+          const weightKg = opt.weightValue || 0.1
+          optStock = Math.floor(masterStockKg / weightKg)
+        }
+        return {
+          ...opt,
+          stock: optStock,
+          inStock: optStock > 0
+        }
+      })
+    }
   }
+
   const baseKgPrice = product.value?.pricePerKg || 0
   const defaultGrams = [100, 150, 200, 250]
   return {
     name: 'Pilihan Berat',
     unit: 'gram' as const,
-    options: defaultGrams.map(g => ({
-      id: `opt-${g}`,
-      label: String(g),
-      weightValue: g / 1000,
-      price: Math.max(5000, Math.round((baseKgPrice * (g / 1000)) / 500) * 500),
-      stock: 10,
-      inStock: true
-    }))
+    options: defaultGrams.map(g => {
+      const weightKg = g / 1000
+      let optStock = 0
+      if (masterStockKg <= 0) {
+        optStock = 0
+      } else if (isPack) {
+        optStock = Math.floor(masterStockKg)
+      } else {
+        optStock = Math.floor(masterStockKg / weightKg)
+      }
+      return {
+        id: `opt-${g}`,
+        label: String(g),
+        weightValue: weightKg,
+        price: Math.max(5000, Math.round((baseKgPrice * weightKg) / 500) * 500),
+        stock: optStock,
+        inStock: optStock > 0
+      }
+    })
   }
 })
 
@@ -186,7 +224,8 @@ const selectedTier1Id = ref<string>('')
 watch(tier1Options, (opts) => {
   if (opts.length > 0) {
     const firstInStock = opts.find(o => o.inStock) || opts[0]
-    if (!opts.some(o => o.id === selectedTier1Id.value)) {
+    const currentSelected = opts.find(o => o.id === selectedTier1Id.value)
+    if (!currentSelected || (!currentSelected.inStock && firstInStock.inStock)) {
       selectedTier1Id.value = firstInStock.id
     }
   }
@@ -198,7 +237,19 @@ const selectedTier1 = computed(() => {
 
 // Tier 2: Custom Variant (Default Disabled/Empty)
 const tier2Config = computed(() => {
-  return customVariants.value?.tier2 || null
+  const t2 = customVariants.value?.tier2
+  if (!t2) return null
+  const masterStockKg = product.value?.stockKg ?? 0
+  if (masterStockKg <= 0 && t2.options) {
+    return {
+      ...t2,
+      options: t2.options.map(opt => ({
+        ...opt,
+        inStock: false
+      }))
+    }
+  }
+  return t2
 })
 
 const tier2Enabled = computed(() => {
@@ -213,7 +264,8 @@ const selectedTier2Id = ref<string>('')
 watch(tier2Options, (opts) => {
   if (tier2Enabled.value && opts.length > 0) {
     const firstInStock = opts.find(o => o.inStock) || opts[0]
-    if (!opts.some(o => o.id === selectedTier2Id.value)) {
+    const currentSelected = opts.find(o => o.id === selectedTier2Id.value)
+    if (!currentSelected || (!currentSelected.inStock && firstInStock.inStock)) {
       selectedTier2Id.value = firstInStock.id
     }
   }
@@ -364,8 +416,24 @@ const currentHeroImage = computed(() => {
 })
 
 const maxStock = computed(() => {
-  return product.value?.stockKg || 15
+  const masterStockKg = product.value?.stockKg ?? 0
+  if (masterStockKg <= 0) return 0
+  if (product.value?.unit === 'pack') return Math.floor(masterStockKg)
+  if (selectedTier1.value && typeof selectedTier1.value.stock === 'number') {
+    return selectedTier1.value.stock
+  }
+  return Math.floor(masterStockKg)
 })
+
+watch(maxStock, (newMax) => {
+  if (newMax <= 0) {
+    quantity.value = 0
+  } else if (quantity.value < 1) {
+    quantity.value = 1
+  } else if (quantity.value > newMax) {
+    quantity.value = newMax
+  }
+}, { immediate: true })
 
 const switchGalleryImage = (idx: number) => {
   if (activeImageIndex.value !== idx) {
@@ -386,6 +454,7 @@ const handleHeroImageError = () => {
 
 // Quantity Stepper
 const changeQty = (delta: number) => {
+  if (maxStock.value <= 0) return
   const newVal = quantity.value + delta
   if (newVal >= 1 && newVal <= maxStock.value) {
     quantity.value = newVal
@@ -417,7 +486,7 @@ const shareProduct = () => {
 }
 
 const addItemToCart = () => {
-  if (!product.value || !selectedTier1.value) return
+  if (!product.value || !selectedTier1.value || maxStock.value <= 0) return
 
   const t1Label = `${selectedTier1.value.label}${tier1Unit.value === 'kg' ? 'kg' : 'g'}`
   const t2Label = selectedTier2.value ? ` (${selectedTier2.value.label})` : ''
@@ -442,7 +511,7 @@ const addItemToCart = () => {
 
 // Add to Cart
 const handleAddToCart = () => {
-  if (!product.value) return
+  if (!product.value || maxStock.value <= 0) return
   addItemToCart()
   addedSuccess.value = true
   triggerToast('Berhasil masuk keranjang', 'shopping_cart', 'text-emerald-400')
@@ -453,6 +522,7 @@ const handleAddToCart = () => {
 
 // Buy Now (Direct Checkout)
 const handleBuyNow = () => {
+  if (!product.value || maxStock.value <= 0) return
   if (toastTimer) clearTimeout(toastTimer)
   showToast.value = false
   addItemToCart()
@@ -1030,16 +1100,16 @@ useHead(() => {
                 <div class="flex items-center gap-3">
                   <!-- Stepper Component -->
                   <div class="inline-flex items-center h-10 bg-white border rounded-lg border-slate-300 shadow-2xs">
-                    <button type="button" aria-label="Kurang kuantitas" @click="changeQty(-1)" :disabled="quantity <= 1"
-                      class="flex items-center justify-center w-10 h-10 text-lg font-bold leading-none transition-colors rounded-l-lg cursor-pointer select-none text-slate-600 hover:bg-slate-50 disabled:opacity-30">
+                    <button type="button" aria-label="Kurang kuantitas" @click="changeQty(-1)" :disabled="quantity <= 1 || maxStock <= 0"
+                      class="flex items-center justify-center w-10 h-10 text-lg font-bold leading-none transition-colors rounded-l-lg select-none text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer">
                       -
                     </button>
                     <span id="quantity-input" class="w-10 text-xs font-bold text-center text-slate-900">
                       {{ quantity }}
                     </span>
                     <button type="button" aria-label="Tambah kuantitas" @click="changeQty(1)"
-                      :disabled="quantity >= maxStock"
-                      class="flex items-center justify-center w-10 h-10 text-lg font-bold leading-none transition-colors rounded-r-lg cursor-pointer select-none text-slate-600 hover:bg-slate-50 disabled:opacity-30">
+                      :disabled="quantity >= maxStock || maxStock <= 0"
+                      class="flex items-center justify-center w-10 h-10 text-lg font-bold leading-none transition-colors rounded-r-lg select-none text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer">
                       +
                     </button>
                   </div>
@@ -1071,17 +1141,29 @@ useHead(() => {
                 </a>
 
                 <button type="button" id="btn-add-cart" @click="handleAddToCart"
-                  class="h-11 bg-slate-100 hover:bg-slate-200 text-[#103860] font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs">
-                  <span class="material-symbols-outlined text-[18px]">add_shopping_cart</span>
-                  <span>{{ addedSuccess ? 'Ditambahkan!' : '+ Keranjang' }}</span>
+                  :disabled="maxStock <= 0"
+                  class="h-11 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all shadow-2xs"
+                  :class="maxStock <= 0
+                    ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                    : 'bg-slate-100 hover:bg-slate-200 text-[#103860] cursor-pointer'">
+                  <span class="material-symbols-outlined text-[18px]">
+                    {{ maxStock <= 0 ? 'block' : 'add_shopping_cart' }}
+                  </span>
+                  <span>{{ addedSuccess ? 'Ditambahkan!' : (maxStock <= 0 ? 'Stok Habis' : '+ Keranjang') }}</span>
                 </button>
               </div>
 
               <!-- Baris Bawah: Tombol Beli Melebar Penuh (w-full) -->
               <button type="button" id="btn-buy-now" @click="handleBuyNow"
-                class="w-full h-11 bg-[#103860] hover:bg-[#002242] text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer active:scale-[0.99]">
-                <span class="material-symbols-outlined text-[18px]">shopping_bag</span>
-                <span>Beli Sekarang</span>
+                :disabled="maxStock <= 0"
+                class="w-full h-11 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all shadow-xs"
+                :class="maxStock <= 0
+                  ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                  : 'bg-[#103860] hover:bg-[#002242] text-white cursor-pointer active:scale-[0.99]'">
+                <span class="material-symbols-outlined text-[18px]">
+                  {{ maxStock <= 0 ? 'remove_shopping_cart' : 'shopping_bag' }}
+                </span>
+                <span>{{ maxStock <= 0 ? 'Stok Habis' : 'Beli Sekarang' }}</span>
               </button>
             </div>
           </div>
@@ -1257,15 +1339,25 @@ useHead(() => {
 
         <!-- + Keranjang Button -->
         <button type="button" @click="handleAddToCart"
-          class="flex-1 h-11 bg-slate-100 hover:bg-slate-200 text-[#103860] font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] cursor-pointer">
-          <span class="material-symbols-outlined text-[18px]">add_shopping_cart</span>
-          <span>+ Keranjang (Rp{{ currentTotalPrice.toLocaleString('id-ID') }})</span>
+          :disabled="maxStock <= 0"
+          class="flex-1 h-11 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all"
+          :class="maxStock <= 0
+            ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+            : 'bg-slate-100 hover:bg-slate-200 text-[#103860] active:scale-[0.98] cursor-pointer'">
+          <span class="material-symbols-outlined text-[18px]">
+            {{ maxStock <= 0 ? 'block' : 'add_shopping_cart' }}
+          </span>
+          <span>{{ maxStock <= 0 ? 'Stok Habis' : `+ Keranjang (Rp${currentTotalPrice.toLocaleString('id-ID')})` }}</span>
         </button>
 
         <!-- Beli Sekarang Button -->
         <button id="buy-now-btn" type="button" @click="handleBuyNow"
-          class="flex-[1.2] h-11 bg-[#103860] hover:bg-[#002242] text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] shadow-xs cursor-pointer">
-          <span>Beli Sekarang</span>
+          :disabled="maxStock <= 0"
+          class="flex-[1.2] h-11 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all shadow-xs"
+          :class="maxStock <= 0
+            ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+            : 'bg-[#103860] hover:bg-[#002242] text-white active:scale-[0.98] cursor-pointer'">
+          <span>{{ maxStock <= 0 ? 'Stok Habis' : 'Beli Sekarang' }}</span>
         </button>
       </footer>
     </div>
