@@ -31,122 +31,173 @@ const socialLinks = [
 </script>
 
 <template>
-  <footer class="mt-8 pt-8 pb-12 border-t border-slate-200/90 bg-slate-50/70 text-slate-600 text-xs">
-    <div class="max-w-md md:max-w-6xl mx-auto px-4 flex flex-col gap-6 md:gap-8">
-      
-      <!-- Top Grid: Brand, Trust Badges, Navigation, Social/CS -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 md:gap-8">
-        <!-- 1. Brand & Description -->
-        <div class="flex flex-col gap-3">
-          <div class="flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-lg bg-[#103860] text-white flex items-center justify-center flex-shrink-0 shadow-xs">
-              <span class="material-symbols-outlined text-[18px]">anchor</span>
+  <footer class="relative mt-12 bg-white text-slate-600 text-xs border-t border-slate-200 overflow-hidden">
+    
+    <!-- Transparent Marine Fish & Wave Watermark Pattern (Low Opacity Vector Background ala Reference 1) -->
+    <div class="absolute inset-0 pointer-events-none select-none overflow-hidden opacity-[0.038] text-[#103860]">
+      <svg class="absolute -right-10 -bottom-12 w-[400px] h-[300px] md:w-[600px] md:h-[420px]" viewBox="0 0 600 420" fill="currentColor">
+        <!-- Leading Pelagic Tuna/Mackerel Fish Silhouette -->
+        <path d="M470,170 C430,155 365,152 295,175 C225,198 175,190 128,166 C98,151 68,133 38,142 C28,145 18,156 14,171 C24,176 43,169 68,176 C107,185 146,214 205,219 C264,224 333,205 402,185 C441,175 460,172 470,170 Z" />
+        <path d="M295,175 C315,132 344,113 368,108 C358,127 343,151 324,166 Z" />
+        <path d="M205,219 C195,248 176,267 156,276 C171,257 186,236 195,221 Z" />
+        <path d="M68,176 C43,142 14,113 0,104 C10,133 19,162 14,171 C19,181 9,210 0,239 C14,229 43,200 68,176 Z" />
+        
+        <!-- Trailing Fish Silhouette -->
+        <path d="M235,295 C210,285 166,281 127,295 C88,309 59,304 30,290 C15,283 5,287 0,295 C15,300 34,306 73,309 C112,312 156,300 195,287 C220,281 230,279 235,295 Z" />
+        <path d="M30,290 C15,271 5,257 0,252 C5,271 10,285 0,295 C10,304 5,319 0,338 C5,333 15,319 30,290 Z" />
+
+        <!-- Fluid Marine Wave Lines -->
+        <path d="M0,75 Q150,120 300,65 T600,75" stroke="currentColor" stroke-width="3" fill="none" opacity="0.6" />
+        <path d="M0,115 Q150,160 300,105 T600,115" stroke="currentColor" stroke-width="2" fill="none" opacity="0.4" />
+        <path d="M0,360 Q150,400 300,350 T600,370" stroke="currentColor" stroke-width="3" fill="none" opacity="0.5" />
+      </svg>
+    </div>
+
+    <!-- Main Footer Content Grid (Clean 4-Column Layout ala Reference Image 1) -->
+    <div class="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 pt-12 pb-10">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-10">
+        
+        <!-- Column 1: Brand & Origin (About Us) (lg:col-span-4) -->
+        <div class="lg:col-span-4 flex flex-col gap-3">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-white border border-slate-200 p-1.5 flex items-center justify-center shrink-0 shadow-2xs">
+              <img 
+                src="/brand/logo.webp" 
+                alt="Laut Berkah Abadi" 
+                class="w-full h-full object-contain"
+                loading="lazy"
+              />
             </div>
             <div>
-              <p class="font-bold text-sm text-[#103860] leading-tight">Laut Berkah Abadi</p>
-              <p class="text-[11px] text-slate-500">Cold Chain Seafood Muncar</p>
+              <span class="text-sm font-extrabold text-[#103860] block tracking-tight">Laut Berkah Abadi</span>
+              <span class="text-[11px] text-slate-500 font-medium">Cold Chain Seafood Muncar</span>
             </div>
           </div>
 
-          <p class="text-xs text-slate-500 leading-relaxed">
-            Distribusi ikan laut segar tangkapan harian nelayan Selat Bali dan Samudra Hindia dengan garansi rantai dingin presisi langsung ke dapur Anda.
+          <p class="text-xs text-slate-500 leading-relaxed pr-3">
+            Distribusi hasil laut segar tangkapan harian nelayan Selat Bali dan Samudra Hindia. Diamankan dengan rantai dingin presisi 0-2°C langsung dari dermaga Pelabuhan Muncar ke pintu rumah Anda.
           </p>
+
+          <div class="pt-1 flex items-center gap-2 text-[11px] text-[#059669] font-semibold">
+            <span class="material-symbols-outlined text-[16px]">verified</span>
+            <span>Garansi Segar Alami, Tanpa Bahan Pengawet</span>
+          </div>
         </div>
 
-        <!-- 2. Clean 3-Item Trust Badges -->
-        <div class="flex flex-col gap-2.5">
-          <div class="text-[11px] font-bold text-slate-700 uppercase tracking-wider">Standar Mutu</div>
-          <div class="grid grid-cols-3 md:grid-cols-1 gap-2">
-            <div class="flex flex-col md:flex-row md:items-center items-center text-center md:text-left p-2 rounded-lg bg-white border border-slate-200/70 shadow-2xs md:gap-2.5">
-              <span class="material-symbols-outlined text-[20px] text-[#006c4a] mb-1 md:mb-0">ac_unit</span>
-              <div>
-                <span class="font-semibold text-[11px] text-slate-800 block">Cold Chain</span>
-                <span class="text-[10px] text-slate-500">Suhu 0 - 2°C</span>
-              </div>
+        <!-- Column 2: Contact Info (ala Reference Image 1) (lg:col-span-3) -->
+        <div class="lg:col-span-3 flex flex-col gap-3">
+          <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider">
+            Informasi Kontak
+          </h4>
+          <div class="space-y-2.5 text-xs text-slate-600">
+            <div class="flex items-start gap-2.5">
+              <span class="material-symbols-outlined text-[16px] text-[#103860] shrink-0 mt-0.5">location_on</span>
+              <span class="leading-relaxed">
+                Pelabuhan Perikanan Muncar, Kabupaten Banyuwangi, Jawa Timur
+              </span>
             </div>
-
-            <div class="flex flex-col md:flex-row md:items-center items-center text-center md:text-left p-2 rounded-lg bg-white border border-slate-200/70 shadow-2xs md:gap-2.5">
-              <span class="material-symbols-outlined text-[20px] text-[#103860] mb-1 md:mb-0">scale</span>
-              <div>
-                <span class="font-semibold text-[11px] text-slate-800 block">Timbangan Riil</span>
-                <span class="text-[10px] text-slate-500">Foto Timbangan</span>
-              </div>
+            <div class="flex items-start gap-2.5">
+              <span class="material-symbols-outlined text-[16px] text-[#103860] shrink-0 mt-0.5">call</span>
+              <span class="font-mono">+62 812-3456-7890</span>
             </div>
-
-            <div class="flex flex-col md:flex-row md:items-center items-center text-center md:text-left p-2 rounded-lg bg-white border border-slate-200/70 shadow-2xs md:gap-2.5">
-              <span class="material-symbols-outlined text-[20px] text-amber-600 mb-1 md:mb-0">verified</span>
-              <div>
-                <span class="font-semibold text-[11px] text-slate-800 block">Bebas Formalin</span>
-                <span class="text-[10px] text-slate-500">100% Segar Alami</span>
-              </div>
+            <div class="flex items-start gap-2.5">
+              <span class="material-symbols-outlined text-[16px] text-[#103860] shrink-0 mt-0.5">mail</span>
+              <span class="font-mono">admin@lautberkahabadi.id</span>
+            </div>
+            <div class="flex items-start gap-2.5">
+              <span class="material-symbols-outlined text-[16px] text-[#059669] shrink-0 mt-0.5">schedule</span>
+              <span>Kirim Subuh: 06:00 - 08:30 WIB</span>
             </div>
           </div>
         </div>
 
-        <!-- 3. Navigation Links (About, Privacy, Terms, Catalog) -->
-        <div class="flex flex-col gap-2.5">
-          <div class="text-[11px] font-bold text-slate-700 uppercase tracking-wider">Informasi & Bantuan</div>
-          <div class="grid grid-cols-2 md:grid-cols-1 gap-y-2 text-xs">
-            <NuxtLink to="/tentang" class="text-slate-600 hover:text-[#103860] transition-colors flex items-center gap-1.5">
-              <span class="w-1 h-1 rounded-full bg-slate-400"></span>
-              <span>Tentang Kami</span>
-            </NuxtLink>
-            <NuxtLink to="/katalog" class="text-slate-600 hover:text-[#103860] transition-colors flex items-center gap-1.5">
-              <span class="w-1 h-1 rounded-full bg-slate-400"></span>
-              <span>Katalog Produk</span>
-            </NuxtLink>
-            <NuxtLink to="/kebijakan-privasi" class="text-slate-600 hover:text-[#103860] transition-colors flex items-center gap-1.5">
-              <span class="w-1 h-1 rounded-full bg-slate-400"></span>
-              <span>Kebijakan Privasi</span>
-            </NuxtLink>
-            <NuxtLink to="/syarat-ketentuan" class="text-slate-600 hover:text-[#103860] transition-colors flex items-center gap-1.5">
-              <span class="w-1 h-1 rounded-full bg-slate-400"></span>
-              <span>Syarat & Ketentuan</span>
-            </NuxtLink>
-          </div>
+        <!-- Column 3: Important Link (ala Reference Image 1) (lg:col-span-2) -->
+        <div class="lg:col-span-2 flex flex-col gap-3">
+          <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider">
+            Tautan Penting
+          </h4>
+          <ul class="space-y-2 text-xs">
+            <li>
+              <NuxtLink to="/katalog" class="text-slate-600 hover:text-[#103860] transition-colors inline-block">
+                Katalog Ikan Segar
+              </NuxtLink>
+            </li>
+            <li>
+              <NuxtLink to="/keranjang" class="text-slate-600 hover:text-[#103860] transition-colors inline-block">
+                Keranjang Belanja
+              </NuxtLink>
+            </li>
+            <li>
+              <NuxtLink to="/akun" class="text-slate-600 hover:text-[#103860] transition-colors inline-block">
+                Akun Saya
+              </NuxtLink>
+            </li>
+            <li>
+              <NuxtLink to="/tentang" class="text-slate-600 hover:text-[#103860] transition-colors inline-block">
+                Tentang Kami
+              </NuxtLink>
+            </li>
+            <li>
+              <NuxtLink to="/kebijakan-privasi" class="text-slate-600 hover:text-[#103860] transition-colors inline-block">
+                Kebijakan Privasi
+              </NuxtLink>
+            </li>
+            <li>
+              <NuxtLink to="/syarat-ketentuan" class="text-slate-600 hover:text-[#103860] transition-colors inline-block">
+                Syarat & Ketentuan
+              </NuxtLink>
+            </li>
+          </ul>
         </div>
 
-        <!-- 4. Media Sosial & Hubungi Kami -->
-        <div class="flex flex-col gap-3">
-          <div class="text-[11px] font-bold text-slate-700 uppercase tracking-wider">Layanan Pelanggan</div>
+        <!-- Column 4: Layanan CS & Konsultasi Cepat (lg:col-span-3) -->
+        <div class="lg:col-span-3 flex flex-col gap-3">
+          <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider">
+            Layanan Cepat
+          </h4>
           <p class="text-xs text-slate-500 leading-relaxed">
-            Butuh info ketersediaan stok kapal atau pesanan khusus restoran & reseller?
+            Konsultasi tangkapan harian, pesanan boks styrofoam luar kota, atau kebutuhan pasokan restoran & katering.
           </p>
-          <a 
-            :href="waUrl" 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            class="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-50 text-[#006c4a] border border-emerald-200/80 font-semibold hover:bg-emerald-100 transition-colors shadow-2xs text-xs w-full"
-          >
-            <span class="material-symbols-outlined text-[16px]">support_agent</span>
-            <span>CS WhatsApp Muncar</span>
-          </a>
 
-          <div class="flex flex-col gap-1.5 mt-1">
-            <span class="text-[11px] font-medium text-slate-500">Ikuti Kami:</span>
-            <div class="flex items-center gap-2">
-              <a 
-                v-for="item in socialLinks"
-                :key="item.name"
-                :href="item.url" 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                :aria-label="`${item.name} Laut Berkah Abadi`"
-                :class="['w-8 h-8 rounded-full bg-white border border-slate-200 text-slate-600 flex items-center justify-center transition-all shadow-2xs active:scale-95 cursor-pointer', item.hoverClass]"
-              >
-                <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                  <path :d="item.path"></path>
-                </svg>
-              </a>
-            </div>
+          <div class="pt-1">
+            <a 
+              :href="waUrl" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-emerald-50 hover:bg-emerald-100 text-[#006c4a] border border-emerald-200/80 font-bold transition-colors text-xs w-full shadow-2xs cursor-pointer active:scale-[0.99]"
+            >
+              <span class="material-symbols-outlined text-[17px]">chat</span>
+              <span>Hubungi CS WhatsApp Muncar</span>
+            </a>
           </div>
         </div>
+
       </div>
 
-      <!-- 5. Operational Location & Copyright -->
-      <div class="pt-4 border-t border-slate-200/70 flex flex-col md:flex-row md:items-center md:justify-between gap-1 text-[11px] text-slate-500">
-        <p>Fasilitas Cold Hub: Pelabuhan Muncar, Banyuwangi, Jawa Timur</p>
-        <p>© {{ currentYear }} Laut Berkah Abadi. Seluruh hak cipta dilindungi.</p>
+      <!-- Bottom Bar: Hairline Divider, Left Copyright, Right Social Icons (ala Reference Image 1) -->
+      <div class="mt-10 pt-6 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-slate-500">
+        <!-- Copyright Text -->
+        <p class="text-center sm:text-left">
+          © {{ currentYear }} Laut Berkah Abadi. Seluruh hak cipta dilindungi.
+        </p>
+
+        <!-- Social Media Links (Right-aligned Flat Icons) -->
+        <div class="flex items-center gap-2">
+          <span class="text-slate-400 mr-1 hidden sm:inline">Ikuti Kami:</span>
+          <a 
+            v-for="item in socialLinks"
+            :key="item.name"
+            :href="item.url" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            :aria-label="`${item.name} Laut Berkah Abadi`"
+            :class="['w-8 h-8 rounded-full bg-slate-50 hover:bg-white border border-slate-200 text-slate-600 flex items-center justify-center transition-all shadow-2xs active:scale-95 cursor-pointer', item.hoverClass]"
+          >
+            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+              <path :d="item.path"></path>
+            </svg>
+          </a>
+        </div>
       </div>
 
     </div>
