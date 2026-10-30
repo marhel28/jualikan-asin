@@ -40,6 +40,7 @@ const errorMessage = ref<string | null>(null)
 const toastMessage = ref<string | null>(null)
 const activeVaTab = ref<'mbanking' | 'atm' | 'ibanking'>('mbanking')
 const isSimulating = ref(false)
+const isDevMode = import.meta.dev ?? false
 
 const formattedTimer = computed(() => {
   const m = Math.floor(Math.max(0, remainingSeconds.value) / 60)
@@ -840,8 +841,9 @@ onUnmounted(() => {
         <span>{{ isCheckingStatus ? 'Mengecek Pembayaran ke Bank...' : 'Cek Status Pembayaran' }}</span>
       </button>
 
-      <!-- Tombol Khusus Simulasi Sandbox (Mempermudah Testing Pengguna) -->
+      <!-- Tombol Khusus Simulasi Sandbox (Hanya Aktif di Mode Dev) -->
       <button
+        v-if="isDevMode"
         type="button"
         @click="handleSimulatePayment"
         :disabled="isSimulating || isExpired"
