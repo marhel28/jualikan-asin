@@ -51,8 +51,8 @@ const { data: announcementData } = await useAsyncData<AnnouncementConfig>(
   },
   {
     default: () => defaultAnnouncement,
-    lazy: false,
-    server: true
+    lazy: true,
+    server: false
   }
 )
 
@@ -266,7 +266,18 @@ const handleSearchClick = () => {
           </NuxtLink>
         </div>
       </div>
+
+      <!-- Leading Swimming Fish Progress Indicator Below Navbar -->
+      <CommonFishProgressBar />
     </header>
+
+    <!-- Mobile Header Fallback for Full-Bleed Pages -->
+    <div 
+      v-if="isKatalogPage || isKeranjangPage || isProdukPage" 
+      class="md:hidden fixed top-16 left-0 right-0 z-50 pointer-events-none h-0 overflow-visible"
+    >
+      <CommonFishProgressBar />
+    </div>
 
     <!-- Main Content Canvas -->
     <main :class="isFullBleedPage ? 'flex-1 w-full' : 'flex-1 w-full max-w-6xl mx-auto px-4 md:px-6 py-4 md:py-6 flex flex-col gap-5'">
