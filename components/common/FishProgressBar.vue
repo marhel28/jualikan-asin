@@ -50,16 +50,16 @@ onUnmounted(() => {
 
 <template>
   <div 
-    class="pointer-events-none absolute bottom-0 left-0 right-0 h-[2px] overflow-visible z-50 transition-opacity duration-200"
+    class="pointer-events-none absolute bottom-0 left-0 right-0 h-[1.5px] overflow-visible z-50 transition-opacity duration-200"
     :class="isLoading ? 'opacity-100' : 'opacity-0'"
     aria-hidden="true"
   >
-    <!-- Subdued Maritime Progress Bar (Calm Corporate Navy, No Glaring Neon) -->
+    <!-- Ultra-subtle, Non-glaring Progress Bar (Soft Muted Slate, Clean & Gentle) -->
     <div 
       class="absolute top-0 h-full transition-all duration-150 ease-out"
       :class="isBackward 
-        ? 'right-0 bg-gradient-to-l from-slate-200 via-[#103860]/70 to-[#103860]' 
-        : 'left-0 bg-gradient-to-r from-slate-200 via-[#103860]/70 to-[#103860]'"
+        ? 'right-0 bg-gradient-to-l from-transparent via-slate-300 to-slate-400' 
+        : 'left-0 bg-gradient-to-r from-transparent via-slate-300 to-slate-400'"
       :style="{ width: `${progress}%` }"
     >
       <!-- Leading Fish Swimmer at the Front Tip -->
@@ -69,26 +69,26 @@ onUnmounted(() => {
           ? 'left-0 -translate-x-1/2 -translate-y-1/2 scale-x-[-1]' 
           : 'right-0 translate-x-1/2 -translate-y-1/2 scale-x-100'"
       >
-        <!-- The Marine Fish Silhouette (Clean Navy, Flat, No Heavy Glow Filter) -->
+        <!-- The Marine Fish Silhouette (Neutral Slate, Soft & Minimalist) -->
         <svg 
           viewBox="0 0 26 14" 
-          class="w-3.5 h-2.5 text-[#103860] fish-wiggle"
+          class="w-3.5 h-2.5 text-slate-500 fish-wiggle"
           fill="currentColor"
         >
           <!-- Streamlined Fish Body -->
           <path d="M22 7 C18 2, 11 0.5, 4 4.5 C2.5 2, 0 1, 0 3.5 C1.5 5.5, 1.8 7, 0 10.5 C0 13, 2.5 12, 4 9.5 C11 13.5, 18 12, 22 7 Z" />
           <!-- Dorsal Fin -->
-          <path d="M12 2 C13 0, 15 0.5, 16 2 Z" fill="#1e3a8a" />
+          <path d="M12 2 C13 0, 15 0.5, 16 2 Z" fill="#94A3B8" />
           <!-- Pectoral Fin -->
-          <path d="M9 7 C11 7.5, 11 9, 8 8.5 Z" fill="#0c2b4a" />
+          <path d="M9 7 C11 7.5, 11 9, 8 8.5 Z" fill="#64748B" />
           <!-- Fish Eye Dot -->
           <circle cx="18" cy="6" r="1" fill="#FFFFFF" />
-          <circle cx="18" cy="6" r="0.5" fill="#0F172A" />
+          <circle cx="18" cy="6" r="0.5" fill="#334155" />
         </svg>
 
-        <!-- Subtle trailing wake dot (calm, non-blinding) -->
+        <!-- Subtle trailing wake dot -->
         <span 
-          class="inline-block w-1 h-1 rounded-full bg-[#103860]/30 pointer-events-none"
+          class="inline-block w-1 h-1 rounded-full bg-slate-300 pointer-events-none"
           :class="isBackward ? 'ml-0.5' : 'mr-0.5'"
         ></span>
       </div>
