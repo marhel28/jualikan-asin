@@ -91,6 +91,7 @@ const handleQuickAdd = () => {
   <article 
     @click="goToDetail"
     class="bg-white border border-slate-200/90 rounded-xl overflow-hidden flex flex-col justify-between hover:border-[#002242]/40 transition duration-150 shadow-2xs cursor-pointer group"
+    style="contain: content; content-visibility: auto; contain-intrinsic-size: 280px;"
   >
     <div>
       <div class="block relative w-full aspect-[4/3] bg-slate-100 overflow-hidden">
@@ -99,16 +100,16 @@ const handleQuickAdd = () => {
           v-if="!isImageLoaded || !product.images?.hero" 
           class="absolute inset-0 bg-slate-200 animate-pulse flex items-center justify-center z-0"
         >
-          <span class="material-symbols-outlined text-3xl text-slate-300">set_meal</span>
+          <span class="material-symbols-outlined text-3xl text-slate-400">set_meal</span>
         </div>
 
         <!-- Fallback only if network error occurred while loading image -->
         <div 
           v-if="isImageError" 
-          class="w-full h-full bg-slate-100 flex flex-col items-center justify-center text-slate-400 p-4"
+          class="w-full h-full bg-slate-100 flex flex-col items-center justify-center text-slate-500 p-4"
         >
-          <span class="material-symbols-outlined text-3xl text-slate-300 mb-1">set_meal</span>
-          <span class="text-[10px] text-slate-400 font-medium">Hasil Laut Muncar</span>
+          <span class="material-symbols-outlined text-3xl text-slate-400 mb-1">set_meal</span>
+          <span class="text-[10px] text-slate-500 font-medium">Hasil Laut Muncar</span>
         </div>
 
         <NuxtImg
@@ -145,7 +146,7 @@ const handleQuickAdd = () => {
           @click.stop="toggleWishlist"
           :aria-label="isFavorited ? 'Hapus dari favorit' : 'Tambah ke favorit'"
           class="absolute top-2 right-2 z-20 w-7 h-7 rounded-full bg-white/90 backdrop-blur-xs flex items-center justify-center transition-colors shadow-xs hover:bg-white cursor-pointer"
-          :class="isFavorited ? 'text-rose-600' : 'text-slate-400 hover:text-slate-700'"
+          :class="isFavorited ? 'text-rose-600' : 'text-slate-500 hover:text-slate-700'"
         >
           <span class="material-symbols-outlined text-[17px]" :class="{ 'fill-1': isFavorited }">
             {{ isFavorited ? 'favorite' : 'favorite' }}
@@ -184,7 +185,7 @@ const handleQuickAdd = () => {
           {{ priceInfo.displayPrice }} 
           <span v-if="priceInfo.unitLabel" class="text-[11px] font-normal text-slate-500">{{ priceInfo.unitLabel }}</span>
         </div>
-        <div v-if="priceInfo.subtext" class="text-[10px] text-slate-400 mt-0.5 font-medium truncate">
+        <div v-if="priceInfo.subtext" class="text-[10px] text-slate-500 mt-0.5 font-medium truncate">
           {{ priceInfo.subtext }}
         </div>
       </div>
@@ -210,7 +211,7 @@ const handleQuickAdd = () => {
         @click.stop="handleQuickAdd"
         class="w-full flex items-center justify-center gap-1.5 transition py-1.5 px-2 rounded-lg text-xs font-bold shadow-2xs"
         :class="(product.stockKg || 0) <= 0
-          ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+          ? 'bg-slate-100 text-slate-500 cursor-not-allowed'
           : 'bg-slate-100 hover:bg-[#103860] text-[#103860] hover:text-white active:scale-95 cursor-pointer disabled:opacity-60'"
       >
         <span class="material-symbols-outlined text-[16px]">

@@ -50,8 +50,8 @@ onUnmounted(() => {
 
 <template>
   <div 
+    v-if="isLoading"
     class="pointer-events-none absolute bottom-0 left-0 right-0 h-[1.5px] overflow-visible z-50 transition-opacity duration-200"
-    :class="isLoading ? 'opacity-100' : 'opacity-0'"
     aria-hidden="true"
   >
     <!-- Ultra-subtle, Non-glaring Progress Bar (Soft Muted Slate, Clean & Gentle) -->

@@ -61,12 +61,6 @@ const announcement = computed(() => announcementData.value || defaultAnnouncemen
 onMounted(async () => {
   if (typeof window !== 'undefined') {
     cartStore.initCart()
-    if (!authStore.isAuthenticated) {
-      const token = localStorage.getItem('lba_auth_token')
-      if (token) {
-        await authStore.initAuth()
-      }
-    }
     if (authStore.isAuthenticated) {
       orderStore.fetchUnpaidOrders()
     }
@@ -185,9 +179,9 @@ const handleSearchClick = () => {
             </div>
           </div>
           <div class="flex flex-col">
-            <h1 class="text-base font-bold text-[#103860] leading-tight group-hover:text-[#13446E] transition-colors">
+            <div class="text-base font-bold text-[#103860] leading-tight group-hover:text-[#13446E] transition-colors">
               Laut Berkah Abadi
-            </h1>
+            </div>
             <p class="text-xs text-slate-500 font-medium hidden sm:block">Banyuwangi Maritime Cold-Chain</p>
           </div>
         </NuxtLink>

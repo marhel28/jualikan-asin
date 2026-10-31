@@ -576,7 +576,7 @@ useHead(() => {
         <div class="flex items-center gap-2 text-xs text-slate-500">
           <NuxtLink to="/" class="hover:text-[#103860] transition-colors">Beranda</NuxtLink>
           <span class="material-symbols-outlined text-[14px]">chevron_right</span>
-          <span class="font-semibold text-[#103860]">Katalog Produk Muncar</span>
+          <h1 class="font-semibold text-[#103860] text-xs m-0 p-0 inline">Katalog Produk Muncar</h1>
         </div>
       </div>
 
@@ -601,7 +601,7 @@ useHead(() => {
               <input :value="searchQueryInput" @input="onSearchInput(($event.target as HTMLInputElement).value)"
                 @focus="onSearchFocus" @blur="onSearchBlur" @keydown.esc="isSearchDropdownOpen = false" type="text"
                 placeholder="Cari ikan laut, fillet, cumi, udang..."
-                class="w-full pl-9 pr-9 py-2 bg-white border border-slate-300 rounded-lg text-sm text-[#0F172A] placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#002242] focus:border-[#002242] transition shadow-2xs" />
+                class="w-full pl-9 pr-9 py-2 bg-white border border-slate-300 rounded-lg text-sm text-[#0F172A] placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-[#002242] focus:border-[#002242] transition shadow-2xs" />
               <!-- Semi-live Spinner or Clear Button -->
               <span class="absolute inset-y-0 right-0 pr-2.5 flex items-center">
                 <span v-if="isSearching" class="material-symbols-outlined text-[18px] text-[#103860] animate-spin">
@@ -644,7 +644,7 @@ useHead(() => {
                       <button v-for="kw in searchSuggestData.suggestions" :key="kw" type="button"
                         @mousedown.prevent="selectSuggestion(kw)"
                         class="px-2.5 py-1 bg-slate-50 hover:bg-slate-100 hover:text-[#103860] text-slate-700 rounded-lg text-xs font-medium border border-slate-200/80 transition cursor-pointer flex items-center gap-1">
-                        <span class="material-symbols-outlined text-[13px] text-slate-400">history</span>
+                        <span class="material-symbols-outlined text-[13px] text-slate-500">history</span>
                         <span>{{ kw }}</span>
                       </button>
                     </div>
@@ -689,10 +689,10 @@ useHead(() => {
                             <span class="material-symbols-outlined text-[18px]">set_meal</span>
                           </div>
                           <div class="min-w-0">
-                            <h4
+                            <p
                               class="text-xs font-bold text-slate-800 group-hover:text-[#103860] truncate transition-colors">
                               {{ p.name }}
-                            </h4>
+                            </p>
                             <div class="text-[10px] text-slate-500 flex items-center gap-1.5 mt-0.5">
                               <span class="px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 font-medium">{{ p.category
                                 }}</span>
@@ -708,7 +708,7 @@ useHead(() => {
                           <div class="text-xs font-bold font-mono text-[#103860]">
                             Rp{{ p.pricePerKg?.toLocaleString('id-ID') }}
                           </div>
-                          <span class="text-[10px] text-slate-400">/ {{ p.unit || 'kg' }}</span>
+                          <span class="text-[10px] text-slate-500 font-medium">/ {{ p.unit || 'kg' }}</span>
                         </div>
                       </div>
                     </div>

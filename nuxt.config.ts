@@ -37,7 +37,7 @@ export default defineNuxtConfig({
   },
 
   $production: {
-    // ponytail: short 10s-15s SWR guarantees instant sub-second SSR while ensuring admin product edits propagate within 15s
+    // short 10s-15s SWR guarantees instant sub-second SSR while ensuring admin product edits propagate within 15s
     routeRules: {
       '/': { swr: 10 },
       '/katalog': { swr: 10 },
@@ -45,8 +45,18 @@ export default defineNuxtConfig({
     },
   },
 
-  // Hybrid rendering: SPA for transactional flows, dynamic SSR in dev, SWR in production
+  // Security Headers and Hybrid Rendering
   routeRules: {
+    '/**': {
+      headers: {
+        'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
+        'X-Content-Type-Options': 'nosniff',
+        'X-Frame-Options': 'SAMEORIGIN',
+        'Referrer-Policy': 'strict-origin-when-cross-origin',
+        'Cross-Origin-Opener-Policy': 'same-origin',
+        'Permissions-Policy': 'camera=(), microphone=(), geolocation=(self)',
+      },
+    },
     '/login': { redirect: '/auth?mode=login' },
     '/signup': { redirect: '/auth?mode=register' },
     '/daftar': { redirect: '/auth?mode=register' },
@@ -110,16 +120,32 @@ export default defineNuxtConfig({
         {
           rel: 'preload',
           as: 'style',
-          href: 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap',
+          href: 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;600&display=swap',
         },
         {
           rel: 'stylesheet',
-          href: 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap',
+          href: 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;600&display=swap',
           media: 'print',
           onload: "this.media='all'",
         },
       ],
       script: [],
+    },
+  },
+
+  vite: {
+    build: {
+      cssCodeSplit: true,
+      chunkSizeWarningLimit: 600,
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes('node_modules/leaflet')) {
+              return 'vendor-leaflet'
+            }
+          },
+        },
+      },
     },
   },
 
