@@ -1088,10 +1088,10 @@ useHead(() => {
               </div>
             </div>
 
-            <!-- Jumlah Pesanan (Pack) & Subtotal & Bagikan -->
+            <!-- Jumlah & Subtotal & Bagikan -->
             <div class="pb-5">
               <div class="mb-2 text-xs font-semibold text-slate-800">
-                Jumlah Pesanan (Pack):
+                Jumlah:
               </div>
 
               <div class="flex flex-wrap items-center justify-between gap-3">
