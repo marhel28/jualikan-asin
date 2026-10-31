@@ -982,19 +982,15 @@ useHead(() => {
             <!-- Category Supertitle, Title & Social Proof -->
             <div class="pb-2">
               <div>
-                <span class="text-[11px] uppercase tracking-wider text-slate-400 font-bold">Hasil Laut Segar Muncar</span>
+                <span class="text-[11px] uppercase tracking-wider text-slate-400 font-bold">{{ (product?.category || 'Hasil Laut Segar').toUpperCase() }}</span>
               </div>
 
               <h1 class="mt-1 text-xl font-bold leading-snug sm:text-2xl text-slate-900">
                 {{ product.name }}
               </h1>
 
-              <div class="mt-1 text-xs font-medium text-slate-500">
-                {{ product.category || 'Hasil Laut Segar' }}
-              </div>
-
               <!-- Social Proof: Terjual, Difavoritkan & Stok -->
-              <div class="flex items-center gap-2 mt-2 text-xs">
+              <div class="flex items-center gap-2 mt-2.5 text-xs">
                 <span class="flex items-center gap-1 font-semibold text-slate-700">
                   <span class="material-symbols-outlined text-[14px] text-emerald-700">sell</span>
                   <span>{{ (product?.soldCount ?? 0).toLocaleString('id-ID') }} terjual</span>
@@ -1030,7 +1026,7 @@ useHead(() => {
                   </span>
                 </div>
                 <div v-if="minVariantPrice !== maxVariantPrice" class="text-[11px] text-slate-500 mt-1 font-medium">
-                  Rentang varian: <strong class="text-slate-700">Rp{{ minVariantPrice.toLocaleString('id-ID') }} - Rp{{ maxVariantPrice.toLocaleString('id-ID') }}</strong>
+                  Varian: <strong class="text-slate-700">Rp{{ minVariantPrice.toLocaleString('id-ID') }} - Rp{{ maxVariantPrice.toLocaleString('id-ID') }}</strong>
                 </div>
               </div>
 

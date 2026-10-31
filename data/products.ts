@@ -89,7 +89,7 @@ export const PRODUCTS: Product[] = [
     catchMethod: 'Pancing Ulur Muncar (Non-Pukat)',
     landingPort: 'Pelabuhan Muncar Banyuwangi',
     originZone: 'Selat Bali & Samudra Hindia',
-    description: 'Tenggiri papan segar tangkapan harian nelayan pancing ulur Muncar. Daging kenyal padat gurih tanpa suntik air, minim aroma amis, dan disimpan di atas es curah sejak kapal berlayar.',
+    description: 'Steak ikan tenggiri papan (betina) memiliki tekstur yang lebih lembut daripada ikan tenggiri batang (jantan) yang biasa Laut Berkah Abadi sediakan. Dikarenakan rata-rata ukuran ikan ini lebih kecil, kebanyakan ikan ini ditangkap dengan metode ramah lingkungan nelayan Muncar. Terdapat goresan halus pada lapisan kulit luar ikan dikarenakan metode tangkap ini.\n\nKaya protein & omega-3. Praktis siap masak untuk hidangan sehat dan istimewa.\n\nCatatan: Berat yang tertera adalah berat bersih (netto)\nKemasan: Vacuum pack (frozen)',
     qualityBadges: [
       'Pancing Ulur Muncar',
       'Cold Chain 0 - 2°C Es Curah',
@@ -161,7 +161,7 @@ export const PRODUCTS: Product[] = [
     catchMethod: 'Pancing Ulur Karang Selat Bali',
     landingPort: 'Pelabuhan Muncar Banyuwangi',
     originZone: 'Gugusan Karang Plawangan Muncar',
-    description: 'Kerapu macan (cantang) kualitas restoran hidangan laut. Memiliki tekstur daging putih lembut berlapis gelatin alami yang sangat gurih saat dikukus saus jahe kecap asin.',
+    description: 'Kerapu macan (cantang) kualitas restoran hidangan laut dari perairan karang Muncar. Memiliki tekstur daging putih tebal, sangat lembut, dan berlapis gelatin alami yang gurih saat dikukus saus jahe kecap asin atau kuah asam.\n\nTinggi protein murni dan kaya asam amino esensial untuk menjaga imunitas tubuh. Praktis siap masak hidangan istimewa keluarga.\n\nCatatan: Berat yang tertera adalah berat bersih (netto)\nKemasan: Vacuum pack (chilled 0°C - 2°C)',
     qualityBadges: [
       'Pancing Ulur Karang',
       'Tekstur Daging Lembut',
@@ -226,7 +226,7 @@ export const PRODUCTS: Product[] = [
     catchMethod: 'Pancing Rawai Nelayan Muncar',
     landingPort: 'Pelabuhan Muncar Banyuwangi',
     originZone: 'Perairan Luar Teluk Pangpang',
-    description: 'Tongkol lisong segar dengan ciri khas daging merah padat kaya asam lemak Omega-3. Sangat lezat dimasak bumbu sarden pedas, balado, atau diasap aroma kayu kelapa.',
+    description: 'Ikan tongkol lisong segar tangkapan nelayan pancing rawai Muncar. Memiliki tekstur daging merah padat berserat rapat dengan cita rasa gurih alami tanpa bau anyir berlebih.\n\nKaya zat besi, vitamin B12, dan asam lemak Omega-3 alami. Sangat cocok dimasak balado pedas, pindang bumbu kuning, atau kuah sarden tomat segar.\n\nCatatan: Berat yang tertera adalah berat bersih (netto)\nKemasan: Vacuum pack (chilled 0°C - 2°C)',
     qualityBadges: [
       'Pancing Rawai Nelayan',
       'Kaya Omega-3 Alami',
@@ -290,7 +290,7 @@ export const PRODUCTS: Product[] = [
     catchMethod: 'Payang Tradisional Selat Bali',
     landingPort: 'Pelabuhan Muncar Banyuwangi',
     originZone: 'Selat Bali Muncar',
-    description: 'Ikan lemuru ikonik Muncar yang terkenal dengan kandungan minyak ikan alaminya. Ditangkap subuh dan langsung dipacking dengan es curah higienis tanpa fermentasi.',
+    description: 'Ikan lemuru ikonik Muncar tangkapan subuh nelayan payang Selat Bali. Memiliki tekstur daging gurih lembut dengan lapisan minyak ikan alami yang melimpah dan mata jernih berkilau.\n\nSumber konsentrasi Omega-3 (EPA & DHA) alami untuk kesehatan jantung dan otak keluarga. Praktis siap goreng krispi, bakar bumbu rujak, atau masak kuah sarden.\n\nCatatan: Berat yang tertera adalah berat bersih (netto)\nKemasan: Vacuum pack food-grade (chilled)',
     qualityBadges: [
       'Ikan Khas Selat Bali',
       'Minyak Ikan Alami Tinggi',
@@ -346,7 +346,7 @@ export const PRODUCTS: Product[] = [
     catchMethod: 'Pancing Ulur Karang Dalam Muncar',
     landingPort: 'Pelabuhan Muncar Banyuwangi',
     originZone: 'Perairan Karang Samudra Hindia',
-    description: 'Kakap merah sisik cerah dengan daging putih berserat halus manis alami. Sangat cocok dibakar bumbu Jimbaran atau dibuat fillet crispy saus asam manis.',
+    description: 'Kakap merah karang dalam tangkapan pancing ulur Selat Bali dan Samudra Hindia. Memiliki tekstur daging putih bersih, padat kenyal, berserat halus, dan bercita rasa manis alami khas ikan karang segar.\n\nKaya protein berkualitas tinggi, mineral selenium, dan rendah lemak jenuh. Sangat cocok dibakar bumbu Jimbaran, asam manis, maupun fillet panggang mentega.\n\nCatatan: Berat yang tertera adalah berat bersih (netto)\nKemasan: Vacuum pack (chilled 0°C - 2°C)',
     qualityBadges: [
       'Pancing Ulur Karang Dalam',
       'Tekstur Flaky Padat',
@@ -418,7 +418,7 @@ export const PRODUCTS: Product[] = [
     catchMethod: 'Pancing Cumi Lampu Malam Selat Bali',
     landingPort: 'Pelabuhan Muncar Banyuwangi',
     originZone: 'Selat Bali Bagian Selatan',
-    description: 'Cumi sero segar berkulit bintik bening dengan kantong tinta utuh. Tekstur daging kenyal renyah alami tanpa pemutih kimia dan tidak susut berlebih saat dimasak.',
+    description: 'Cumi sero segar berkulit bintik bening keunguan dengan kantong tinta utuh dari perairan Teluk Pangpang. Tekstur daging kenyal renyah alami tanpa pemutih kimia dan tidak susut berlebih saat dimasak.\n\nKaya protein, taurin alami, mineral fosfor, dan rendah kalori. Cocok dimasak cumi hitam rempah gurih, saus tiram, cincin tepung krispi, atau bakar pedas manis.\n\nCatatan: Berat yang tertera adalah berat bersih (netto)\nKemasan: Vacuum pack (chilled es curah)',
     qualityBadges: [
       'Badan Bening Kenyal',
       'Tinta Utuh Alami',
@@ -476,7 +476,7 @@ export const PRODUCTS: Product[] = [
     catchMethod: 'Preparasi Cold Hub Muncar',
     landingPort: 'Fasilitas Cold Hub LBA Muncar',
     originZone: 'Muncar Banyuwangi',
-    description: 'Bagian kepala dan rahang kakap merah segar dengan daging pipi yang sangat tebal dan gurih. Sudah dibelah dua dan dibersihkan insangnya, siap untuk gulai atau sup kepala ikan.',
+    description: 'Bagian kepala dan rahang kakap merah segar dengan daging pipi tebal yang kenyal dan kaya gelatin alami. Sudah dibelah dua secara simetris dan dibersihkan dari insang serta sisik pelindung.\n\nPilihan utama untuk sajian gulai kepala ikan khas pesisir, kuah asam pedas, atau sup bening berkaldu gurih kental alami.\n\nCatatan: Berat yang tertera adalah berat bersih (netto)\nKemasan: Vacuum pack (chilled 0°C - 2°C)',
     qualityBadges: [
       'Paling Cocok Gulai & Sup',
       'Insang Bersih Siap Masak',
@@ -532,7 +532,7 @@ export const PRODUCTS: Product[] = [
     catchMethod: 'Pancing Ulur Samudra Hindia',
     landingPort: 'Pelabuhan Muncar Banyuwangi',
     originZone: 'Samudra Hindia Selatan Jawa',
-    description: 'Potongan steak tuna sirip kuning dengan warna ruby-red segar pekat. Dipotong presisi tebal 2.5 cm dan dikemas vacuum sealed higienis per porsi 200 gram.',
+    description: 'Steak tuna sirip kuning (yellowfin) kualitas ekspor dari perairan Samudra Hindia Selatan Jawa. Daging merah pekat alami (ruby-red) tanpa pewarna atau suntikan gas karbon monoksida.\n\nSumber protein padat tanpa lemak jahat, kaya selenium, dan kalium. Dipotong presisi tebal 2.5 cm siap panggang (pan-seared), grill, atau steak saus teriyaki.\n\nCatatan: Berat yang tertera adalah berat bersih (netto)\nKemasan: Vacuum pack (frozen food-grade)',
     qualityBadges: [
       'Daging Segar Pilihan',
       'Ruby Red Bebas Karbon Monoksida',
@@ -587,7 +587,7 @@ export const PRODUCTS: Product[] = [
     catchMethod: 'Pancing Nelayan Selat Bali',
     landingPort: 'Pelabuhan Muncar Banyuwangi',
     originZone: 'Selat Bali & Muncar',
-    description: 'Ikan Baronang Tulis pilihan tangkapan pancing nelayan Selat Bali. Memiliki tekstur daging yang putih, tebal, gurih alami, dan rendah duri halus. Fillet diproses secara bersih (skin-on), bebas lendir & kotoran, lalu segera divakum food-grade dan disimpan pada rantai dingin 0°C - 2°C untuk menjaga kesegaran tingkat sashimi.',
+    description: 'Fillet ikan baronang tulis pilihan hasil pancing nelayan karang Selat Bali. Memiliki tekstur daging putih bersih, padat, beraroma harum laut, dan bebas dari duri halus yang mengganggu.\n\nDiproses higienis (skin-on) pada fasilitas cold hub bersuhu dingin konstan untuk menjaga standar kesegaran prima siap masak hidangan keluarga.\n\nCatatan: Berat yang tertera adalah berat bersih (netto)\nKemasan: Vacuum pack (chilled 0°C - 2°C)',
     qualityBadges: [
       'Segar Cold Chain',
       'Pancing Selat Bali',
