@@ -319,7 +319,7 @@ const toggleLike = async () => {
   }
 }
 
-// Photo gallery list (clean, no injection of irrelevant fish photos)
+// Photo gallery list (clean, deduplicated, no duplicate identical URLs)
 const galleryImages = computed(() => {
   if (!product.value) return []
   const imgs: string[] = []
@@ -329,7 +329,15 @@ const galleryImages = computed(() => {
   if (imgs.length === 0 && (product.value as any).imageUrl) {
     imgs.push((product.value as any).imageUrl)
   }
-  return imgs
+  // Deduplicate identical non-empty URLs
+  return Array.from(new Set(imgs.filter(url => typeof url === 'string' && url.trim().length > 0)))
+})
+
+// Keep activeImageIndex strictly within bounds if gallery length changes
+watch(galleryImages, (newImgs) => {
+  if (activeImageIndex.value >= newImgs.length) {
+    activeImageIndex.value = 0
+  }
 })
 
 const currentHeroImage = computed(() => {
@@ -357,10 +365,62 @@ watch(maxStock, (newMax) => {
 }, { immediate: true })
 
 const switchGalleryImage = (idx: number) => {
-  if (activeImageIndex.value !== idx) {
-    activeImageIndex.value = idx
-    isHeroImageLoaded.value = false
-    isHeroImageError.value = false
+  if (idx < 0 || idx >= galleryImages.value.length) return
+  if (activeImageIndex.value === idx) return
+
+  const targetImg = galleryImages.value[idx]
+  const currentImg = currentHeroImage.value
+
+  activeImageIndex.value = idx
+
+  // If target image is identical URL (defensive check), preserve loaded status
+  if (targetImg === currentImg) {
+    isHeroImageLoaded.value = true
+    return
+  }
+
+  isHeroImageLoaded.value = false
+  isHeroImageError.value = false
+}
+
+const prevGalleryImage = () => {
+  if (galleryImages.value.length <= 1) return
+  const prevIdx = activeImageIndex.value <= 0 ? galleryImages.value.length - 1 : activeImageIndex.value - 1
+  switchGalleryImage(prevIdx)
+}
+
+const nextGalleryImage = () => {
+  if (galleryImages.value.length <= 1) return
+  const nextIdx = activeImageIndex.value >= galleryImages.value.length - 1 ? 0 : activeImageIndex.value + 1
+  switchGalleryImage(nextIdx)
+}
+
+// Touch swipe gestures for mobile gallery
+let touchStartX = 0
+let touchStartY = 0
+
+const handleTouchStart = (e: TouchEvent) => {
+  if (e.touches && e.touches[0]) {
+    touchStartX = e.touches[0].clientX
+    touchStartY = e.touches[0].clientY
+  }
+}
+
+const handleTouchEnd = (e: TouchEvent) => {
+  if (!e.changedTouches || !e.changedTouches[0]) return
+  const touchEndX = e.changedTouches[0].clientX
+  const touchEndY = e.changedTouches[0].clientY
+
+  const diffX = touchEndX - touchStartX
+  const diffY = touchEndY - touchStartY
+
+  // Trigger horizontal swipe if horizontal movement is dominant and > 35px
+  if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 35) {
+    if (diffX < 0) {
+      nextGalleryImage()
+    } else {
+      prevGalleryImage()
+    }
   }
 }
 
@@ -838,30 +898,35 @@ useHead(() => {
         <div class="grid items-start grid-cols-1 gap-4 p-4 md:grid-cols-2 md:gap-8 md:p-6">
           <!-- Left Column: Product Image Showcase -->
           <div class="w-full">
-            <div class="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-slate-100 border border-slate-200/80">
+            <div 
+              class="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-slate-100 border border-slate-200/80 select-none group"
+              @touchstart="handleTouchStart"
+              @touchend="handleTouchEnd"
+            >
               <!-- Skeleton Loader for Hero Image -->
               <div 
                 v-if="!isHeroImageLoaded || !currentHeroImage"
                 class="absolute inset-0 bg-slate-200 animate-pulse flex items-center justify-center z-0"
               >
-                <span class="material-symbols-outlined text-4xl text-slate-300">set_meal</span>
+                <span class="material-symbols-outlined text-4xl text-slate-400">set_meal</span>
               </div>
 
               <!-- Fallback on error -->
               <div 
                 v-if="isHeroImageError"
-                class="w-full h-full bg-slate-100 flex flex-col items-center justify-center text-slate-400 p-6"
+                class="w-full h-full bg-slate-100 flex flex-col items-center justify-center text-slate-500 p-6 z-10"
               >
-                <span class="material-symbols-outlined text-4xl text-slate-300 mb-2">set_meal</span>
-                <span class="text-xs text-slate-400 font-medium">Dokumentasi Tangkapan Muncar</span>
+                <span class="material-symbols-outlined text-4xl text-slate-400 mb-2">set_meal</span>
+                <span class="text-xs text-slate-500 font-medium">Dokumentasi Tangkapan Muncar</span>
               </div>
 
               <NuxtImg 
                 v-else-if="currentHeroImage"
+                :key="currentHeroImage"
                 id="main-product-img" 
                 :src="currentHeroImage" 
                 :alt="displayName"
-                class="object-cover w-full h-full transition-opacity duration-300 relative z-10"
+                class="object-cover w-full h-full transition-opacity duration-200 relative z-10"
                 :class="isHeroImageLoaded ? 'opacity-100' : 'opacity-0'"
                 width="800" 
                 height="600" 
@@ -870,6 +935,26 @@ useHead(() => {
                 @load="handleHeroImageLoad"
                 @error="handleHeroImageError" 
               />
+
+              <!-- Previous & Next Navigation Arrows (only if multiple photos) -->
+              <template v-if="galleryImages.length > 1">
+                <button
+                  type="button"
+                  @click.stop="prevGalleryImage"
+                  class="absolute left-2.5 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-slate-900/60 hover:bg-slate-900/85 text-white flex items-center justify-center transition opacity-80 hover:opacity-100 backdrop-blur-xs shadow-xs cursor-pointer active:scale-95"
+                  aria-label="Foto Sebelumnya"
+                >
+                  <span class="material-symbols-outlined text-[18px]">chevron_left</span>
+                </button>
+                <button
+                  type="button"
+                  @click.stop="nextGalleryImage"
+                  class="absolute right-2.5 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-slate-900/60 hover:bg-slate-900/85 text-white flex items-center justify-center transition opacity-80 hover:opacity-100 backdrop-blur-xs shadow-xs cursor-pointer active:scale-95"
+                  aria-label="Foto Berikutnya"
+                >
+                  <span class="material-symbols-outlined text-[18px]">chevron_right</span>
+                </button>
+              </template>
 
               <!-- Photo gallery counter pill -->
               <div
@@ -881,10 +966,10 @@ useHead(() => {
             </div>
 
             <!-- Thumbnail Strip (only if multiple photos) -->
-            <div v-if="galleryImages.length > 1" class="flex gap-2 mt-3 overflow-x-auto no-scrollbar py-0.5">
-              <button v-for="(imgSrc, idx) in galleryImages" :key="idx" type="button" @click="switchGalleryImage(idx)"
+            <div v-if="galleryImages.length > 1" class="flex gap-2.5 mt-3 overflow-x-auto no-scrollbar py-0.5">
+              <button v-for="(imgSrc, idx) in galleryImages" :key="imgSrc" type="button" @click="switchGalleryImage(idx)"
                 class="flex-shrink-0 overflow-hidden transition-all cursor-pointer w-14 h-14 rounded-xl focus:outline-none bg-slate-100"
-                :class="activeImageIndex === idx ? 'border-2 border-[#002242]' : 'border border-slate-200 opacity-70 hover:opacity-100'"
+                :class="activeImageIndex === idx ? 'border-2 border-[#103860] ring-2 ring-blue-100 scale-105' : 'border border-slate-200 opacity-60 hover:opacity-100'"
                 :aria-label="`Pilih Foto ${idx + 1}`">
                 <NuxtImg :src="imgSrc" :alt="`Foto ${idx + 1}`" class="object-cover w-full h-full" width="56"
                   height="56" format="webp" loading="lazy" />
