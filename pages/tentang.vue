@@ -66,189 +66,155 @@ useHead({
       <ScrollyStory />
 
       <!-- 2. PARALLAX CURTAIN TRANSITION SHEET (Mengadopsi Seafood Watch .homepage-section-top) -->
-      <div class="relative z-30 bg-[#F8FAFC] -mt-16 sm:-mt-24 rounded-t-[32px] sm:rounded-t-[48px] shadow-2xl border-t border-slate-200/80 overflow-hidden">
+      <div class="relative z-20 bg-[#F8FAFC] -mt-16 sm:-mt-24 rounded-t-[32px] sm:rounded-t-[48px] shadow-2xl border-t border-slate-200/80 overflow-hidden">
 
-        <!-- 3. PANDUAN KLASIFIKASI MUTU IKAN (Mengadopsi Seafood Watch Decision Guide) -->
-        <section id="panduan-mutu" class="w-full bg-white py-16 md:py-24 border-b border-slate-200/80">
-        <!-- Pilar 1: Siapa Kami (Who We Are) -> Background Putih -->
-        <div class="w-full bg-white border-b border-slate-100 py-16 md:py-24">
-          <div class="w-full max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-            <div class="flex flex-col gap-4 max-w-xl">
-              <span class="text-[11px] font-bold tracking-widest uppercase text-[#103860]">
-                PILAR 01 • SIAPA KAMI
+        <!-- 3. PILAR UTAMA: SIAPA KAMI (Format Kotak-Kotak Mist Persis Foto Seafood Watch) -->
+        <section id="siapa-kami" class="relative w-full bg-[#002242] py-20 sm:py-28 lg:py-32 overflow-hidden border-b border-slate-800">
+          <!-- Scenic Background Pelabuhan Muncar dengan overlay maritim -->
+          <div class="absolute inset-0 z-0 pointer-events-none">
+            <img 
+              src="https://cdn.ammarabufadhel.my.id/banners/banner-dermaga-muncar-2a28a9c6.webp" 
+              alt="Dermaga Nelayan Tradisional Muncar" 
+              class="w-full h-full object-cover opacity-35"
+              loading="lazy"
+            />
+            <div class="absolute inset-0 bg-gradient-to-t from-[#002242] via-[#002242]/80 to-[#002242]/90" />
+          </div>
+
+          <div class="relative z-10 w-full max-w-7xl mx-auto px-6 sm:px-12 lg:px-20">
+            <!-- Header Luar Kartu: Label Biru Terang & Judul Putih Tegas -->
+            <header class="max-w-2xl mb-6">
+              <span class="text-[11px] font-bold tracking-widest uppercase text-sky-400 drop-shadow-sm">
+                PILAR 01 DARI 04 • SIAPA KAMI
               </span>
-              <h2 class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#002242] leading-tight">
+              <h2 class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white leading-tight tracking-tight mt-1.5 drop-shadow-md">
                 Pusat pengolahan dan distribusi rantai dingin Pelabuhan Muncar.
               </h2>
-              <div class="text-slate-600 text-sm md:text-base leading-relaxed flex flex-col gap-3">
-                <p>
-                  Laut Berkah Abadi lahir dari pesisir Pelabuhan Muncar Banyuwangi, salah satu sentra pendaratan ikan terpenting di Selat Bali. Kami menyaksikan bagaimana rantai distribusi tradisional sering merugikan nelayan kecil sekaligus membahayakan konsumen akibat penggunaan bahan pengawet sintetis.
-                </p>
-                <p>
-                  Kami hadir sebagai jembatan langsung antara nelayan pancing ulur Muncar dengan konsumen rumah tangga dan pelaku kuliner. Dengan memangkas rantai tengkulak gelap, nelayan mendapatkan kepastian harga timbangan yang adil, sementara konsumen menerima hasil laut berkualitas prima dengan harga transparan.
-                </p>
-              </div>
-              <div class="flex items-center gap-4 pt-2">
-                <NuxtLink to="/katalog" class="text-xs sm:text-sm font-bold text-[#103860] hover:text-[#002242] inline-flex items-center gap-1.5 underline underline-offset-4 cursor-pointer">
-                  <span>Lihat hasil tangkapan hari ini</span>
-                  <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
-                </NuxtLink>
-              </div>
-            </div>
+            </header>
 
-            <div class="relative aspect-[4/3] rounded-3xl overflow-hidden bg-slate-100 border border-slate-200/80 shadow-lg">
-              <NuxtImg
-                src="https://cdn.ammarabufadhel.my.id/banners/banner-dermaga-muncar-2a28a9c6.webp"
-                alt="Dermaga pendaratan ikan tradisional Muncar"
-                class="w-full h-full object-cover"
-                loading="lazy"
-                width="800"
-                height="600"
-                format="webp"
-              />
-              <div class="absolute bottom-4 left-4 bg-slate-900/85 backdrop-blur-md text-white px-3.5 py-2 rounded-xl text-xs font-semibold">
-                Dermaga Tradisional Nelayan Muncar
-              </div>
-            </div>
-          </div>
-        </div>
+            <!-- KOTAK KARTU MIST (Persis Foto Seafood Watch) -->
+            <div class="w-full lg:max-w-2xl bg-[#F5F5F5] text-slate-900 rounded-[4px] p-8 sm:p-10 md:p-12 shadow-2xl border border-white/80">
+              <!-- Judul di Dalam Kotak -->
+              <h3 class="text-xl sm:text-2xl md:text-[24px] font-bold text-slate-900 leading-snug tracking-tight mb-4">
+                Menghubungkan nelayan pancing ulur Muncar langsung ke dapur Anda.
+              </h3>
 
-        <!-- Pilar 2: Apa yang Kami Lakukan (What We Do) -> Background Mist (#F8FAFC) -->
-        <div class="w-full bg-[#F8FAFC] border-b border-slate-200/70 py-16 md:py-24">
-          <div class="w-full max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-            <!-- Media di Kiri pada Desktop -->
-            <div class="order-2 lg:order-1 relative aspect-[4/3] rounded-3xl overflow-hidden bg-slate-100 border border-slate-200/80 shadow-lg">
-              <NuxtImg
-                src="https://cdn.ammarabufadhel.my.id/products/asset-1544552866-03b7d7e3.webp"
-                alt="Meja preparasi dan pengolahan ikan higienis Muncar"
-                class="w-full h-full object-cover"
-                loading="lazy"
-                width="800"
-                height="600"
-                format="webp"
-              />
-              <div class="absolute bottom-4 left-4 bg-slate-900/85 backdrop-blur-md text-white px-3.5 py-2 rounded-xl text-xs font-semibold">
-                Inspeksi Organoleptik Meja Stainless Steel
-              </div>
-            </div>
+              <!-- Paragraf Deskripsi Bersih Tanpa Klise -->
+              <p class="text-sm sm:text-base text-slate-700 leading-relaxed font-normal mb-8">
+                Laut Berkah Abadi lahir dari pesisir Pelabuhan Muncar Banyuwangi, salah satu sentra pendaratan ikan terpenting di Selat Bali. Kami memangkas rantai tengkulak tradisional agar nelayan pancing ulur memperoleh kepastian harga timbangan yang adil, sementara keluarga dan mitra kuliner mendapatkan hasil laut segar berkualitas prima bebas formalin dengan transparansi penuh.
+              </p>
 
-            <div class="order-1 lg:order-2 flex flex-col gap-4 max-w-xl">
-              <span class="text-[11px] font-bold tracking-widest uppercase text-[#103860]">
-                PILAR 02 • APA YANG KAMI LAKUKAN
-              </span>
-              <h2 class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#002242] leading-tight">
-                Seleksi mutu subuh dan pengawalan suhu dingin tanpa kompromi.
-              </h2>
-              <div class="text-slate-600 text-sm md:text-base leading-relaxed flex flex-col gap-3">
-                <p>
-                  Setiap subuh pukul 05:00 WIB saat perahu nelayan merapat, tim kurasi kami langsung melakukan uji organoleptik: kejernihan pupil mata, warna merah segar insang, dan kekenyalan elastisitas serat daging.
-                </p>
-                <p>
-                  Ikan yang lolos seleksi ditimbang secara basah di timbangan digital transparan, disiangi di atas meja baja tahan karat steril, lalu dikemas rapat dalam kantong vakum kedap udara bersama ice gel beku. Seluruh proses diawasi ketat dalam ruangan bersuhu 0°C sampai 2°C untuk menghentikan perkembangan bakteri.
-                </p>
-              </div>
-              <div class="flex items-center gap-4 pt-2">
-                <a href="#panduan-mutu" class="text-xs sm:text-sm font-bold text-[#103860] hover:text-[#002242] inline-flex items-center gap-1.5 underline underline-offset-4 cursor-pointer">
-                  <span>Pelajari standar seleksi mutu kami</span>
-                  <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Pilar 3: Mengapa Ini Penting (Why It Matters) -> Background Putih -->
-        <div class="w-full bg-white border-b border-slate-100 py-16 md:py-24">
-          <div class="w-full max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-            <div class="flex flex-col gap-4 max-w-xl">
-              <span class="text-[11px] font-bold tracking-widest uppercase text-[#103860]">
-                PILAR 03 • MENGAPA INI PENTING
-              </span>
-              <h2 class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#002242] leading-tight">
-                Menjaga kelestarian laut dan melindungi kesehatan generasi penerus.
-              </h2>
-              <div class="text-slate-600 text-sm md:text-base leading-relaxed flex flex-col gap-3">
-                <p>
-                  Ikan laut merupakan sumber protein murni dan asam lemak Omega-3 (EPA dan DHA) yang krusial bagi pertumbuhan otak anak serta kesehatan jantung keluarga. Namun, manfaat alami ini hilang seketika jika ikan terpapar formalin atau mengalami kebusukan histamin akibat putusnya rantai dingin.
-                </p>
-                <p>
-                  Di sisi lain, kelestarian laut Selat Bali dan Samudra Hindia terancam jika metode penangkapan destruktif seperti cantrang atau racun potasium terus dibiarkan. Dengan mendukung metode pancing ulur ramah lingkungan, kita menjaga terumbu karang tetap lestari untuk generasi masa depan.
-                </p>
-              </div>
-              <div class="flex items-center gap-4 pt-2">
-                <NuxtLink to="/katalog" class="text-xs sm:text-sm font-bold text-[#103860] hover:text-[#002242] inline-flex items-center gap-1.5 underline underline-offset-4 cursor-pointer">
-                  <span>Pesan ikan sehat tanpa bahan kimia</span>
-                  <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
-                </NuxtLink>
-              </div>
-            </div>
-
-            <div class="relative aspect-[4/3] rounded-3xl overflow-hidden bg-slate-100 border border-slate-200/80 shadow-lg">
-              <NuxtImg
-                src="https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800&q=80&auto=format&fit=crop"
-                alt="Hidangan hasil laut segar untuk keluarga dan mitra kuliner"
-                class="w-full h-full object-cover"
-                loading="lazy"
-                width="800"
-                height="600"
-                format="webp"
-              />
-              <div class="absolute bottom-4 left-4 bg-slate-900/85 backdrop-blur-md text-white px-3.5 py-2 rounded-xl text-xs font-semibold">
-                Nutrisi Segar Tanpa Pengawet Kimia
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Pilar 4: Strategi Distribusi Kami (Our Strategy) -> Background Mist (#F8FAFC) -->
-        <div class="w-full bg-[#F8FAFC] border-b border-slate-200/70 py-16 md:py-24">
-          <div class="w-full max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-            <!-- Media di Kiri pada Desktop -->
-            <div class="order-2 lg:order-1 relative aspect-[4/3] rounded-3xl overflow-hidden bg-slate-100 border border-slate-200/80 shadow-lg">
-              <NuxtImg
-                src="https://cdn.ammarabufadhel.my.id/qc/ikan-kerapu-macan-muncar-scaleSlip-292250c2.webp"
-                alt="Bukti slip timbangan digital dan kemasan rantai dingin"
-                class="w-full h-full object-cover"
-                loading="lazy"
-                width="800"
-                height="600"
-                format="webp"
-              />
-              <div class="absolute bottom-4 left-4 bg-slate-900/85 backdrop-blur-md text-white px-3.5 py-2 rounded-xl text-xs font-semibold">
-                Slip Timbang Digital dan Label Mutu
-              </div>
-            </div>
-
-            <div class="order-1 lg:order-2 flex flex-col gap-4 max-w-xl">
-              <span class="text-[11px] font-bold tracking-widest uppercase text-[#103860]">
-                PILAR 04 • STRATEGI DISTRIBUSI
-              </span>
-              <h2 class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#002242] leading-tight">
-                Pengiriman jadwal subuh dan kemitraan pasokan kuliner berstandar.
-              </h2>
-              <div class="text-slate-600 text-sm md:text-base leading-relaxed flex flex-col gap-3">
-                <p>
-                  Untuk pesanan rumah tangga di area lokal Banyuwangi, kurir berinsulasi termal kami bergerak mulai pukul 06:00 sampai 08:30 WIB agar paket tiba sebelum waktu masak siang. Untuk pengiriman luar kota di Jawa Timur dan Bali, kami menggunakan kemasan kotak styrofoam tebal berlapis es gel beku.
-                </p>
-                <p>
-                  Bagi pengusaha kuliner, hotel, dan katering, kami menyediakan layanan pasokan berkala dengan potongan spesifik yang terkalibrasi beratnya, memudahkan chef menghitung biaya porsi hidangan secara akurat tanpa risiko fluktuasi berat palsu.
-                </p>
-              </div>
-              <div class="flex items-center gap-4 pt-2">
-                <a
-                  href="https://wa.me/6281234567890?text=Halo%20Laut%20Berkah%20Abadi,%20saya%20ingin%20konsultasi%20pasokan%20ikan%20restoran/katering"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="text-xs sm:text-sm font-bold text-[#103860] hover:text-[#002242] inline-flex items-center gap-1.5 underline underline-offset-4 cursor-pointer"
+              <!-- DUA TOMBOL AKSI SEAFOOD WATCH (1 Outline + 1 Filled Solid) -->
+              <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5">
+                <NuxtLink
+                  to="/katalog"
+                  class="h-11 px-5 rounded-[2px] bg-white hover:bg-slate-50 border border-[#00629B] text-[#00629B] font-semibold text-xs sm:text-sm inline-flex items-center justify-center gap-2.5 transition-colors cursor-pointer"
                 >
-                  <span>Konsultasi pasokan restoran dan hotel</span>
-                  <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
-                </a>
+                  <span class="material-symbols-outlined text-[18px]">sailing</span>
+                  <span>Standar pendaratan Selat Bali</span>
+                </NuxtLink>
+
+                <NuxtLink
+                  to="/katalog"
+                  class="h-11 px-5 rounded-[2px] bg-[#00629B] hover:bg-[#004d7a] text-white font-semibold text-xs sm:text-sm inline-flex items-center justify-center gap-2.5 transition-colors cursor-pointer"
+                >
+                  <span class="material-symbols-outlined text-[18px]">shopping_bag</span>
+                  <span>Telusuri katalog ikan segar</span>
+                </NuxtLink>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+
+        <!-- 4. HARMONISASI PILAR 02, 03, & 04 (Grid Kotak-Kotak Seragam Persis Sistem Kartu Seafood Watch) -->
+        <section class="w-full bg-white py-16 md:py-24 border-b border-slate-200/80">
+          <div class="w-full max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 flex flex-col gap-10">
+            <div class="flex flex-col gap-2 max-w-2xl">
+              <span class="text-[11px] font-bold tracking-[0.14em] uppercase text-[#103860]">
+                KOMITMEN MUTU DARI DERMAGA KE DAPUR
+              </span>
+              <h2 class="text-2xl sm:text-3xl font-extrabold text-[#002242]">
+                Tiga pilar integritas operasional Laut Berkah Abadi.
+              </h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+              <!-- Kartu Pilar 02: Apa yang Kami Lakukan -->
+              <div class="bg-[#F5F5F5] rounded-[4px] p-6 sm:p-8 flex flex-col justify-between border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                <div class="flex flex-col gap-3">
+                  <span class="text-[10px] font-bold tracking-widest uppercase text-[#00629B]">
+                    PILAR 02 • KURASI SUBUH
+                  </span>
+                  <h3 class="text-lg font-bold text-slate-900 leading-snug">
+                    Seleksi organoleptik & ruang dingin 0–2°C.
+                  </h3>
+                  <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                    Setiap subuh pukul 05:00 WIB, tim kami memeriksa kejernihan mata, insang merah segar, dan kekenyalan daging. Ikan disiangi di atas meja baja tahan karat dan langsung masuk palka bersuhu terkendali.
+                  </p>
+                </div>
+                <div class="pt-5 mt-5 border-t border-slate-200/80">
+                  <a
+                    href="#panduan-mutu"
+                    class="text-xs font-bold text-[#00629B] hover:text-[#004d7a] inline-flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <span>Standar seleksi mutu</span>
+                    <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+                  </a>
+                </div>
+              </div>
+
+              <!-- Kartu Pilar 03: Mengapa Ini Penting -->
+              <div class="bg-[#F5F5F5] rounded-[4px] p-6 sm:p-8 flex flex-col justify-between border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                <div class="flex flex-col gap-3">
+                  <span class="text-[10px] font-bold tracking-widest uppercase text-[#00629B]">
+                    PILAR 03 • INTEGRITAS GIZI
+                  </span>
+                  <h3 class="text-lg font-bold text-slate-900 leading-snug">
+                    Protein murni & Omega-3 tanpa bahan kimia.
+                  </h3>
+                  <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                    Ikan laut kaya EPA dan DHA untuk pertumbuhan otak anak dan kesehatan jantung. Kami menjamin 100% tanpa formalin dan tanpa zat pemutih sintetis agar nutrisi alami ikan tetap utuh terjaga.
+                  </p>
+                </div>
+                <div class="pt-5 mt-5 border-t border-slate-200/80">
+                  <NuxtLink
+                    to="/katalog"
+                    class="text-xs font-bold text-[#00629B] hover:text-[#004d7a] inline-flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <span>Pilihan ikan sehat keluarga</span>
+                    <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+                  </NuxtLink>
+                </div>
+              </div>
+
+              <!-- Kartu Pilar 04: Strategi Distribusi -->
+              <div class="bg-[#F5F5F5] rounded-[4px] p-6 sm:p-8 flex flex-col justify-between border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                <div class="flex flex-col gap-3">
+                  <span class="text-[10px] font-bold tracking-widest uppercase text-[#00629B]">
+                    PILAR 04 • DISTRIBUSI PRESISI
+                  </span>
+                  <h3 class="text-lg font-bold text-slate-900 leading-snug">
+                    Pengiriman jadwal subuh & pasokan kuliner.
+                  </h3>
+                  <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                    Kurir termal meluncur pukul 06:00 sampai 08:30 WIB untuk area lokal Banyuwangi. Kemasan styrofoam tebal berlapis es gel untuk luar kota Jawa Timur dan Bali menjamin kondisi beku hingga di tangan Anda.
+                  </p>
+                </div>
+                <div class="pt-5 mt-5 border-t border-slate-200/80">
+                  <a
+                    href="https://wa.me/6281234567890?text=Halo%20Laut%20Berkah%20Abadi,%20saya%20ingin%20konsultasi%20pasokan%20ikan%20restoran/katering"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="text-xs font-bold text-[#00629B] hover:text-[#004d7a] inline-flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <span>Konsultasi pasokan kuliner</span>
+                    <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
 
       <!-- 4. PANDUAN KLASIFIKASI MUTU IKAN (Mengadopsi Seafood Watch Decision Guide) -->
       <section id="panduan-mutu" class="w-full bg-white py-16 md:py-24 border-b border-slate-200/80">

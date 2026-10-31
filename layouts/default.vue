@@ -139,7 +139,7 @@ const handleSearchClick = () => {
       v-if="showMainHeader && (announcement?.isActive !== false)" 
       :class="(isKatalogPage || isKeranjangPage || isProdukPage) ? 'hidden md:flex' : 'flex'"
       :style="{ backgroundColor: announcement?.bgColor || '#103860', color: announcement?.textColor || '#FFFFFF' }"
-      class="text-xs px-4 py-2 items-center justify-between text-center overflow-hidden z-30 shadow-xs transition-colors"
+      class="text-xs px-4 py-2 items-center justify-between text-center overflow-hidden z-50 shadow-xs transition-colors"
     >
       <div 
         class="flex items-center gap-2 mx-auto"
@@ -158,7 +158,7 @@ const handleSearchClick = () => {
     <header 
       v-if="showMainHeader" 
       :class="(isKatalogPage || isKeranjangPage || isProdukPage) ? 'hidden md:block' : 'block'"
-      class="bg-white sticky top-0 z-30 shadow-sm border-b border-slate-200/80 px-4 py-3"
+      class="bg-white sticky top-0 z-50 shadow-sm border-b border-slate-200/80 px-4 py-3"
     >
       <div class="max-w-6xl mx-auto flex justify-between items-center w-full gap-4">
         <!-- Brand Link & Anchor / Logo -->
