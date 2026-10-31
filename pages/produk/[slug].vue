@@ -1260,11 +1260,14 @@ useHead(() => {
             </NuxtLink>
           </div>
 
-          <div class="flex md:grid md:grid-cols-4 gap-3 sm:gap-4 overflow-x-auto no-scrollbar snap-x pb-2 pt-0.5">
+          <div 
+            class="flex md:grid md:grid-cols-4 gap-3 sm:gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory scroll-smooth -mx-4 px-4 md:mx-0 md:px-0 py-1.5"
+            style="scroll-padding-left: 1rem; -webkit-overflow-scrolling: touch;"
+          >
             <div
               v-for="rec in recommendedProducts"
               :key="rec.id"
-              class="w-[185px] sm:w-[220px] md:w-auto flex-shrink-0 snap-start flex flex-col"
+              class="w-[155px] sm:w-[170px] md:w-auto shrink-0 snap-start flex flex-col"
             >
               <CatalogProductCard :product="rec" class="h-full" />
             </div>
