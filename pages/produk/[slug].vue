@@ -1248,11 +1248,8 @@ useHead(() => {
 
         <!-- Rekomendasi Produk Terkait -->
         <section v-if="recommendedProducts.length > 0" class="px-4 py-5 border-t border-slate-100 bg-slate-50/50">
-          <div class="flex items-center justify-between mb-3.5">
-            <div>
-              <h2 class="text-sm font-bold tracking-tight md:text-base text-slate-900">Rekomendasi Pilihan untuk Anda</h2>
-              <p class="text-[11px] text-slate-500">Hasil laut segar sejenis dengan standar mutu pendaratan harian</p>
-            </div>
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-sm font-bold tracking-tight md:text-base text-slate-900">Produk Serupa</h2>
             <NuxtLink to="/katalog"
               class="text-xs font-semibold text-[#103860] hover:underline flex items-center gap-0.5">
               <span>Semua</span>
