@@ -60,84 +60,16 @@ useHead({
     </header>
 
     <!-- MAIN FULL-BLEED WRAPPER -->
-    <main class="w-full flex flex-col pb-20 md:pb-28">
+    <main class="w-full flex flex-col">
 
-      <!-- 1. HERO SECTION: Full-Bleed Atmospheric Maritime Hero (Adopsi Seafood Watch Hero) -->
-      <section class="relative w-full bg-[#002242] text-white overflow-hidden">
-        <!-- Background Imagery -->
-        <div class="absolute inset-0">
-          <NuxtImg
-            src="https://cdn.ammarabufadhel.my.id/banners/banner-laut-selatbali-09d4359b.webp"
-            alt="Perahu nelayan tradisional Selat Bali Muncar"
-            class="w-full h-full object-cover opacity-30"
-            loading="eager"
-            width="1920"
-            height="800"
-            format="webp"
-          />
-          <div class="absolute inset-0 bg-gradient-to-r from-[#002242] via-[#002242]/90 to-transparent" />
-          <div class="absolute inset-0 bg-gradient-to-t from-[#002242] via-transparent to-transparent md:hidden" />
-        </div>
-
-        <div class="relative z-10 w-full max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-20 sm:py-28 lg:py-36 flex flex-col justify-center min-h-[480px] lg:min-h-[580px]">
-          <div class="max-w-3xl flex flex-col gap-5">
-            <div class="inline-flex items-center gap-2 self-start flex-wrap">
-              <span class="px-3 py-1 rounded-md bg-white/10 border border-white/20 text-sky-200 text-[10px] sm:text-[11px] font-bold tracking-widest uppercase">
-                PANDUAN MUTU & RANTAI DINGIN • LAUT BERKAH ABADI MUNCAR
-              </span>
-              <span class="inline-flex items-center gap-1.5 text-xs text-emerald-400 font-semibold bg-emerald-950/40 px-2.5 py-0.5 rounded-md border border-emerald-500/30">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                Palka Es 0°C Terjaga
-              </span>
-            </div>
-
-            <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight text-white">
-              Pilihan hasil laut Anda menentukan masa depan nelayan Selat Bali dan kesehatan keluarga.
-            </h1>
-
-            <p class="text-sm sm:text-base text-slate-200 leading-relaxed max-w-2xl">
-              Apa yang layak dibeli, apa yang harus dihindari, dan bagaimana menjaga ikan tetap segar tanpa formalin. Laut Berkah Abadi menghubungkan hasil tangkapan pancing subuh nelayan Muncar langsung ke dapur rumah tangga dan pelaku kuliner dengan standar rantai dingin tanpa putus.
-            </p>
-
-            <!-- Dual Action CTAs -->
-            <div class="flex flex-wrap items-center gap-3.5 pt-3">
-              <NuxtLink
-                to="/katalog"
-                class="h-12 px-6 bg-white hover:bg-slate-100 text-[#002242] font-bold text-xs sm:text-sm rounded-xl inline-flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 cursor-pointer"
-              >
-                <span class="material-symbols-outlined text-[20px]">storefront</span>
-                <span>Telusuri Katalog Segar</span>
-              </NuxtLink>
-
-              <a
-                href="#panduan-mutu"
-                class="h-12 px-6 bg-white/10 hover:bg-white/15 border border-white/25 text-white font-semibold text-xs sm:text-sm rounded-xl inline-flex items-center justify-center gap-2 transition-colors cursor-pointer"
-              >
-                <span class="material-symbols-outlined text-[20px]">verified</span>
-                <span>Panduan Keputusan Mutu</span>
-              </a>
-            </div>
-          </div>
-
-          <!-- Floating Metric Pill di Sudut Kanan Bawah Desktop -->
-          <div class="hidden lg:flex absolute right-12 bottom-12 bg-white/95 backdrop-blur-md rounded-2xl border border-white/80 p-5 items-center gap-4 shadow-xl max-w-sm text-slate-900">
-            <div class="w-12 h-12 rounded-xl bg-[#103860] text-white flex items-center justify-center shrink-0 shadow-xs">
-              <span class="material-symbols-outlined text-[26px]">ac_unit</span>
-            </div>
-            <div class="flex flex-col">
-              <span class="text-[10px] font-bold tracking-widest uppercase text-slate-500">Standar Cold Storage Muncar</span>
-              <span class="text-base font-extrabold text-[#002242]">Ruang Dingin 0°C – 2°C</span>
-              <span class="text-xs text-slate-600">Blast freezer cepat -20°C higienis</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- 2. SCROLLYTELLING PINNED VIDEO ENGINE (Persis Seafood Watch Signature Video Scroller) -->
+      <!-- 1. FULL-SCREEN SCROLLABLE PINNED VIDEO PARALLAX (Persis Seafood Watch) -->
       <ScrollyStory />
 
-      <!-- 3. FIFTY-FIFTY ALTERNATING INSTITUTIONAL PILLARS (Mengadopsi Seafood Watch /about-us) -->
-      <section id="pilar-lba" class="w-full flex flex-col">
+      <!-- 2. PARALLAX CURTAIN TRANSITION SHEET (Mengadopsi Seafood Watch .homepage-section-top) -->
+      <div class="relative z-30 bg-[#F8FAFC] -mt-16 sm:-mt-24 rounded-t-[32px] sm:rounded-t-[48px] shadow-2xl border-t border-slate-200/80 overflow-hidden">
+
+        <!-- 3. PANDUAN KLASIFIKASI MUTU IKAN (Mengadopsi Seafood Watch Decision Guide) -->
+        <section id="panduan-mutu" class="w-full bg-white py-16 md:py-24 border-b border-slate-200/80">
         <!-- Pilar 1: Siapa Kami (Who We Are) -> Background Putih -->
         <div class="w-full bg-white border-b border-slate-100 py-16 md:py-24">
           <div class="w-full max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
@@ -640,6 +572,7 @@ useHead({
         </div>
       </section>
 
+      </div>
     </main>
   </div>
 </template>
