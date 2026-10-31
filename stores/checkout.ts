@@ -9,6 +9,7 @@ export interface DeliverySlotOption {
   id: string
   title: string
   timeRange: string
+  timeRangeWita?: string
   badge?: string | null
   description: string
   isActive?: boolean
@@ -92,6 +93,7 @@ const DEFAULT_SLOTS: DeliverySlotOption[] = [
     id: 'subuh',
     title: 'Slot Pagi',
     timeRange: '06:00 - 08:30 WIB',
+    timeRangeWita: '07:00 - 09:30 WITA',
     badge: 'Rekomendasi',
     description: 'Tiba segar siap masak sarapan dan makan siang',
     isActive: true,
@@ -101,6 +103,7 @@ const DEFAULT_SLOTS: DeliverySlotOption[] = [
     id: 'siang',
     title: 'Slot Siang',
     timeRange: '10:30 - 13:00 WIB',
+    timeRangeWita: '11:30 - 14:00 WITA',
     badge: null,
     description: 'Pengiriman reguler tengah hari',
     isActive: true,
@@ -110,6 +113,7 @@ const DEFAULT_SLOTS: DeliverySlotOption[] = [
     id: 'sore',
     title: 'Slot Sore',
     timeRange: '16:00 - 18:30 WIB',
+    timeRangeWita: '17:00 - 19:30 WITA',
     badge: null,
     description: 'Persiapan santap malam keluarga',
     isActive: true,

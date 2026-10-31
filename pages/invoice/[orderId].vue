@@ -239,7 +239,7 @@ const qrVerificationUrl = computed(() => {
             <div class="flex flex-col gap-1.5 text-xs text-slate-700">
               <div class="flex items-center justify-between">
                 <span class="text-slate-500">Jadwal Tiba:</span>
-                <span class="font-bold text-[#103860]">{{ order.delivery_slot || 'Slot Pagi (06:00 - 08:30 WIB)' }}</span>
+                <span class="font-bold text-[#103860]">{{ order.delivery_slot || 'Slot Pagi (06:00 - 08:30 WIB / 07:00 - 09:30 WITA)' }}</span>
               </div>
               <div class="flex items-center justify-between">
                 <span class="text-slate-500">Insulasi Kemasan:</span>

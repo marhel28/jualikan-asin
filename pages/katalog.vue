@@ -54,7 +54,6 @@ let debounceTimer: ReturnType<typeof setTimeout> | null = null
 const selectedCategory = ref('semua')
 const selectedSort = ref('paling_sesuai')
 const selectedCut = ref<string | null>(null)
-const selectedStorage = ref<string | null>(null)
 const onlyInStock = ref(false)
 const minPrice = ref(0)
 const maxPrice = ref(500000)
@@ -259,7 +258,6 @@ const activeFilterCount = computed(() => {
   let count = 0
   if (selectedCategory.value !== 'semua') count++
   if (selectedCut.value) count++
-  if (selectedStorage.value) count++
   if (onlyInStock.value) count++
   if (selectedSort.value !== 'paling_sesuai') count++
   return count
@@ -291,14 +289,40 @@ const filteredProducts = computed(() => {
     }
   }
 
-  // 3. Cut shape filter
+  // 3. Bentuk Olahan & Potongan (Sinkron dengan Varian Ke-2 / Tier 2 Dashboard & Available Cuts)
   if (selectedCut.value) {
     if (selectedCut.value === 'utuh_bersih') {
-      list = list.filter(p => p.availableCuts?.some(c => c.type === 'utuh_bersih'))
+      list = list.filter(p => {
+        const hasTier2 = p.customVariants?.tier2?.enabled && p.customVariants.tier2.options?.some((o: any) =>
+          /utuh|siang/i.test(o.label || '')
+        )
+        const hasCut = p.availableCuts?.some(c =>
+          c.type === 'utuh_bersih' || /utuh|siang/i.test(c.label || '')
+        )
+        return Boolean(hasTier2 || hasCut)
+      })
     } else if (selectedCut.value === 'fillet') {
-      list = list.filter(p => p.category === 'fillet' || p.availableCuts?.some(c => c.type === 'fillet_tanpa_kulit'))
+      list = list.filter(p => {
+        const isCat = p.category?.toLowerCase() === 'fillet'
+        const hasTier2 = p.customVariants?.tier2?.enabled && p.customVariants.tier2.options?.some((o: any) =>
+          /fillet|kulit|duri/i.test(o.label || '')
+        )
+        const hasCut = p.availableCuts?.some(c =>
+          c.type === 'fillet_tanpa_kulit' || /fillet/i.test(c.label || '')
+        )
+        return Boolean(isCat || hasTier2 || hasCut)
+      })
     } else if (selectedCut.value === 'steak') {
-      list = list.filter(p => p.category === 'steak' || p.availableCuts?.some(c => c.type === 'steak_melintang'))
+      list = list.filter(p => {
+        const isCat = p.category?.toLowerCase() === 'steak'
+        const hasTier2 = p.customVariants?.tier2?.enabled && p.customVariants.tier2.options?.some((o: any) =>
+          /steak/i.test(o.label || '')
+        )
+        const hasCut = p.availableCuts?.some(c =>
+          c.type === 'steak_melintang' || /steak/i.test(c.label || '')
+        )
+        return Boolean(isCat || hasTier2 || hasCut)
+      })
     }
   }
 
@@ -365,7 +389,7 @@ watch(scrollSentinel, (el) => {
 })
 
 // Reset scroll limit whenever filters or search change
-watch([selectedCategory, selectedSort, selectedCut, selectedStorage, onlyInStock, minPrice, maxPrice], () => {
+watch([selectedCategory, selectedSort, selectedCut, onlyInStock, minPrice, maxPrice], () => {
   displayLimit.value = 8
 })
 
@@ -387,7 +411,6 @@ const resetAllFilters = () => {
   selectedCategory.value = 'semua'
   selectedSort.value = 'paling_sesuai'
   selectedCut.value = null
-  selectedStorage.value = null
   onlyInStock.value = false
   minPrice.value = 0
   maxPrice.value = 500000
@@ -925,7 +948,7 @@ useHead(() => {
 
               <hr class="border-slate-200" />
 
-              <!-- SECTION 3: Bentuk Olahan & Potongan -->
+              <!-- SECTION 3: Bentuk Olahan & Potongan (Varian Ke-2 Dashboard) -->
               <div>
                 <label
                   class="text-xs font-bold uppercase tracking-wider text-[#103860] flex items-center gap-1.5 mb-2.5">
@@ -940,7 +963,7 @@ useHead(() => {
                       :class="selectedCut === 'utuh_bersih' ? 'bg-[#198754] text-white' : 'border border-slate-300'">
                       <span v-if="selectedCut === 'utuh_bersih'" class="text-xs material-symbols-outlined">check</span>
                     </div>
-                    <span>Ikan Utuh Bersih</span>
+                    <span>Utuh Bersih Siang</span>
                   </div>
 
                   <div @click="selectedCut = selectedCut === 'fillet' ? null : 'fillet'"
@@ -950,11 +973,11 @@ useHead(() => {
                       :class="selectedCut === 'fillet' ? 'bg-[#198754] text-white' : 'border border-slate-300'">
                       <span v-if="selectedCut === 'fillet'" class="text-xs material-symbols-outlined">check</span>
                     </div>
-                    <span>Fillet Skin-on</span>
+                    <span>Fillet (Skin-on / Duri Bersih)</span>
                   </div>
 
                   <div @click="selectedCut = selectedCut === 'steak' ? null : 'steak'"
-                    class="p-2.5 rounded-xl border text-xs font-medium cursor-pointer transition flex items-center gap-2"
+                    class="p-2.5 rounded-xl border text-xs font-medium cursor-pointer transition flex items-center gap-2 col-span-2 sm:col-span-1"
                     :class="selectedCut === 'steak' ? 'border-[#198754] bg-[#c9f3d5]/30 text-[#00210f] font-semibold' : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'">
                     <div class="flex items-center justify-center w-4 h-4 rounded"
                       :class="selectedCut === 'steak' ? 'bg-[#198754] text-white' : 'border border-slate-300'">
@@ -967,57 +990,7 @@ useHead(() => {
 
               <hr class="border-slate-200" />
 
-              <!-- SECTION 4: Metode Simpan & Mutu Cold-Chain -->
-              <div>
-                <div class="flex items-center justify-between mb-2">
-                  <label class="text-xs font-bold uppercase tracking-wider text-[#103860] flex items-center gap-1.5">
-                    <span class="material-symbols-outlined text-[16px] text-[#198754]">ac_unit</span>
-                    Metode Simpan & Mutu
-                  </label>
-                  <span class="text-[10px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-mono">HACCP
-                    Certified</span>
-                </div>
-
-                <div class="space-y-2">
-                  <div @click="selectedStorage = 'chilled'"
-                    class="flex items-center justify-between p-3 transition border cursor-pointer rounded-xl"
-                    :class="selectedStorage === 'chilled' ? 'border-2 border-[#103860] bg-[#103860]/5' : 'border-slate-200 bg-white hover:bg-slate-50'">
-                    <div class="flex items-center gap-2.5">
-                      <div
-                        class="w-7 h-7 rounded-lg bg-[#d6e4ff] text-[#103860] flex items-center justify-center font-bold text-xs">
-                        0°C
-                      </div>
-                      <div>
-                        <p class="text-xs font-bold text-[#103860]">Segar Dingin / Chilled (0°-2°C)</p>
-                        <p class="text-[10px] text-slate-500">Es curah segar pelabuhan, siap diolah hari ini</p>
-                      </div>
-                    </div>
-                    <span v-if="selectedStorage === 'chilled'"
-                      class="material-symbols-outlined text-[#103860] text-lg">check_circle</span>
-                  </div>
-
-                  <div @click="selectedStorage = 'frozen'"
-                    class="flex items-center justify-between p-3 transition border cursor-pointer rounded-xl"
-                    :class="selectedStorage === 'frozen' ? 'border-2 border-[#103860] bg-[#103860]/5' : 'border-slate-200 bg-white hover:bg-slate-50'">
-                    <div class="flex items-center gap-2.5">
-                      <div
-                        class="flex items-center justify-center text-xs font-bold rounded-lg w-7 h-7 bg-slate-100 text-slate-600">
-                        -18
-                      </div>
-                      <div>
-                        <p class="text-xs font-semibold text-slate-800">Beku Kapal / Frozen (-18°C)</p>
-                        <p class="text-[10px] text-slate-500">Air blast freezing langsung saat berlayar</p>
-                      </div>
-                    </div>
-                    <span v-if="selectedStorage === 'frozen'"
-                      class="material-symbols-outlined text-[#103860] text-lg">check_circle</span>
-                  </div>
-                </div>
-              </div>
-
-              <hr class="border-slate-200" />
-
-              <!-- SECTION 5: Ketersediaan -->
+              <!-- SECTION 4: Ketersediaan -->
               <div class="pb-2">
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-2">

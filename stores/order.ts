@@ -238,6 +238,11 @@ export const useOrderStore = defineStore('order', {
           const api = useApi()
           const isDropship = Boolean(checkoutStore.isDropship)
           const isTextFallback = Boolean(checkoutStore.isTextOnlyFallback)
+          const activeSlot = checkoutStore.slotDetails
+          const formattedDeliverySlot = activeSlot?.timeRangeWita
+            ? `${activeSlot.title} (${activeSlot.timeRange} / ${activeSlot.timeRangeWita})`
+            : (activeSlot?.timeRange ? `${activeSlot.title} (${activeSlot.timeRange})` : 'Slot Pagi (06:00 - 08:30 WIB / 07:00 - 09:30 WITA)')
+
           const backendPayload = {
             items: cartStore.items.map(it => {
               const rawPid = it.productId || it.id || ''
@@ -258,7 +263,7 @@ export const useOrderStore = defineStore('order', {
                 price_per_kg: it.pricePerKg
               }
             }),
-            delivery_slot: checkoutStore.slotDetails.title,
+            delivery_slot: formattedDeliverySlot,
             packaging_type: cartStore.packagingType,
             shipping_courier: checkoutStore.selectedCourier,
             shipping_address: {

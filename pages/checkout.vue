@@ -414,9 +414,12 @@ const handleProceedToPayment = async () => {
               class="mt-1 text-[#103860]"
             />
             <div class="flex-1">
-              <div class="flex items-center gap-2 text-xs">
+              <div class="flex items-center gap-2 text-xs flex-wrap">
                 <span class="font-bold text-[#0F172A]">{{ slot.title }}</span>
                 <span class="text-[11px] font-semibold text-slate-600">({{ slot.timeRange }})</span>
+                <span v-if="slot.timeRangeWita" class="text-[10px] font-medium text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
+                  {{ slot.timeRangeWita }}
+                </span>
                 <span v-if="slot.badge || slot.isRecommended" class="text-[#059669] text-[10px] font-bold bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">
                   Rekomendasi
                 </span>

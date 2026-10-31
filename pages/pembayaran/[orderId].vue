@@ -32,6 +32,7 @@ const expiredAt = ref<string | null>(null)
 
 // Countdown Timer State (20 minutes = 1200 seconds)
 const remainingSeconds = ref<number>(1200)
+let targetExpiryEpoch = 0
 let timerInterval: any = null
 let pollTimer: any = null
 
@@ -192,8 +193,11 @@ const handleApplySwitchPayment = async () => {
       paymentBank.value = res.payment_bank
       paymentMethod.value = res.payment_method
       paymentPayload.value = res.payment_payload
-      if (res.expires_in_seconds) {
-        remainingSeconds.value = res.expires_in_seconds
+      const switchRemaining = res.remaining_seconds ?? res.expires_in_seconds
+      if (typeof switchRemaining === 'number') {
+        setExpirySeconds(switchRemaining)
+      } else if (res.expired_at) {
+        setExpiryFromDateString(res.expired_at)
       }
       isSwitchModalOpen.value = false
       showToast(`Metode pembayaran berhasil diubah ke ${bankDisplayTitle.value}!`)
@@ -256,6 +260,60 @@ const downloadQrImage = () => {
   showToast('Memulai pengunduhan QRIS...')
 }
 
+const formatDualZoneSlot = (slotStr?: string | null): string => {
+  if (!slotStr) return 'Slot Pagi (06:00 - 08:30 WIB / 07:00 - 09:30 WITA)'
+  const s = slotStr.trim()
+  if (s.includes('WITA')) return s
+  if (s.includes('06:00 - 08:30') || s.includes('06:00')) {
+    return s.replace('WIB', 'WIB / 07:00 - 09:30 WITA')
+  }
+  if (s.includes('10:30 - 13:00') || s.includes('10:30')) {
+    return s.replace('WIB', 'WIB / 11:30 - 14:00 WITA')
+  }
+  if (s.includes('16:00 - 18:30') || s.includes('16:00')) {
+    return s.replace('WIB', 'WIB / 17:00 - 19:30 WITA')
+  }
+  return s
+}
+
+const updateCountdownFromEpoch = () => {
+  if (!targetExpiryEpoch) return
+  const now = Date.now()
+  const diffSec = Math.max(0, Math.floor((targetExpiryEpoch - now) / 1000))
+  remainingSeconds.value = diffSec
+  if (diffSec <= 0) {
+    if (timerInterval) {
+      clearInterval(timerInterval)
+      timerInterval = null
+    }
+    paymentStatus.value = 'EXPIRED'
+  }
+}
+
+const setExpirySeconds = (seconds: number) => {
+  const safeSeconds = Math.max(0, Number(seconds) || 0)
+  remainingSeconds.value = safeSeconds
+  targetExpiryEpoch = Date.now() + safeSeconds * 1000
+}
+
+const setExpiryFromDateString = (isoString: string) => {
+  try {
+    const epoch = new Date(isoString).getTime()
+    if (!isNaN(epoch)) {
+      targetExpiryEpoch = epoch
+      updateCountdownFromEpoch()
+      return
+    }
+  } catch {}
+  setExpirySeconds(1200)
+}
+
+const handleVisibilityChange = () => {
+  if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+    updateCountdownFromEpoch()
+  }
+}
+
 const loadOrderData = async () => {
   try {
     const api = useApi()
@@ -267,7 +325,7 @@ const loadOrderData = async () => {
     if (res) {
       orderNumber.value = res.order_number || res.orderNumber || target
       totalAmount.value = Number(res.grand_total || res.total_amount || res.totalAmount || 0)
-      deliverySlot.value = res.delivery_slot || res.deliverySlot || 'Slot Pagi Subuh (06:00 - 08:30 WIB)'
+      deliverySlot.value = formatDualZoneSlot(res.delivery_slot || res.deliverySlot)
       recipientName.value = res.recipient_name || res.shipping_address?.recipientName || 'Pelanggan LBA'
       addressStreet.value = res.address_detail || res.shipping_address?.street || 'Banyuwangi'
       paymentStatus.value = res.payment_status || 'PENDING'
@@ -286,13 +344,17 @@ const loadOrderData = async () => {
         return
       }
 
-      // Hitung sisa waktu 20 menit
-      if (typeof res.expires_in_seconds === 'number') {
-        remainingSeconds.value = Math.max(0, res.expires_in_seconds)
+      // Hitung sisa waktu berbasis server delta / expired_at
+      const serverRemaining = typeof res.remaining_seconds === 'number'
+        ? res.remaining_seconds
+        : (typeof res.expires_in_seconds === 'number' ? res.expires_in_seconds : null)
+
+      if (serverRemaining !== null) {
+        setExpirySeconds(serverRemaining)
       } else if (res.expired_at) {
-        const expTime = new Date(res.expired_at).getTime()
-        const now = Date.now()
-        remainingSeconds.value = Math.max(0, Math.floor((expTime - now) / 1000))
+        setExpiryFromDateString(res.expired_at)
+      } else {
+        setExpirySeconds(1200)
       }
     }
   } catch (err: any) {
@@ -302,14 +364,9 @@ const loadOrderData = async () => {
 
 const startCountdown = () => {
   if (timerInterval) clearInterval(timerInterval)
+  updateCountdownFromEpoch()
   timerInterval = setInterval(() => {
-    if (remainingSeconds.value > 0) {
-      remainingSeconds.value--
-    } else {
-      clearInterval(timerInterval)
-      timerInterval = null
-      paymentStatus.value = 'EXPIRED'
-    }
+    updateCountdownFromEpoch()
   }, 1000)
 }
 
@@ -377,6 +434,9 @@ const handleSimulatePayment = async () => {
 onMounted(async () => {
   await loadOrderData()
   startCountdown()
+  if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+  }
   // Polling aktif setiap 3.5 detik untuk konfirmasi otomatis dari Webhook Midtrans
   pollTimer = setInterval(pollPaymentStatus, 3500)
 })
@@ -384,6 +444,9 @@ onMounted(async () => {
 onUnmounted(() => {
   if (timerInterval) clearInterval(timerInterval)
   if (pollTimer) clearInterval(pollTimer)
+  if (typeof document !== 'undefined') {
+    document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }
 })
 </script>
 

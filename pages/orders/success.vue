@@ -298,7 +298,7 @@ onMounted(() => {
             <span class="text-[11px] font-bold text-slate-600">Jadwal Pengantaran Subuh:</span>
           </div>
           <span class="font-extrabold text-[#103860] text-sm">
-            {{ orderData?.delivery_slot || 'Slot Pagi (06:00 - 08:30 WIB)' }}
+            {{ orderData?.delivery_slot || 'Slot Pagi (06:00 - 08:30 WIB / 07:00 - 09:30 WITA)' }}
           </span>
           <span class="text-[11px] text-slate-600 leading-snug">
             Armada thermo-insulated berangkat jam subuh langsung dari fasilitas Muncar.
