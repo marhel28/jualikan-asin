@@ -413,6 +413,24 @@ const addItemToCart = () => {
   const t2Label = selectedTier2.value ? ` (${selectedTier2.value.label})` : ''
   const itemDisplayName = `${product.value.name} - ${t1Label}${t2Label}`
 
+  // Resolusi tipe potongan secara dinamis dari Varian 2 (dashboard) atau default produk
+  let resolvedCutType: 'utuh_bersih' | 'fillet_tanpa_kulit' | 'steak_melintang' = 'utuh_bersih'
+  if (selectedTier2.value) {
+    const lbl = (selectedTier2.value.label || '').toLowerCase()
+    const id = (selectedTier2.value.id || '').toLowerCase()
+    if (lbl.includes('fillet') || id.includes('fillet')) {
+      resolvedCutType = 'fillet_tanpa_kulit'
+    } else if (lbl.includes('steak') || id.includes('steak')) {
+      resolvedCutType = 'steak_melintang'
+    } else if (lbl.includes('utuh') || lbl.includes('siang') || id.includes('utuh')) {
+      resolvedCutType = 'utuh_bersih'
+    } else if (product.value.availableCuts && product.value.availableCuts.length > 0) {
+      resolvedCutType = (product.value.availableCuts[0].type as any) || 'utuh_bersih'
+    }
+  } else if (product.value.availableCuts && product.value.availableCuts.length > 0) {
+    resolvedCutType = (product.value.availableCuts[0].type as any) || 'utuh_bersih'
+  }
+
   cartStore.addItem(
     {
       id: `${product.value.id}-${selectedTier1.value.id}${selectedTier2.value ? '-' + selectedTier2.value.id : ''}`,
@@ -424,7 +442,7 @@ const addItemToCart = () => {
       unit: 'pack',
       netGrams: selectedGrams.value
     },
-    'fillet_tanpa_kulit',
+    resolvedCutType,
     false,
     quantity.value
   )
